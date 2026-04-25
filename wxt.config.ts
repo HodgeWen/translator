@@ -13,7 +13,6 @@ export default defineConfig({
       'activeTab',
       'scripting',
       'alarms',
-      'background',
     ],
     host_permissions: ['<all_urls>'],
     icons: {

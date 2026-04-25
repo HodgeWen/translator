@@ -33,7 +33,7 @@
 | 32x32 | `public/icon/32.png` | 已有 |
 | 48x48 | `public/icon/48.png` | 已有 |
 | 96x96 | `public/icon/96.png` | 已有 |
-| 128x128 | `public/icon/128.png` | 缺失 — `wxt.config.ts` 引用但目录中无此文件，需补充 |
+| 128x128 | `public/icon/128.png` | 已有 |
 
 ## 4. 截图与宣传图
 
@@ -62,7 +62,6 @@
 
 - [ ] `bun compile` — TypeScript 类型检查无错误
 - [ ] `bun build` — 生产构建成功（输出 `.output/chrome-mv3`）
-- [ ] 补充缺失的 `public/icon/128.png`
 - [ ] 在 Chrome `chrome://extensions` 加载解压目录，确认无明显错误
 - [ ] 确认 `manifest.json` 中无多余权限声明
 - [ ] 确认未使用 Manifest V2 弃用字段
