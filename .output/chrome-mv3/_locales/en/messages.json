@@ -1,0 +1,302 @@
+{
+  "extName": {
+    "message": "Translator",
+    "description": "Extension name"
+  },
+  "extDescription": {
+    "message": "A modern browser translation extension with OpenAI-compatible LLM support",
+    "description": "Extension description"
+  },
+  "command_toggle_desc": {
+    "message": "Toggle page translation",
+    "description": "Command description for toggle translation"
+  },
+  "popup_subtitle": {
+    "message": "OpenAI-compatible LLM translation"
+  },
+  "popup_provider": {
+    "message": "Provider"
+  },
+  "popup_model": {
+    "message": "Model"
+  },
+  "popup_translate_to": {
+    "message": "Translate to"
+  },
+  "popup_placeholder": {
+    "message": "Enter text to translate..."
+  },
+  "popup_translating": {
+    "message": "Translating..."
+  },
+  "popup_translate": {
+    "message": "Translate"
+  },
+  "popup_result": {
+    "message": "Result"
+  },
+  "popup_error": {
+    "message": "Error"
+  },
+  "popup_error_hint": {
+    "message": "Click to view details"
+  },
+  "popup_dismiss_error": {
+    "message": "Dismiss error"
+  },
+  "popup_session_history": {
+    "message": "Session History"
+  },
+  "popup_clear": {
+    "message": "Clear"
+  },
+  "popup_open_settings": {
+    "message": "Open Settings"
+  },
+  "popup_copied": {
+    "message": "Copied to clipboard"
+  },
+  "options_title": {
+    "message": "Translator Settings"
+  },
+  "options_subtitle": {
+    "message": "Configure your OpenAI-compatible translation providers and preferences"
+  },
+  "options_saved": {
+    "message": "Settings saved successfully"
+  },
+  "options_imported": {
+    "message": "Settings imported successfully"
+  },
+  "tab_providers": {
+    "message": "Providers"
+  },
+  "tab_model_queue": {
+    "message": "Model Queue"
+  },
+  "tab_language": {
+    "message": "Language"
+  },
+  "tab_general": {
+    "message": "General"
+  },
+  "btn_add_provider": {
+    "message": "Add Provider"
+  },
+  "title_add_provider": {
+    "message": "Add Provider"
+  },
+  "title_edit_provider": {
+    "message": "Edit Provider"
+  },
+  "btn_save": {
+    "message": "Save"
+  },
+  "btn_cancel": {
+    "message": "Cancel"
+  },
+  "label_name": {
+    "message": "Name"
+  },
+  "label_base_url": {
+    "message": "Base URL"
+  },
+  "label_api_key": {
+    "message": "API Key"
+  },
+  "placeholder_api_key": {
+    "message": "Enter API key..."
+  },
+  "hint_api_key": {
+    "message": "If set, Authorization: Bearer header will be sent automatically. You can still override it in custom headers."
+  },
+  "btn_show": {
+    "message": "Show"
+  },
+  "btn_hide": {
+    "message": "Hide"
+  },
+  "label_headers": {
+    "message": "Headers"
+  },
+  "label_query_params": {
+    "message": "Query Parameters"
+  },
+  "label_extra_body": {
+    "message": "Extra Body (JSON)"
+  },
+  "label_models": {
+    "message": "Models"
+  },
+  "label_model_id": {
+    "message": "Model ID"
+  },
+  "label_display_name": {
+    "message": "Display Name"
+  },
+  "btn_add_model": {
+    "message": "Add Model"
+  },
+  "btn_edit": {
+    "message": "Edit"
+  },
+  "btn_delete": {
+    "message": "Delete"
+  },
+  "queue_description": {
+    "message": "Models are tried in order. If one fails, the next is automatically used as fallback."
+  },
+  "label_timeout": {
+    "message": "Timeout (ms)"
+  },
+  "label_ui_language": {
+    "message": "Interface Language"
+  },
+  "hint_ui_language": {
+    "message": "Controls the language of this extension's UI"
+  },
+  "label_native_language": {
+    "message": "Native Language"
+  },
+  "hint_native_language": {
+    "message": "Your native language. Translations will target this language."
+  },
+  "title_lang_detect_providers": {
+    "message": "Language Detection Providers"
+  },
+  "btn_add_api_detector": {
+    "message": "Add API Detector"
+  },
+  "lang_detect_description": {
+    "message": "franc-min is always used first. Additional API detectors are used as fallback when franc-min is uncertain."
+  },
+  "label_default_style": {
+    "message": "Default Translation Style"
+  },
+  "style_original": {
+    "message": "original"
+  },
+  "style_bilingual": {
+    "message": "bilingual"
+  },
+  "style_underline": {
+    "message": "underline"
+  },
+  "style_clean": {
+    "message": "clean"
+  },
+  "style_original_desc": {
+    "message": "Replace text while preserving element structure"
+  },
+  "style_bilingual_desc": {
+    "message": "Show original and translation together"
+  },
+  "style_underline_desc": {
+    "message": "Underlined translation with original tooltip"
+  },
+  "style_clean_desc": {
+    "message": "Clean replacement without any markers"
+  },
+  "label_keyboard_shortcut": {
+    "message": "Keyboard Shortcut"
+  },
+  "shortcut_hint": {
+    "message": "Change in chrome://extensions/shortcuts"
+  },
+  "shortcut_unbound": {
+    "message": "Not bound"
+  },
+  "title_backup_restore": {
+    "message": "Backup & Restore"
+  },
+  "btn_export_settings": {
+    "message": "Export Settings"
+  },
+  "btn_import_settings": {
+    "message": "Import Settings"
+  },
+  "error_load_settings": {
+    "message": "Failed to load settings"
+  },
+  "error_save_failed": {
+    "message": "Save failed"
+  },
+  "error_export_failed": {
+    "message": "Export failed"
+  },
+  "error_import_failed": {
+    "message": "Import failed"
+  },
+  "error_required_fields": {
+    "message": "Name and Base URL are required"
+  },
+  "error_translation_failed": {
+    "message": "Translation failed"
+  },
+  "error_unknown": {
+    "message": "Unknown error"
+  },
+  "new_provider": {
+    "message": "New Provider"
+  },
+  "new_api_detector": {
+    "message": "New API Detector"
+  },
+  "label_endpoint_url": {
+    "message": "Endpoint URL"
+  },
+  "label_api_key_optional": {
+    "message": "API Key (optional)"
+  },
+  "label_key": {
+    "message": "Key"
+  },
+  "label_value": {
+    "message": "Value"
+  },
+  "btn_add": {
+    "message": "Add"
+  },
+  "label_provider_prompt": {
+    "message": "Translation Prompt"
+  },
+  "placeholder_provider_prompt": {
+    "message": "Leave empty to use global prompt..."
+  },
+  "hint_provider_prompt": {
+    "message": "Custom prompt for this provider. Supports {{sourceLang}}, {{targetLang}}, {{text}} variables."
+  },
+  "title_global_prompt": {
+    "message": "Global Translation Prompt"
+  },
+  "desc_global_prompt": {
+    "message": "This prompt is used for all providers unless overridden."
+  },
+  "hint_prompt_vars": {
+    "message": "Available variables:"
+  },
+  "title_aggregation": {
+    "message": "Aggregation Settings"
+  },
+  "label_aggregate_enabled": {
+    "message": "Enable Aggregation"
+  },
+  "desc_aggregate_enabled": {
+    "message": "Combine multiple paragraphs into a single translation request to improve efficiency."
+  },
+  "label_max_paragraphs": {
+    "message": "Max Paragraphs per Request"
+  },
+  "label_max_text_length": {
+    "message": "Max Text Length per Request"
+  },
+  "label_max_concurrent": {
+    "message": "Max Concurrent Requests"
+  },
+  "label_request_timeout": {
+    "message": "Request Timeout (ms)"
+  },
+  "title_display_settings": {
+    "message": "Display Settings"
+  }
+}

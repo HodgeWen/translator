@@ -1,0 +1,92 @@
+/* ============================================================================
+ * 译文样式 — DOM 契约
+ * ----------------------------------------------------------------------------
+ * original  → 原 el 通过 `el.replaceWith(wrapper)` 离开 DOM 树，仅由 elementMap
+ *             保留节点引用作存储；wrapper（原 el 的同标签 cloneNode + 译文
+ *             DocumentFragment + [data-translator-clone]）接管原 el 的 DOM 槽位，
+ *             与原 el 拥有完全一致的 :nth-child / 兄弟选择器命中。
+ *             恢复时 wrapper.replaceWith(原 el) 还原。
+ * clean     → 同 original（语义差别留给 UI 层，DOM 契约一致）
+ * bilingual → 原 el 保留，末尾追加
+ *             <br data-translator-br> + <span/<div>[data-translator-bilingual][data-display=block|inline]>
+ * underline → 原 el 清空，追加 <span[data-translator-underline] title="原文文本">
+ *
+ * 隔离策略：
+ *   - clone 走原标签 + 原 class，自然继承站点 CSS（保留 blockquote 左边框、
+ *     列表标记、标题字号等结构化样式）；不做 `all: revert`，避免把站点为
+ *     blockquote/li/h1 等定义的视觉指示一并抹掉。
+ *   - bilingual / underline 是注入式 span / div，需要 `all: revert` 清洗
+ *     从父节点继承的奇葩 inline 样式，再 `inherit` 回站点字体/颜色。
+ *   - !important 仅在必要处压过站点 CSS（与 kiss-translator / 沉浸式翻译一致）。
+ * ============================================================================ */
+
+/* ─── 注入式译文容器基线（仅 bilingual / underline）─────── */
+[data-translator-bilingual],
+[data-translator-underline] {
+  all: revert;
+  color: inherit;
+  background: transparent;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+/* ─── bilingual: 块级附加段 ─────────────── */
+[data-translator-bilingual][data-display='block'] {
+  display: block !important;
+  margin-top: 0.35em;
+  opacity: 0.78;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+[data-translator-bilingual][data-display='inline'] {
+  display: inline !important;
+  margin-left: 0.4em;
+  opacity: 0.75;
+  font-style: italic;
+}
+
+/* ─── underline: 虚下划线 + hover 强化 ──── */
+[data-translator-underline] {
+  text-decoration: underline dashed !important;
+  text-decoration-color: rgb(100 116 139 / 0.6) !important;
+  text-underline-offset: 0.2em;
+  cursor: help;
+}
+
+[data-translator-underline]:hover {
+  text-decoration-color: rgb(59 130 246 / 0.9) !important;
+}
+
+/* ─── 内部链接保持可点击 ─────────────────── */
+[data-translator-clone] a,
+[data-translator-bilingual] a,
+[data-translator-underline] a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: currentColor;
+  text-decoration-style: dotted;
+}
+
+/* ─── 暗色模式支持 ───────────────────────── */
+@media (prefers-color-scheme: dark) {
+  [data-translator-underline] {
+    text-decoration-color: rgb(148 163 184 / 0.6) !important;
+  }
+}
+
+/* ─── Ctrl+Hover 翻译目标视觉反馈 ────────── */
+/* 用 box-shadow 模拟 outline，避免破坏 inline 段落的换行流式布局 */
+[data-translator-hover-target] {
+  background-color: rgba(80, 70, 229, 0.08) !important;
+  border-radius: 3px !important;
+
+  transition: background-color 120ms ease, box-shadow 120ms ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-translator-hover-target] {
+    background-color: rgba(111, 101, 236, 0.18) !important;
+  }
+}

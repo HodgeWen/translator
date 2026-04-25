@@ -1,0 +1,41 @@
+{
+  "name": "translator-extension",
+  "version": "0.1.0",
+  "description": "A modern browser translation extension with OpenAI-compatible LLM support",
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "dev:firefox": "wxt -b firefox",
+    "build": "wxt build",
+    "build:firefox": "wxt build -b firefox",
+    "zip": "wxt zip",
+    "zip:firefox": "wxt zip -b firefox",
+    "compile": "tsc --noEmit",
+    "postinstall": "wxt prepare"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "dexie": "^4.0.11",
+    "franc-min": "^6.2.0",
+    "zod": "^3.24.2",
+    "lucide-react": "^0.487.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.2.0",
+    "@uiw/react-codemirror": "^4.23.10",
+    "@codemirror/lang-json": "^6.0.1",
+    "@codemirror/theme-one-dark": "^6.1.2",
+    "@codemirror/view": "^6.36.5",
+    "@codemirror/state": "^6.5.2"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/chrome": "^0.0.313",
+    "typescript": "^5.8.3",
+    "wxt": "^0.20.0",
+    "tailwindcss": "^4.1.4",
+    "@tailwindcss/vite": "^4.1.4"
+  }
+}
