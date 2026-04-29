@@ -26,6 +26,21 @@ const HARD_EXCLUDE_TAGS = new Set([
   'PRE', 'CODE',
 ]);
 
+// 软排除标签：这些标签内的后代元素默认跳过翻译（导航、页头页脚等 UI chrome）。
+// 与 HARD_EXCLUDE 的区别：元素自身不会出现在候选列表（它们不在白/灰名单），
+// 但内部的 <li>/<p> 等白名单元素会被 hasExcludedAncestor 拦截。
+const SOFT_EXCLUDE_TAGS = new Set(['NAV', 'FOOTER', 'HEADER']);
+
+// 交互式 UI 组件的 ARIA role：这些角色下的文本是 UI 控件而非可读内容。
+const UI_ROLES = new Set([
+  'menu', 'menubar', 'menuitem', 'menuitemcheckbox', 'menuitemradio',
+  'toolbar', 'tablist', 'tab', 'navigation',
+  'button', 'switch', 'slider', 'spinbutton',
+  'listbox', 'option', 'combobox',
+  'alertdialog', 'dialog',
+  'tooltip', 'status', 'timer', 'progressbar',
+]);
+
 const DIRECT_TEXT_RATIO_THRESHOLD = 0.5;
 const MIN_TEXT_LENGTH = 5;
 
@@ -56,6 +71,8 @@ function hasExcludedAncestor(el: HTMLElement): boolean {
     if (cur.getAttribute?.('aria-hidden') === 'true') return true;
     const role = cur.getAttribute?.('role');
     if (role === 'code' || role === 'math') return true;
+    if (role && UI_ROLES.has(role)) return true;
+    if (SOFT_EXCLUDE_TAGS.has(cur.tagName)) return true;
     if (cur.hasAttribute?.('data-translator-processed')) return true;
     if (cur.hasAttribute?.('data-translator-clone')) return true;
     cur = cur.parentElement;
@@ -74,11 +91,25 @@ function isVisible(el: HTMLElement): boolean {
   return rect.width > 0 || rect.height > 0;
 }
 
+// 链接密度启发式：当元素中链接文本占比过高时（> 70%），认为是导航型列表，跳过翻译。
+// 典型场景：侧边栏目录、面包屑、标签云、分页控件。
+const LINK_DENSITY_THRESHOLD = 0.7;
+
+function isLinkHeavy(el: HTMLElement): boolean {
+  const totalLen = (el.textContent?.trim() ?? '').length;
+  if (totalLen === 0) return false;
+  const links = el.querySelectorAll('a');
+  let linkTextLen = 0;
+  links.forEach(a => { linkTextLen += (a.textContent?.trim() ?? '').length; });
+  return linkTextLen / totalLen > LINK_DENSITY_THRESHOLD;
+}
+
 export function isTranslatableBlock(el: HTMLElement | null | undefined): el is HTMLElement {
   if (!el) return false;
 
   const tag = el.tagName;
   if (HARD_EXCLUDE_TAGS.has(tag)) return false;
+  if (SOFT_EXCLUDE_TAGS.has(tag)) return false;
 
   const isWhitelist = WHITELIST_TAGS.has(tag);
   const isGraylist = GRAYLIST_TAGS.has(tag);
@@ -98,6 +129,9 @@ export function isTranslatableBlock(el: HTMLElement | null | undefined): el is H
     if (totalLen === 0) return false;
     if (directLen / totalLen < DIRECT_TEXT_RATIO_THRESHOLD) return false;
   }
+
+  // 链接密度过高的 <li> 等通常是导航列表，跳过
+  if (tag === 'LI' && isLinkHeavy(el)) return false;
 
   return true;
 }
@@ -122,15 +156,32 @@ export function collectBlocks(root: ParentNode = document): HTMLElement[] {
 
   if (passed.length === 0) return [];
 
-  // 父子去重：构造 Set 便于 O(1) 查表；对每个候选往上找是否存在已在 Set 的祖先。
+  // 父子去重（含子夺权）：
+  // 原始策略：父子同时命中时只保留最外层（父）。
+  // 问题：当父节点直接文本为空（所有文字在子块级元素内），encodeInline 会把
+  // 子块当 KEEP 占位符（#N#），导致 LLM 收到的只有占位符、没有可翻译内容。
+  // 典型场景：<li><p>文本</p></li>、<td><p>文本</p></td>。
+  //
+  // 子夺权策略：当父节点直接文本占比不足（< DIRECT_TEXT_RATIO_THRESHOLD），
+  // 说明父只是容器，应保留子节点翻译、抑制父节点。
   const passedSet = new Set(passed);
+  const suppressed = new Set<HTMLElement>();
   const survivors: HTMLElement[] = [];
+
   for (const el of passed) {
     let hasAncestorInSet = false;
     let parent: HTMLElement | null = el.parentElement;
     while (parent) {
       if (passedSet.has(parent)) {
-        hasAncestorInSet = true;
+        // 检查父节点直接文本占比
+        const parentDirectLen = getDirectTextLength(parent);
+        const parentTotalLen = (parent.textContent?.trim() ?? '').length;
+        if (parentTotalLen > 0 && parentDirectLen / parentTotalLen < DIRECT_TEXT_RATIO_THRESHOLD) {
+          // 父节点直接文本不够 → 子夺权，标记父被抑制
+          suppressed.add(parent);
+        } else {
+          hasAncestorInSet = true;
+        }
         break;
       }
       parent = parent.parentElement;
@@ -138,5 +189,5 @@ export function collectBlocks(root: ParentNode = document): HTMLElement[] {
     if (!hasAncestorInSet) survivors.push(el);
   }
 
-  return survivors;
+  return survivors.filter(el => !suppressed.has(el));
 }

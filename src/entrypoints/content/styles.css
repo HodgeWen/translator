@@ -76,6 +76,58 @@
   }
 }
 
+/* ─── Pending 翻译中等待效果 ─────────────── */
+/* 微妙的脉冲底色 + 左侧渐变条，让用户感知到「正在翻译」而不干扰阅读 */
+@keyframes translator-shimmer {
+  0%   { opacity: 0.45; }
+  50%  { opacity: 1; }
+  100% { opacity: 0.45; }
+}
+
+[data-translator-pending] {
+  position: relative !important;
+}
+
+[data-translator-pending]::after {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  pointer-events: none !important;
+  border-radius: 3px !important;
+  background: linear-gradient(
+    90deg,
+    rgba(99, 102, 241, 0.06) 0%,
+    rgba(99, 102, 241, 0.12) 50%,
+    rgba(99, 102, 241, 0.06) 100%
+  ) !important;
+  border-left: 2px solid rgba(99, 102, 241, 0.5) !important;
+  animation: translator-shimmer 1.8s ease-in-out infinite !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-translator-pending]::after {
+    background: linear-gradient(
+      90deg,
+      rgba(129, 140, 248, 0.06) 0%,
+      rgba(129, 140, 248, 0.14) 50%,
+      rgba(129, 140, 248, 0.06) 100%
+    ) !important;
+    border-left-color: rgba(129, 140, 248, 0.55) !important;
+  }
+}
+
+/* ─── Error 翻译失败视觉提示 ─────────────── */
+[data-translator-error] {
+  border-left: 2px solid rgba(239, 68, 68, 0.45) !important;
+  border-radius: 2px !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-translator-error] {
+    border-left-color: rgba(248, 113, 113, 0.45) !important;
+  }
+}
+
 /* ─── Ctrl+Hover 翻译目标视觉反馈 ────────── */
 /* 用 box-shadow 模拟 outline，避免破坏 inline 段落的换行流式布局 */
 [data-translator-hover-target] {

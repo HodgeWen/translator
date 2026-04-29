@@ -110,12 +110,40 @@ function App() {
     return settings?.providers.find((p) => p.id === selectedProviderId);
   };
 
-  const handleProviderChange = (providerId: string) => {
+  const handleProviderChange = async (providerId: string) => {
     setSelectedProviderId(providerId);
     const provider = settings?.providers.find((p) => p.id === providerId);
-    if (provider && provider.models.length > 0) {
-      setSelectedModelId(provider.models[0].id);
+    if (!provider) return;
+
+    const newModelId = provider.models.length > 0 ? provider.models[0].id : '';
+    if (newModelId) {
+      setSelectedModelId(newModelId);
     }
+
+    if (!settings) return;
+
+    const newQueue: ModelQueueItem[] = settings.modelQueue.map((item) => ({
+      ...item,
+      enabled: item.providerId === providerId && item.modelId === newModelId ? true : item.enabled,
+    }));
+
+    const selectedIndex = newQueue.findIndex(
+      (item) => item.providerId === providerId && item.modelId === newModelId
+    );
+    if (selectedIndex > 0) {
+      const [item] = newQueue.splice(selectedIndex, 1);
+      newQueue.unshift(item);
+    } else if (selectedIndex === -1 && newModelId) {
+      newQueue.unshift({
+        providerId: providerId,
+        modelId: newModelId,
+        enabled: true,
+      });
+    }
+
+    const newSettings = { ...settings, modelQueue: newQueue };
+    setSettings(newSettings);
+    await saveSettings(newSettings);
   };
 
   const handleModelChange = async (modelId: string) => {

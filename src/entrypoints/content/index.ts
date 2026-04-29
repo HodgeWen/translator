@@ -14,6 +14,7 @@ interface ElementState {
   translatedText: string;
   status: 'idle' | 'pending' | 'translated' | 'error';
   cloneEl?: HTMLElement;
+  showingOriginal: boolean;
 }
 
 interface AggregateSettings {
@@ -34,6 +35,13 @@ interface GlobalState {
   aggregate: AggregateSettings;
   pendingAggregateElements: Set<HTMLElement>;
   aggregateDebounceTimer: number | null;
+  // 全局显示模式：
+  //   'translation' → elementMap 中所有段落显示译文（默认）
+  //   'original'    → 所有段落显示原文（Alt+W 二次按下后进入）
+  // 与 ElementState.showingOriginal 配合：单段 Ctrl+悬浮 toggle 仅修改单段标志；
+  // 全页 Alt+W toggle 修改本字段并把所有段落 sync 到对应状态。
+  // 新翻译完成的段落在 applyTranslation 时按本字段决定初始显示。
+  displayMode: 'translation' | 'original';
 }
 
 // ─── State ──────────────────────────────────────────────────────────────
@@ -48,6 +56,10 @@ const wrapperToOriginal: WeakMap<HTMLElement, HTMLElement> = new WeakMap();
 let mutationFlushTimer: number | null = null;
 const pendingMutationNodes: Set<HTMLElement> = new Set();
 const MUTATION_FLUSH_DELAY_MS = 200;
+
+// WeakSet：标记「由扩展自身 replaceWith 导致的 DOM 移除」，防止 MutationObserver
+// 误把翻译/还原/切换操作当成站点移除节点而清理 elementMap。
+const mutationIgnoredNodes = new WeakSet<HTMLElement>();
 
 const state: GlobalState = {
   isActive: false,
@@ -65,6 +77,7 @@ const state: GlobalState = {
   },
   pendingAggregateElements: new Set(),
   aggregateDebounceTimer: null,
+  displayMode: 'translation',
 };
 
 // ─── Utilities ──────────────────────────────────────────────────────────
@@ -114,9 +127,10 @@ function applyOriginalStyle(el: HTMLElement, translatedText: string, fragments: 
   wrapper.setAttribute('data-translator-processed', 'true');
 
   wrapperToOriginal.set(wrapper, el);
+  mutationIgnoredNodes.add(el);
   el.replaceWith(wrapper);
 
-  state.elementMap.set(el, { originalHTML, translatedText, status: 'translated', cloneEl: wrapper });
+  state.elementMap.set(el, { originalHTML, translatedText, status: 'translated', cloneEl: wrapper, showingOriginal: false });
 }
 
 function applyCleanStyle(el: HTMLElement, translatedText: string, fragments: DocumentFragment[]): void {
@@ -127,9 +141,10 @@ function applyCleanStyle(el: HTMLElement, translatedText: string, fragments: Doc
   wrapper.setAttribute('data-translator-clone', 'true');
 
   wrapperToOriginal.set(wrapper, el);
+  mutationIgnoredNodes.add(el);
   el.replaceWith(wrapper);
 
-  state.elementMap.set(el, { originalHTML, translatedText, status: 'translated', cloneEl: wrapper });
+  state.elementMap.set(el, { originalHTML, translatedText, status: 'translated', cloneEl: wrapper, showingOriginal: false });
 }
 
 function applyBilingualStyle(el: HTMLElement, translatedText: string, fragments: DocumentFragment[]): void {
@@ -147,7 +162,7 @@ function applyBilingualStyle(el: HTMLElement, translatedText: string, fragments:
   el.appendChild(span);
   el.setAttribute('data-translator-processed', 'true');
 
-  state.elementMap.set(el, { originalHTML, translatedText, status: 'translated' });
+  state.elementMap.set(el, { originalHTML, translatedText, status: 'translated', showingOriginal: false });
 }
 
 function applyUnderlineStyle(el: HTMLElement, translatedText: string, fragments: DocumentFragment[]): void {
@@ -164,11 +179,13 @@ function applyUnderlineStyle(el: HTMLElement, translatedText: string, fragments:
   el.appendChild(wrapper);
   el.setAttribute('data-translator-processed', 'true');
 
-  state.elementMap.set(el, { originalHTML, translatedText, status: 'translated' });
+  state.elementMap.set(el, { originalHTML, translatedText, status: 'translated', cloneEl: wrapper, showingOriginal: false });
 }
 
 function applyTranslation(el: HTMLElement, translatedText: string, fragments: DocumentFragment[]): void {
   if (state.elementMap.has(el)) return;
+
+  console.log('[Translator] applyTranslation called, style =', state.style, 'isActive =', state.isActive, 'displayMode =', state.displayMode);
 
   switch (state.style) {
     case 'original':
@@ -184,19 +201,30 @@ function applyTranslation(el: HTMLElement, translatedText: string, fragments: Do
       applyUnderlineStyle(el, translatedText, fragments);
       break;
   }
+
+  // 若用户处于「全页显示原文」模式（Alt+W 切换过的），新翻译完成的段落
+  // 也应立即同步切到原文显示，避免出现「滚动后部分段落是译文，整体却显示原文」的视觉错乱。
+  if (state.displayMode === 'original') {
+    toggleElementDisplay(el);
+  }
 }
 
 function restoreElement(el: HTMLElement): void {
   const elState = state.elementMap.get(el);
   if (!elState) return;
 
+  console.log('[Translator] restoreElement called, style =', state.style, 'showingOriginal =', elState.showingOriginal, 'cloneEl in DOM =', !!elState.cloneEl?.parentNode);
+
   switch (state.style) {
     case 'original':
     case 'clean': {
       const wrapper = elState.cloneEl;
       if (wrapper && wrapper.parentNode) {
+        mutationIgnoredNodes.add(wrapper);
         wrapper.replaceWith(el);
         wrapperToOriginal.delete(wrapper);
+      } else if (elState.showingOriginal && !wrapper?.parentNode) {
+        // showingOriginal: el 已在 DOM，wrapper 已脱离，无需操作
       }
       break;
     }
@@ -212,15 +240,84 @@ function restoreElement(el: HTMLElement): void {
     }
   }
 
+  el.removeAttribute('data-translator-error');
   state.elementMap.delete(el);
 }
 
+function toggleElementDisplay(el: HTMLElement): void {
+  const elState = state.elementMap.get(el);
+  if (!elState) return;
+
+  const show = elState.showingOriginal;
+
+  switch (state.style) {
+    case 'original':
+    case 'clean': {
+      const wrapper = elState.cloneEl;
+      if (!wrapper) break;
+      if (show) {
+        // 原文 → 译文：把 wrapper 放回 DOM
+        mutationIgnoredNodes.add(el);
+        el.replaceWith(wrapper);
+      } else {
+        // 译文 → 原文：把 el 放回 DOM
+        mutationIgnoredNodes.add(wrapper);
+        wrapper.replaceWith(el);
+      }
+      break;
+    }
+    case 'bilingual': {
+      const br = el.querySelector('[data-translator-br]') as HTMLElement | null;
+      const biling = el.querySelector('[data-translator-bilingual]') as HTMLElement | null;
+      if (show) {
+        // 原文 → 译文：恢复可见
+        if (br) br.style.display = '';
+        if (biling) biling.style.display = '';
+      } else {
+        // 译文 → 原文：隐藏双语部分
+        if (br) br.style.display = 'none';
+        if (biling) biling.style.display = 'none';
+      }
+      break;
+    }
+    case 'underline': {
+      const wrapper = elState.cloneEl;
+      if (!wrapper) break;
+      if (show) {
+        // 原文 → 译文：恢复 underline wrapper
+        el.innerHTML = '';
+        el.appendChild(wrapper);
+        el.setAttribute('data-translator-processed', 'true');
+      } else {
+        // 译文 → 原文：恢复原内容
+        el.innerHTML = elState.originalHTML;
+        el.removeAttribute('data-translator-processed');
+      }
+      break;
+    }
+  }
+
+  elState.showingOriginal = !show;
+}
+
 function restoreAll(): void {
-  // restoreElement 在循环中会修改 elementMap，先快照 keys 避免迭代中变更。
   const keys = Array.from(state.elementMap.keys());
+  console.log('[Translator] restoreAll called, element count =', keys.length);
   for (const el of keys) restoreElement(el);
   // restoreElement 已逐个 delete；最终 clear 是冗余但无副作用，作防御保留。
   state.elementMap.clear();
+}
+
+// 全页 toggle：把 elementMap 中所有「当前 showingOriginal 与目标态不一致」的段落
+// 都切到目标态。成功翻译的段落（status === 'translated'）才有切换价值；
+// 失败/pending 的段落跳过（其 cloneEl 可能不存在，toggleElementDisplay 会 break）。
+function toggleAllDisplay(targetShowOriginal: boolean): void {
+  console.log('[Translator] toggleAllDisplay called, target showOriginal =', targetShowOriginal, 'count =', state.elementMap.size);
+  state.elementMap.forEach((entry, el) => {
+    if (entry.status !== 'translated') return;
+    if (entry.showingOriginal === targetShowOriginal) return;
+    toggleElementDisplay(el);
+  });
 }
 
 // 节点（或其子树）离开 DOM 时主动从 elementMap 清理对应 entry。
@@ -240,7 +337,21 @@ function cleanupRemovedSubtree(root: HTMLElement): void {
     const inByClone =
       entry.cloneEl !== undefined &&
       (entry.cloneEl === root || root.contains(entry.cloneEl));
-    if (inByKey || inByClone) victims.push(key);
+    if (!inByKey && !inByClone) return;
+
+    // 命中目标节点 → 检查是否是扩展自身 replaceWith 触发的：
+    //   只在「真正命中本次 root」的条目上消耗 mutationIgnoredNodes 标记，
+    //   避免一次 forEach 把所有 mark 都耗光，导致后续同一批 mutation 中
+    //   其他 root 的 cleanup 因找不到 mark 而把对应 entry 误删。
+    if (inByKey && mutationIgnoredNodes.has(key)) {
+      mutationIgnoredNodes.delete(key);
+      return;
+    }
+    if (inByClone && entry.cloneEl && mutationIgnoredNodes.has(entry.cloneEl)) {
+      mutationIgnoredNodes.delete(entry.cloneEl);
+      return;
+    }
+    victims.push(key);
   });
   for (const el of victims) {
     state.elementMap.delete(el);
@@ -285,14 +396,21 @@ async function translateSingleElement(el: HTMLElement, force = false): Promise<v
     });
 
     el.removeAttribute('data-translator-pending');
+    // 如果用户已在翻译完成前按快捷键关闭翻译，则不再应用结果
+    if (!state.isActive) {
+      console.log('[Translator] Translation completed but state.isActive is false, skipping apply');
+      return;
+    }
     applyTranslation(el, result.text, fragments);
   } catch (error) {
     console.error('Translation failed:', error);
     el.removeAttribute('data-translator-pending');
+    el.setAttribute('data-translator-error', 'true');
     state.elementMap.set(el, {
       originalHTML: el.innerHTML,
       translatedText: '',
       status: 'error',
+      showingOriginal: false,
     });
   }
 }
@@ -396,6 +514,13 @@ async function translateBatchWithFallback(batch: HTMLElement[]): Promise<void> {
         missing,
         duplicated,
       });
+    }
+
+    // 如果用户已在翻译完成前按快捷键关闭翻译，则不再应用结果
+    if (!state.isActive) {
+      console.log('[Translator] Batch translation completed but state.isActive is false, skipping apply');
+      clearPending();
+      return;
     }
 
     const retryElements: HTMLElement[] = [];
@@ -529,6 +654,7 @@ function startTranslation(): void {
 }
 
 function stopTranslation(): void {
+  console.log('[Translator] stopTranslation called');
   state.observer?.disconnect();
   state.observer = null;
   restoreAll();
@@ -626,6 +752,14 @@ let lastMouseY = -1;
 // 视作一次新的"按 Ctrl"事件，避免按住期间不停 toggle。
 let ctrlPressed = false;
 
+// 「本轮按 Ctrl 已 toggle 过的段落」——按住 Ctrl 期间，鼠标在同一段落内子元素
+// 之间移动会持续触发 mouseover（每个子元素一次），若不去重就会反复 toggle，
+// 用户感受是「按下没切换 / 切了又切回去」。
+//
+// 切换段落（移到段落 B）应允许新段落 toggle；松开 Ctrl 重置（下一次按 Ctrl
+// 视作新一轮，可再次 toggle 同一段落）。
+let lastCtrlToggledEl: HTMLElement | null = null;
+
 async function ensureCtrlHoverSettings(): Promise<void> {
   if (ctrlHoverSettingsLoaded || state.isActive) return;
   try {
@@ -673,14 +807,25 @@ function findToggleTarget(target: HTMLElement | null): HTMLElement | null {
   return null;
 }
 
-// 命中已翻译目标时同步恢复原文，返回是否已处理。
-function tryToggleRestore(target: HTMLElement | null): boolean {
+// 命中已翻译目标时切换原文/译文显示，返回是否已「认定为命中」（无论是否真正切换）。
+//
+// 返回 true 即认为「这次 mouseover/keydown 命中了已翻译段落」，调用方据此跳过
+// 后续 tryStartHoverFor。只有「跨段落」或「Ctrl 重新按下」时才真正执行 toggle，
+// 同段落内的连续 mouseover 静默吞掉、不重复切换。
+function tryToggleDisplay(target: HTMLElement | null): boolean {
   const toggleEl = findToggleTarget(target);
   if (!toggleEl || !state.elementMap.has(toggleEl)) return false;
-  // 若当前 hover 候选恰好是要恢复的目标，先清掉防抖阶段的高亮 / 计时器，
-  // 避免恢复后残留 `[data-translator-hover-target]` 样式或后续误触发翻译。
+
+  if (lastCtrlToggledEl === toggleEl) {
+    return true;
+  }
+
   if (hoverTarget === toggleEl) cancelHoverDebounce();
-  restoreElement(toggleEl);
+  toggleEl.removeAttribute(HOVER_HIGHLIGHT_ATTR);
+  const cloneEl = state.elementMap.get(toggleEl)?.cloneEl;
+  cloneEl?.removeAttribute(HOVER_HIGHLIGHT_ATTR);
+  toggleElementDisplay(toggleEl);
+  lastCtrlToggledEl = toggleEl;
   return true;
 }
 
@@ -761,7 +906,9 @@ function setupCtrlHover(): void {
 
   document.addEventListener('mouseover', (e) => {
     if (!e.ctrlKey) return;
-    tryStartHoverFor(e.target as HTMLElement);
+    const target = e.target as HTMLElement;
+    if (tryToggleDisplay(target)) return;
+    tryStartHoverFor(target);
   });
 
   // 用户先悬停后按 Ctrl 的姿势：mouseover 不会再次触发，需要 keydown 兜底。
@@ -775,7 +922,7 @@ function setupCtrlHover(): void {
     ctrlPressed = true;
     if (lastMouseX < 0 || lastMouseY < 0) return;
     const el = document.elementFromPoint(lastMouseX, lastMouseY) as HTMLElement | null;
-    if (tryToggleRestore(el)) return;
+    if (tryToggleDisplay(el)) return;
     tryStartHoverFor(el);
   });
 
@@ -794,11 +941,15 @@ function setupCtrlHover(): void {
   document.addEventListener('keyup', (e) => {
     if (e.key !== 'Control') return;
     ctrlPressed = false;
+    // 释放 Ctrl 视为「上一轮交互结束」：清空去重锚点，下次按下 Ctrl
+    // 即使鼠标停留原段落也允许再次 toggle（再按 Ctrl 切回另一面）。
+    lastCtrlToggledEl = null;
   });
 
   // 窗口失焦视作用户主动离开，仍走防抖期取消逻辑。
   window.addEventListener('blur', () => {
     ctrlPressed = false;
+    lastCtrlToggledEl = null;
     cancelHoverDebounce();
   });
 }
@@ -902,33 +1053,47 @@ function setupMutationObserver(): void {
 
 // ─── Toggle Handler ─────────────────────────────────────────────────────
 
+// Alt+W 状态机：
+//   inactive                          → press → active + translation（启动翻译，显示译文）
+//   active + translation              → press → active + original（全页 toggle 到原文，不停止 observer）
+//   active + original                 → press → active + translation（全页 toggle 回译文）
+// 目的：避免每次按 Alt+W 都重新请求 API；翻译结果保留在 elementMap，纯切换 DOM 显示。
 async function toggleTranslation(): Promise<void> {
+  console.log('[Translator] toggleTranslation called, state.isActive =', state.isActive, 'displayMode =', state.displayMode);
+
   if (state.isActive) {
-    state.isActive = false;
-    stopTranslation();
-  } else {
-    try {
-      await sendBgMessage({ type: 'PING' }).catch(() => null);
-
-      const { getSettings } = await import('@/lib/storage');
-      const s = await getSettings();
-
-      state.style = s.defaultStyle;
-      state.nativeLanguage = s.nativeLanguage;
-      state.targetLang = s.nativeLanguage;
-      state.aggregate = {
-        aggregateEnabled: s.aggregateEnabled,
-        maxParagraphsPerRequest: s.maxParagraphsPerRequest,
-        maxTextLengthPerRequest: s.maxTextLengthPerRequest,
-        maxConcurrentRequests: s.maxConcurrentRequests,
-        requestTimeout: s.requestTimeout,
-      };
-      state.isActive = true;
-
-      startTranslation();
-    } catch (error) {
-      console.error('Failed to start translation:', error);
+    if (state.displayMode === 'translation') {
+      state.displayMode = 'original';
+      toggleAllDisplay(true);
+    } else {
+      state.displayMode = 'translation';
+      toggleAllDisplay(false);
     }
+    return;
+  }
+
+  try {
+    await sendBgMessage({ type: 'PING' }).catch(() => null);
+
+    const { getSettings } = await import('@/lib/storage');
+    const s = await getSettings();
+
+    state.style = s.defaultStyle;
+    state.nativeLanguage = s.nativeLanguage;
+    state.targetLang = s.nativeLanguage;
+    state.aggregate = {
+      aggregateEnabled: s.aggregateEnabled,
+      maxParagraphsPerRequest: s.maxParagraphsPerRequest,
+      maxTextLengthPerRequest: s.maxTextLengthPerRequest,
+      maxConcurrentRequests: s.maxConcurrentRequests,
+      requestTimeout: s.requestTimeout,
+    };
+    state.isActive = true;
+    state.displayMode = 'translation';
+
+    startTranslation();
+  } catch (error) {
+    console.error('Failed to start translation:', error);
   }
 }
 
@@ -940,8 +1105,16 @@ export default defineContentScript({
   main() {
     if (!isValidPage()) return;
 
+    // Guard against double-injection (extension reload/update)
+    if ((window as unknown as Record<string, unknown>).__translatorContentScriptLoaded) {
+      console.log('[Translator] Content script already loaded, skipping');
+      return;
+    }
+    (window as unknown as Record<string, unknown>).__translatorContentScriptLoaded = true;
+
     chrome.runtime.onMessage.addListener((message) => {
       if (message.type === 'TOGGLE_TRANSLATION') {
+        console.log('[Translator] Received TOGGLE_TRANSLATION message');
         toggleTranslation();
       }
     });
@@ -951,6 +1124,6 @@ export default defineContentScript({
     setupSPADetection();
     setupMutationObserver();
 
-    console.log('Translator content script loaded');
+    console.log('[Translator] Content script loaded');
   },
 });
