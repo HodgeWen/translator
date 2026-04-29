@@ -185,8 +185,6 @@ function applyUnderlineStyle(el: HTMLElement, translatedText: string, fragments:
 function applyTranslation(el: HTMLElement, translatedText: string, fragments: DocumentFragment[]): void {
   if (state.elementMap.has(el)) return;
 
-  console.log('[Translator] applyTranslation called, style =', state.style, 'isActive =', state.isActive, 'displayMode =', state.displayMode);
-
   switch (state.style) {
     case 'original':
       applyOriginalStyle(el, translatedText, fragments);
@@ -212,8 +210,6 @@ function applyTranslation(el: HTMLElement, translatedText: string, fragments: Do
 function restoreElement(el: HTMLElement): void {
   const elState = state.elementMap.get(el);
   if (!elState) return;
-
-  console.log('[Translator] restoreElement called, style =', state.style, 'showingOriginal =', elState.showingOriginal, 'cloneEl in DOM =', !!elState.cloneEl?.parentNode);
 
   switch (state.style) {
     case 'original':
@@ -302,7 +298,6 @@ function toggleElementDisplay(el: HTMLElement): void {
 
 function restoreAll(): void {
   const keys = Array.from(state.elementMap.keys());
-  console.log('[Translator] restoreAll called, element count =', keys.length);
   for (const el of keys) restoreElement(el);
   // restoreElement 已逐个 delete；最终 clear 是冗余但无副作用，作防御保留。
   state.elementMap.clear();
@@ -312,7 +307,6 @@ function restoreAll(): void {
 // 都切到目标态。成功翻译的段落（status === 'translated'）才有切换价值；
 // 失败/pending 的段落跳过（其 cloneEl 可能不存在，toggleElementDisplay 会 break）。
 function toggleAllDisplay(targetShowOriginal: boolean): void {
-  console.log('[Translator] toggleAllDisplay called, target showOriginal =', targetShowOriginal, 'count =', state.elementMap.size);
   state.elementMap.forEach((entry, el) => {
     if (entry.status !== 'translated') return;
     if (entry.showingOriginal === targetShowOriginal) return;
@@ -399,12 +393,10 @@ async function translateSingleElement(el: HTMLElement, force = false, skipActive
     // 如果用户已在翻译完成前按快捷键关闭翻译，则不再应用结果
     // skipActiveCheck: Ctrl+Hover 独立翻译时 state.isActive 始终为 false，需跳过此检查
     if (!skipActiveCheck && !state.isActive) {
-      console.log('[Translator] Translation completed but state.isActive is false, skipping apply');
       return;
     }
     applyTranslation(el, result.text, fragments);
-  } catch (error) {
-    console.error('Translation failed:', error);
+  } catch {
     el.removeAttribute('data-translator-pending');
     el.setAttribute('data-translator-error', 'true');
     state.elementMap.set(el, {
@@ -493,33 +485,18 @@ async function translateBatchWithFallback(batch: HTMLElement[]): Promise<void> {
       },
     });
 
-    const { translations, missing, duplicated } = decodeBatch(result.text, expected);
+    const { translations, missing } = decodeBatch(result.text, expected);
 
     const protocolFailed =
       translations.size === 0 || missing.length >= Math.ceil(expected / 2);
 
     if (protocolFailed) {
-      console.warn('Batch protocol failed, full fallback', {
-        expected,
-        got: translations.size,
-        missing,
-        duplicated,
-      });
       await fullFallback();
       return;
     }
 
-    if (missing.length > 0 || duplicated.length > 0) {
-      console.warn('Batch protocol partial mismatch, retrying missing only', {
-        expected,
-        missing,
-        duplicated,
-      });
-    }
-
     // 如果用户已在翻译完成前按快捷键关闭翻译，则不再应用结果
     if (!state.isActive) {
-      console.log('[Translator] Batch translation completed but state.isActive is false, skipping apply');
       clearPending();
       return;
     }
@@ -539,8 +516,7 @@ async function translateBatchWithFallback(batch: HTMLElement[]): Promise<void> {
       const tasks = retryElements.map(el => () => translateSingleElement(el, true));
       await limitConcurrency(tasks, state.aggregate.maxConcurrentRequests);
     }
-  } catch (error) {
-    console.warn('Aggregate translation failed, falling back to single:', error);
+  } catch {
     await fullFallback();
   }
 }
@@ -554,9 +530,8 @@ async function limitConcurrency<T>(tasks: (() => Promise<T>)[], limit: number): 
       const i = index++;
       try {
         results[i] = await tasks[i]();
-      } catch (error) {
+      } catch {
         // Individual task errors should be handled inside the task
-        console.error('Task error:', error);
       }
     }
   }
@@ -655,7 +630,6 @@ function startTranslation(): void {
 }
 
 function stopTranslation(): void {
-  console.log('[Translator] stopTranslation called');
   state.observer?.disconnect();
   state.observer = null;
   restoreAll();
@@ -701,8 +675,8 @@ async function translateInput(el: HTMLInputElement | HTMLTextAreaElement): Promi
     });
 
     el.value = result.text;
-  } catch (error) {
-    console.error('Input translation failed:', error);
+  } catch {
+    // ignore
   }
 }
 
@@ -777,8 +751,8 @@ async function ensureCtrlHoverSettings(): Promise<void> {
       requestTimeout: s.requestTimeout,
     };
     ctrlHoverSettingsLoaded = true;
-  } catch (error) {
-    console.error('Failed to load settings for Ctrl+hover:', error);
+  } catch {
+    // ignore
   }
 }
 
@@ -1060,8 +1034,6 @@ function setupMutationObserver(): void {
 //   active + original                 → press → active + translation（全页 toggle 回译文）
 // 目的：避免每次按 Alt+W 都重新请求 API；翻译结果保留在 elementMap，纯切换 DOM 显示。
 async function toggleTranslation(): Promise<void> {
-  console.log('[Translator] toggleTranslation called, state.isActive =', state.isActive, 'displayMode =', state.displayMode);
-
   if (state.isActive) {
     if (state.displayMode === 'translation') {
       state.displayMode = 'original';
@@ -1093,8 +1065,8 @@ async function toggleTranslation(): Promise<void> {
     state.displayMode = 'translation';
 
     startTranslation();
-  } catch (error) {
-    console.error('Failed to start translation:', error);
+  } catch {
+    // ignore
   }
 }
 
@@ -1108,14 +1080,12 @@ export default defineContentScript({
 
     // Guard against double-injection (extension reload/update)
     if ((window as unknown as Record<string, unknown>).__translatorContentScriptLoaded) {
-      console.log('[Translator] Content script already loaded, skipping');
       return;
     }
     (window as unknown as Record<string, unknown>).__translatorContentScriptLoaded = true;
 
     chrome.runtime.onMessage.addListener((message) => {
       if (message.type === 'TOGGLE_TRANSLATION') {
-        console.log('[Translator] Received TOGGLE_TRANSLATION message');
         toggleTranslation();
       }
     });
@@ -1124,7 +1094,5 @@ export default defineContentScript({
     setupCtrlHover();
     setupSPADetection();
     setupMutationObserver();
-
-    console.log('[Translator] Content script loaded');
   },
 });

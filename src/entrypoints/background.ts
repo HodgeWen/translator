@@ -7,8 +7,6 @@ import type { BgMessage } from '@/types';
 const ALARM_NAME = 'cache-cleanup';
 
 export default defineBackground(() => {
-  console.log('Translator background service worker started');
-
   // Set up daily cache cleanup alarm
   chrome.alarms.get(ALARM_NAME, (alarm) => {
     if (!alarm) {
@@ -21,10 +19,9 @@ export default defineBackground(() => {
   chrome.alarms.onAlarm.addListener(async (alarm) => {
     if (alarm.name === ALARM_NAME) {
       try {
-        const cleared = await clearExpiredCache();
-        console.log(`Cache cleanup: removed ${cleared} expired entries`);
-      } catch (error) {
-        console.error('Cache cleanup failed:', error);
+        await clearExpiredCache();
+      } catch {
+        // ignore
       }
     }
   });

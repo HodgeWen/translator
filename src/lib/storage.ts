@@ -112,7 +112,6 @@ function validateSettings(data: unknown): ValidatedSettings {
   if (parsed.success) {
     return normalizeSettings(parsed.data);
   }
-  console.warn('Invalid settings, using defaults:', parsed.error.format());
   return normalizeSettings(globalSettingsSchema.parse(DEFAULT_SETTINGS));
 }
 

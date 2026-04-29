@@ -99,7 +99,6 @@ export function decodeInline(translated: string, fragments: DocumentFragment[]):
     const idx = Number(match[1]);
     const frag = fragments[idx - 1];
     if (!frag) {
-      console.warn('[translator] placeholder not found in fragments:', match[0]);
       out.appendChild(document.createTextNode(match[0]));
     } else {
       out.appendChild(frag.cloneNode(true));
