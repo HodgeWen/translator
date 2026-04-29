@@ -2,6 +2,12 @@ import type { ProviderConfig, TranslationRequest, TranslationResponse, LangCode,
 import { getSettings } from './storage';
 import { getCachedTranslation, setCachedTranslation } from './cache';
 
+const inflightRequests = new Map<string, Promise<TranslationResponse>>();
+
+function inflightKey(text: string, sourceLang: string | undefined, targetLang: string): string {
+  return `${text}::${sourceLang ?? 'auto'}::${targetLang}`;
+}
+
 interface ProviderModel {
   provider: ProviderConfig;
   model: { id: string; name: string };
@@ -163,7 +169,11 @@ async function consumeOpenAIStream(
             const lang = json.detected_language ?? json.source_language;
             if (lang && !detectedLang) detectedLang = lang;
           } catch {
-            // 忽略 JSON 解析失败的 chunk（多见于事件分隔不规则的服务端）
+            // JSON 解析失败的 chunk（多见于事件分隔不规则的服务端），
+            // 尝试保留原始 data 作为 fallback 文本继续累积
+            if (dataStr && dataStr.length > 0 && dataStr !== '[DONE]') {
+              acc += dataStr;
+            }
           }
         }
         if (done) break;
@@ -377,59 +387,69 @@ function getPromptTemplate(settings: GlobalSettings, provider: ProviderConfig): 
 export async function translate(request: TranslationRequest): Promise<TranslationResponse> {
   const { text, sourceLang, targetLang, isAggregate } = request;
 
-  // Check cache first
   const cacheKeySourceLang = sourceLang || 'auto';
-  const cached = await getCachedTranslation(text, cacheKeySourceLang, targetLang);
-  if (cached) {
-    return {
-      text: cached,
-      providerId: 'cache',
-      modelId: 'cache',
-    };
-  }
+  const cacheKey = inflightKey(text, sourceLang, targetLang);
 
-  const settings = await getSettings();
+  const existing = inflightRequests.get(cacheKey);
+  if (existing) return existing;
 
-  // 根据是否开启负载均衡选择不同的 provider 队列
-  const models = settings.loadBalance.enabled
-    ? pickLoadBalanceQueue(settings)
-    : buildFallbackQueue(settings);
-
-  if (models.length === 0) {
-    throw new Error('No translation models available. Please configure providers in settings.');
-  }
-
-  const timeout = settings.requestTimeout;
-  const errors: string[] = [];
-
-  for (const providerModel of models) {
+  const promise = (async () => {
     try {
-      const promptTemplate = getPromptTemplate(settings, providerModel.provider);
-      const result = await callProvider(
-        providerModel,
-        text,
-        targetLang,
-        sourceLang,
-        promptTemplate,
-        timeout,
-        isAggregate || false
-      );
+      const cached = await getCachedTranslation(text, cacheKeySourceLang, targetLang);
+      if (cached) {
+        return {
+          text: cached,
+          providerId: 'cache',
+          modelId: 'cache',
+        };
+      }
 
-      // Cache the result
-      await setCachedTranslation(text, cacheKeySourceLang, targetLang, result.text);
+      const settings = await getSettings();
 
-      return {
-        text: result.text,
-        providerId: providerModel.provider.id,
-        modelId: providerModel.model.id,
-        detectedLang: result.detectedLang as LangCode | undefined,
-      };
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      errors.push(`${providerModel.provider.name}/${providerModel.model.name}: ${errorMsg}`);
-      // Continue to next model in queue
+      const models = settings.loadBalance.enabled
+        ? pickLoadBalanceQueue(settings)
+        : buildFallbackQueue(settings);
+
+      if (models.length === 0) {
+        throw new Error('No translation models available. Please configure providers in settings.');
+      }
+
+      const timeout = settings.requestTimeout;
+      const errors: string[] = [];
+
+      for (const providerModel of models) {
+        try {
+          const promptTemplate = getPromptTemplate(settings, providerModel.provider);
+          const result = await callProvider(
+            providerModel,
+            text,
+            targetLang,
+            sourceLang,
+            promptTemplate,
+            timeout,
+            isAggregate || false
+          );
+
+          await setCachedTranslation(text, cacheKeySourceLang, targetLang, result.text);
+
+          return {
+            text: result.text,
+            providerId: providerModel.provider.id,
+            modelId: providerModel.model.id,
+            detectedLang: result.detectedLang as LangCode | undefined,
+          };
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          errors.push(`${providerModel.provider.name}/${providerModel.model.name}: ${errorMsg}`);
+        }
+      }
+
+      throw new Error(`All translation models failed:\n${errors.join('\n')}`);
+    } finally {
+      inflightRequests.delete(cacheKey);
     }
-  }
+  })();
 
-  throw new Error(`All translation models failed:\n${errors.join('\n')}`);
+  inflightRequests.set(cacheKey, promise);
+  return promise;
 }

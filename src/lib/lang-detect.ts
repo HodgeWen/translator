@@ -94,7 +94,8 @@ async function detectWithFranc(text: string): Promise<LangCode | null> {
       return detectByCharset(trimmed);
     }
     return mapLangCode(iso3);
-  } catch {
+  } catch (err) {
+    console.warn('[Translator] franc detection failed, using charset fallback:', err);
     return detectByCharset(trimmed);
   }
 }
@@ -129,7 +130,8 @@ async function detectWithGoogleFree(provider: LangDetectProvider, text: string):
       return lang;
     }
     return null;
-  } catch {
+  } catch (err) {
+    console.warn('[Translator] detectWithGoogleFree failed:', err);
     return null;
   }
 }
@@ -172,7 +174,8 @@ async function detectWithApi(provider: LangDetectProvider, text: string): Promis
     }
 
     return null;
-  } catch {
+  } catch (err) {
+    console.warn('[Translator] detectWithApi failed:', err);
     return null;
   }
 }

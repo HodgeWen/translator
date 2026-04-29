@@ -1,7 +1,7 @@
 import React from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { json } from '@codemirror/lang-json';
-import { oneDark } from '@codemirror/theme-one-dark';
+import { materialLight, materialDark } from '@uiw/codemirror-theme-material';
 
 interface CodeEditorProps {
   value: string;
@@ -27,7 +27,7 @@ export function CodeEditor({ value, onChange, height = '200px', placeholder }: C
         value={value}
         height={height}
         extensions={[json()]}
-        theme={isDark ? oneDark : 'light'}
+        theme={isDark ? materialDark : materialLight}
         onChange={onChange}
         placeholder={placeholder}
         basicSetup={{

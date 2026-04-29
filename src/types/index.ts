@@ -73,6 +73,7 @@ export interface GlobalSettings {
 // Cache entry stored in IndexedDB
 export interface CacheEntry {
   hash: string;
+  sourceText: string; // 原文，用于 hash 碰撞校验
   sourceLang: LangCode;
   targetLang: LangCode;
   text: string;
@@ -96,14 +97,14 @@ export interface TranslationResponse {
 }
 
 // Background message types
-export interface BgTranslatePayload {
+interface BgTranslatePayload {
   text: string;
   sourceLang?: LangCode;
   targetLang: LangCode;
   isAggregate?: boolean;
 }
 
-export interface BgDetectLangPayload {
+interface BgDetectLangPayload {
   text: string;
 }
 

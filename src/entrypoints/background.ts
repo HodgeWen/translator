@@ -1,7 +1,7 @@
 import { defineBackground } from 'wxt/utils/define-background';
 import { translate } from '@/lib/api';
 import { detectLanguage } from '@/lib/lang-detect';
-import { clearExpiredCache } from '@/lib/cache';
+import { clearExpiredCache, clearAllCache } from '@/lib/cache';
 import type { BgMessage } from '@/types';
 
 const ALARM_NAME = 'cache-cleanup';
@@ -63,7 +63,7 @@ export default defineBackground(() => {
           }
 
           case 'CLEAR_CACHE': {
-            const cleared = await clearExpiredCache();
+            const cleared = await clearAllCache();
             sendResponse({ success: true, data: { cleared } });
             break;
           }

@@ -98,7 +98,10 @@ const LINK_DENSITY_THRESHOLD = 0.7;
 function isLinkHeavy(el: HTMLElement): boolean {
   const totalLen = (el.textContent?.trim() ?? '').length;
   if (totalLen === 0) return false;
-  const links = el.querySelectorAll('a');
+
+  // 仅检查直接子级 <a> 的文本占比，避免深层子树查询导致性能退化。
+  // 导航型 <li> 的链接通常就在第一层子节点中。
+  const links = el.querySelectorAll(':scope > a, :scope > span > a');
   let linkTextLen = 0;
   links.forEach(a => { linkTextLen += (a.textContent?.trim() ?? '').length; });
   return linkTextLen / totalLen > LINK_DENSITY_THRESHOLD;
@@ -109,7 +112,6 @@ export function isTranslatableBlock(el: HTMLElement | null | undefined): el is H
 
   const tag = el.tagName;
   if (HARD_EXCLUDE_TAGS.has(tag)) return false;
-  if (SOFT_EXCLUDE_TAGS.has(tag)) return false;
 
   const isWhitelist = WHITELIST_TAGS.has(tag);
   const isGraylist = GRAYLIST_TAGS.has(tag);
