@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy - Translator</title>
+  <style>
+    :root { --bg: #fff; --fg: #1a1a1a; --muted: #666; --accent: #2563eb; --border: #e5e7eb; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #0f172a; --fg: #e2e8f0; --muted: #94a3b8; --accent: #60a5fa; --border: #334155; } }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: var(--fg); background: var(--bg); line-height: 1.7; padding: 2rem 1rem; max-width: 48rem; margin: 0 auto; }
+    h1 { font-size: 1.75rem; margin-bottom: 0.5rem; }
+    h2 { font-size: 1.25rem; margin-top: 2rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+    p, ul { margin-bottom: 0.75rem; }
+    ul { padding-left: 1.5rem; }
+    li { margin-bottom: 0.25rem; }
+    .muted { color: var(--muted); font-size: 0.875rem; }
+    a { color: var(--accent); }
+    table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.9rem; }
+    th, td { border: 1px solid var(--border); padding: 0.5rem 0.75rem; text-align: left; }
+    th { background: var(--bg); font-weight: 600; }
+  </style>
+</head>
+<body>
+  <h1>Privacy Policy for Translator</h1>
+  <p class="muted">Last updated: April 29, 2026</p>
+
+  <h2>Overview</h2>
+  <p>Translator ("the Extension") is a browser extension that translates web page content and user-input text using user-configured OpenAI-compatible large language model (LLM) APIs. The Extension does <strong>not</strong> operate any backend servers, does <strong>not</strong> collect analytics or telemetry, and does <strong>not</strong> sell or share any user data with third parties.</p>
+
+  <h2>Data We Collect</h2>
+  <p>The Extension stores the following data <strong>locally on your device</strong>:</p>
+  <table>
+    <thead>
+      <tr><th>Data</th><th>Storage</th><th>Purpose</th><th>PII?</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>LLM provider settings (API keys, endpoints, custom headers, model preferences)</td><td>chrome.storage.sync</td><td>Authenticate with your configured LLM API</td><td>Yes &mdash; API keys are secrets</td></tr>
+      <tr><td>Language preferences &amp; UI settings</td><td>chrome.storage.sync</td><td>Remember your translation preferences</td><td>No</td></tr>
+      <tr><td>Custom prompt templates</td><td>chrome.storage.sync</td><td>Personalize translation behavior</td><td>No</td></tr>
+      <tr><td>Translation results (cached)</td><td>IndexedDB (local)</td><td>Avoid redundant API calls; auto-deleted after 7 days</td><td>Potentially &mdash; reflects content you translated</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Data Sent to External Services</h2>
+  <p>When you translate text, the following is sent <strong>only to the LLM API endpoint you configured</strong>:</p>
+  <ul>
+    <li><strong>The text to be translated</strong> &mdash; the original paragraph or input content.</li>
+    <li><strong>A system prompt</strong> &mdash; containing your language pair and translation instructions.</li>
+    <li><strong>Your API key</strong> &mdash; in the <code>Authorization</code> request header for authentication.</li>
+    <li><strong>Any custom headers / query parameters / body fields</strong> you configured for that provider.</li>
+  </ul>
+  <p>The Extension <strong>does not</strong> route your data through any intermediary servers. Network requests go directly from your browser to the API endpoint you specified.</p>
+
+  <h2>Language Detection</h2>
+  <p>By default, the Extension uses <strong>franc-min</strong>, a local-only N-gram language detection library that runs entirely in your browser. No network requests are made for language detection in this mode.</p>
+  <p>If you configure a remote language detection provider (e.g., Google Translate free endpoint or a custom API), the text to detect will be sent to that provider's endpoint. This is <strong>optional</strong> and only happens when you explicitly configure a remote detection provider.</p>
+
+  <h2>Data Retention</h2>
+  <ul>
+    <li>Translation cache entries are automatically deleted after <strong>7 days</strong>.</li>
+    <li>You can clear cached data by using the Extension's settings, which will purge all cached translations.</li>
+    <li>Settings data persists until you uninstall the Extension or manually clear it.</li>
+  </ul>
+
+  <h2>Data Sharing</h2>
+  <p>The Extension <strong>does not</strong> share, sell, or transmit any data to any party other than the LLM API endpoints you configure. There are:</p>
+  <ul>
+    <li>No analytics or tracking services (Google Analytics, Mixpanel, etc.)</li>
+    <li>No crash reporting SDKs (Sentry, Bugsnag, etc.)</li>
+    <li>No advertising networks</li>
+    <li>No social media integrations</li>
+  </ul>
+
+  <h2>Settings Export &amp; Import</h2>
+  <p>The Extension allows you to export and import your settings. Exported settings may contain API keys. You have the option to encrypt the export file with a passphrase (AES-256-GCM). Without a passphrase, API keys are stored in plaintext JSON. We recommend always using a passphrase when exporting settings.</p>
+
+  <h2>Permissions</h2>
+  <table>
+    <thead>
+      <tr><th>Permission</th><th>Justification</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>storage</code></td><td>Store your settings and preferences in chrome.storage.sync</td></tr>
+      <tr><td><code>activeTab</code></td><td>Access the content of the current tab when you trigger translation</td></tr>
+      <tr><td><code>alarms</code></td><td>Schedule periodic cleanup of expired translation cache entries</td></tr>
+      <tr><td><code>&lt;all_urls&gt;</code> (host permission)</td><td>Run the content script on any page to translate visible paragraphs</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Third-Party Libraries</h2>
+  <p>All bundled third-party libraries operate locally within the browser and do not make network requests or collect data:</p>
+  <ul>
+    <li>React &amp; React DOM &mdash; UI rendering</li>
+    <li>Dexie &mdash; IndexedDB wrapper for local caching</li>
+    <li>Zod &mdash; Schema validation</li>
+    <li>franc-min &mdash; Local language detection</li>
+    <li>Tailwind CSS &mdash; Styling</li>
+    <li>Lucide React &mdash; SVG icons</li>
+    <li>class-variance-authority &mdash; CSS variant utility</li>
+    <li>@uiw/react-codemirror &mdash; Code editor for settings</li>
+  </ul>
+
+  <h2>Children's Privacy</h2>
+  <p>The Extension is not directed at children under 13. We do not knowingly collect personal information from children under 13.</p>
+
+  <h2>Changes to This Policy</h2>
+  <p>We may update this policy from time to time. Changes will be reflected in the "Last updated" date above. Continued use of the Extension after changes constitutes acceptance of the updated policy.</p>
+
+  <h2>Contact</h2>
+  <p>If you have questions about this privacy policy, please open an issue on our GitHub repository:</p>
+  <p><a href="https://github.com/HodgeWen/translator/issues">https://github.com/HodgeWen/translator/issues</a></p>
+</body>
+</html>
