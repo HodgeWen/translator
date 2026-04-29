@@ -3,10 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CodeEditor } from '@/components/code-editor';
 import { KeyValueList } from './key-value-list';
-import type { ProviderConfig, ModelQueueItem, GlobalSettings } from '@/types';
+import type { ProviderConfig, GlobalSettings } from '@/types';
 import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
-import { Plus, Trash2, Save, Eye, EyeOff, FileText, Sliders } from 'lucide-react';
+import { Plus, Trash2, Save, Eye, EyeOff, FileText, Sliders, ArrowUp, ArrowDown } from 'lucide-react';
 
 interface OptionsProviderSettingsProps {
   settings: GlobalSettings;
@@ -45,8 +45,13 @@ export function OptionsProviderSettings({ settings, onSave, onError }: OptionsPr
 
   const handleDeleteProvider = (providerId: string) => {
     const newProviders = settings.providers.filter((p) => p.id !== providerId);
-    const newQueue = settings.modelQueue.filter((q) => q.providerId !== providerId);
-    onSave({ ...settings, providers: newProviders, modelQueue: newQueue });
+    // 同时清理负载均衡中对该 provider 的引用
+    const newLbProviders = settings.loadBalance.providers.filter(p => p.providerId !== providerId);
+    onSave({
+      ...settings,
+      providers: newProviders,
+      loadBalance: { ...settings.loadBalance, providers: newLbProviders },
+    });
   };
 
   const handleSaveProvider = () => {
@@ -63,19 +68,7 @@ export function OptionsProviderSettings({ settings, onSave, onError }: OptionsPr
       newProviders = settings.providers.map((p) => (p.id === editingProvider.id ? editingProvider : p));
     }
 
-    const existingQueueItems = new Map(settings.modelQueue.map((q) => [`${q.providerId}:${q.modelId}`, q]));
-    const newQueue: ModelQueueItem[] = [...settings.modelQueue];
-
-    for (const provider of newProviders) {
-      for (const model of provider.models) {
-        const key = `${provider.id}:${model.id}`;
-        if (!existingQueueItems.has(key)) {
-          newQueue.push({ providerId: provider.id, modelId: model.id, enabled: true });
-        }
-      }
-    }
-
-    onSave({ ...settings, providers: newProviders, modelQueue: newQueue });
+    onSave({ ...settings, providers: newProviders });
     setEditingProvider(null);
     setIsAddingProvider(false);
   };
@@ -99,19 +92,10 @@ export function OptionsProviderSettings({ settings, onSave, onError }: OptionsPr
 
     return (
       <div className="rounded-lg border border-border p-6 space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center">
           <h3 className="text-lg font-semibold">
             {isAddingProvider ? t('title_add_provider') : t('title_edit_provider')}
           </h3>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => { setEditingProvider(null); setIsAddingProvider(false); }}>
-              {t('btn_cancel')}
-            </Button>
-            <Button size="sm" onClick={handleSaveProvider} className="bg-indigo-600 hover:bg-indigo-700 text-white">
-              <Save className="mr-1.5 h-4 w-4" />
-              {t('btn_save')}
-            </Button>
-          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -321,8 +305,37 @@ export function OptionsProviderSettings({ settings, onSave, onError }: OptionsPr
 
         <div className="space-y-2">
           <label className="text-sm font-medium">{t('label_models')}</label>
+          <p className="text-xs text-muted-foreground">{t('hint_model_order')}</p>
           {editingProvider.models.map((model, index) => (
-            <div key={index} className="flex gap-2">
+            <div key={index} className="flex gap-2 items-center">
+              <div className="flex flex-col gap-0.5 shrink-0">
+                <button
+                  type="button"
+                  className="h-3.5 w-5 flex items-center justify-center rounded hover:bg-accent disabled:opacity-30 disabled:cursor-default"
+                  disabled={index === 0}
+                  onClick={() => {
+                    const newModels = [...editingProvider.models];
+                    [newModels[index - 1], newModels[index]] = [newModels[index], newModels[index - 1]];
+                    updateEditingModels(newModels);
+                  }}
+                  title={t('btn_move_up')}
+                >
+                  <ArrowUp className="h-3 w-3" />
+                </button>
+                <button
+                  type="button"
+                  className="h-3.5 w-5 flex items-center justify-center rounded hover:bg-accent disabled:opacity-30 disabled:cursor-default"
+                  disabled={index === editingProvider.models.length - 1}
+                  onClick={() => {
+                    const newModels = [...editingProvider.models];
+                    [newModels[index], newModels[index + 1]] = [newModels[index + 1], newModels[index]];
+                    updateEditingModels(newModels);
+                  }}
+                  title={t('btn_move_down')}
+                >
+                  <ArrowDown className="h-3 w-3" />
+                </button>
+              </div>
               <input
                 type="text"
                 value={model.id}
@@ -367,6 +380,19 @@ export function OptionsProviderSettings({ settings, onSave, onError }: OptionsPr
             <Plus className="mr-1 h-3 w-3" />
             {t('btn_add_model')}
           </Button>
+        </div>
+
+        {/* Sticky save bar */}
+        <div className="sticky bottom-0 -mx-6 -mb-6 border-t border-border bg-background/95 backdrop-blur-sm rounded-b-lg">
+          <div className="px-6 py-3 flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => { setEditingProvider(null); setIsAddingProvider(false); }}>
+              {t('btn_cancel')}
+            </Button>
+            <Button size="sm" onClick={handleSaveProvider} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+              <Save className="mr-1.5 h-4 w-4" />
+              {t('btn_save')}
+            </Button>
+          </div>
         </div>
       </div>
     );

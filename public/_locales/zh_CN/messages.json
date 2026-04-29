@@ -376,5 +376,50 @@
   },
   "error_import_passphrase_required": {
     "message": "该备份已加密，请输入密钥后再导入。"
+  },
+  "tab_load_balance": {
+    "message": "负载均衡"
+  },
+  "title_load_balance": {
+    "message": "负载均衡"
+  },
+  "desc_load_balance": {
+    "message": "开启后，翻译请求将按权重自动分配到多个服务商，均衡使用配额。在 Popup 面板中可快速切换。"
+  },
+  "warn_no_lb_providers": {
+    "message": "请先勾选至少一个参与负载均衡的服务商。"
+  },
+  "label_weight": {
+    "message": "权重"
+  },
+  "hint_load_balance": {
+    "message": "请求按权重比例分配到各服务商。某个服务商失败时自动切换到下一个。"
+  },
+  "popup_load_balance": {
+    "message": "负载均衡模式"
+  },
+  "popup_load_balance_active": {
+    "message": "负载均衡已开启 — 请求将自动分配到多个服务商"
+  },
+  "hint_model_order": {
+    "message": "模型顺序决定 fallback 优先级，排在前面的模型优先使用。"
+  },
+  "btn_move_up": {
+    "message": "上移"
+  },
+  "btn_move_down": {
+    "message": "下移"
+  },
+  "lb_preferred_model": {
+    "message": "优先模型"
+  },
+  "lb_model_default": {
+    "message": "按配置顺序"
+  },
+  "title_request_settings": {
+    "message": "请求设置"
+  },
+  "desc_request_settings": {
+    "message": "适用于所有翻译请求（包括聚合和非聚合翻译）。"
   }
 }

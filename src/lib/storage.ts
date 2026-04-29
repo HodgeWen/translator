@@ -25,10 +25,9 @@ export const DEFAULT_SETTINGS: GlobalSettings = {
       ],
     },
   ],
-  modelQueue: [
-    { providerId: 'default-openai', modelId: 'gpt-4o', enabled: true },
-    { providerId: 'default-openai', modelId: 'gpt-4o-mini', enabled: true },
-  ],
+  selectedProviderId: 'default-openai',
+  selectedModelId: 'gpt-4o',
+  loadBalance: { enabled: false, providers: [] },
   nativeLanguage: 'zh-CN',
   defaultSourceLanguage: 'en',
   uiLanguage: 'zh-CN',

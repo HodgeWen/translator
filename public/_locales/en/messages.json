@@ -376,5 +376,50 @@
   },
   "error_import_passphrase_required": {
     "message": "This backup is encrypted. Please enter the passphrase to import."
+  },
+  "tab_load_balance": {
+    "message": "Load Balance"
+  },
+  "title_load_balance": {
+    "message": "Load Balancing"
+  },
+  "desc_load_balance": {
+    "message": "When enabled, translation requests are distributed across multiple providers by weight. Toggle quickly from the Popup panel."
+  },
+  "warn_no_lb_providers": {
+    "message": "Please select at least one provider for load balancing."
+  },
+  "label_weight": {
+    "message": "Weight"
+  },
+  "hint_load_balance": {
+    "message": "Requests are distributed proportionally by weight. If a provider fails, the next one is used automatically."
+  },
+  "popup_load_balance": {
+    "message": "Load Balance Mode"
+  },
+  "popup_load_balance_active": {
+    "message": "Load balancing active — requests distributed across providers"
+  },
+  "hint_model_order": {
+    "message": "Model order determines fallback priority. Models listed first are tried first."
+  },
+  "btn_move_up": {
+    "message": "Move up"
+  },
+  "btn_move_down": {
+    "message": "Move down"
+  },
+  "lb_preferred_model": {
+    "message": "Preferred model"
+  },
+  "lb_model_default": {
+    "message": "Use config order"
+  },
+  "title_request_settings": {
+    "message": "Request Settings"
+  },
+  "desc_request_settings": {
+    "message": "Applies to all translation requests (both aggregate and non-aggregate)."
   }
 }

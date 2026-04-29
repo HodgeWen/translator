@@ -1078,8 +1078,128 @@ declare module "wxt/browser" {
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
+    /**
+     * "负载均衡"
+     */
     getMessage(
-      messageName: "@@extension_id" | "@@ui_locale" | "@@bidi_dir" | "@@bidi_reversed_dir" | "@@bidi_start_edge" | "@@bidi_end_edge" | "extName" | "extDescription" | "command_toggle_desc" | "popup_subtitle" | "popup_provider" | "popup_model" | "popup_translate_to" | "popup_placeholder" | "popup_translating" | "popup_translate" | "popup_result" | "popup_error" | "popup_error_hint" | "popup_dismiss_error" | "popup_open_settings" | "popup_auto_detect_hint" | "popup_target_auto" | "popup_manual_override_hint" | "popup_copied" | "options_title" | "options_subtitle" | "options_saved" | "options_imported" | "tab_providers" | "tab_model_queue" | "tab_language" | "tab_general" | "btn_add_provider" | "title_add_provider" | "title_edit_provider" | "btn_save" | "btn_cancel" | "label_name" | "label_base_url" | "label_api_key" | "placeholder_api_key" | "hint_api_key" | "btn_show" | "btn_hide" | "label_headers" | "label_query_params" | "label_extra_body" | "label_models" | "label_model_id" | "label_display_name" | "btn_add_model" | "btn_edit" | "btn_delete" | "queue_description" | "label_timeout" | "label_ui_language" | "hint_ui_language" | "label_native_language" | "hint_native_language" | "label_default_source_language" | "hint_default_source_language" | "title_lang_detect_providers" | "btn_add_api_detector" | "btn_add_google_free_detector" | "preset_google_free_name" | "hint_google_free_detector" | "lang_detect_description" | "label_default_style" | "style_original" | "style_bilingual" | "style_underline" | "style_clean" | "style_original_desc" | "style_bilingual_desc" | "style_underline_desc" | "style_clean_desc" | "label_keyboard_shortcut" | "shortcut_hint" | "shortcut_unbound" | "title_backup_restore" | "btn_export_settings" | "btn_import_settings" | "btn_reset_default" | "error_load_settings" | "error_save_failed" | "error_export_failed" | "error_import_failed" | "error_required_fields" | "error_translation_failed" | "error_unknown" | "new_provider" | "new_api_detector" | "label_endpoint_url" | "label_api_key_optional" | "label_key" | "label_value" | "btn_add" | "label_provider_prompt" | "placeholder_provider_prompt" | "hint_provider_prompt" | "title_global_prompt" | "desc_global_prompt" | "hint_prompt_vars" | "title_aggregation" | "label_aggregate_enabled" | "desc_aggregate_enabled" | "label_max_paragraphs" | "label_max_text_length" | "label_max_concurrent" | "label_request_timeout" | "title_display_settings" | "label_sampling" | "label_temperature" | "label_top_p" | "label_max_tokens" | "label_top_p_enable" | "label_stream" | "hint_stream" | "hint_extra_body_override" | "hint_content_type_auto" | "badge_stream" | "label_export_passphrase" | "hint_export_passphrase" | "hint_export_passphrase_warn" | "label_import_passphrase" | "btn_import_confirm" | "btn_import_cancel" | "toast_export_encrypted_remember" | "error_import_decrypt_failed" | "error_import_passphrase_required",
+      messageName: "tab_load_balance",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "负载均衡"
+     */
+    getMessage(
+      messageName: "title_load_balance",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "开启后，翻译请求将按权重自动分配到多个服务商，均衡使用配额。在 Popup 面板中可快速切换。"
+     */
+    getMessage(
+      messageName: "desc_load_balance",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "请先勾选至少一个参与负载均衡的服务商。"
+     */
+    getMessage(
+      messageName: "warn_no_lb_providers",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "权重"
+     */
+    getMessage(
+      messageName: "label_weight",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "请求按权重比例分配到各服务商。某个服务商失败时自动切换到下一个。"
+     */
+    getMessage(
+      messageName: "hint_load_balance",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "负载均衡模式"
+     */
+    getMessage(
+      messageName: "popup_load_balance",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "负载均衡已开启 — 请求将自动分配到多个服务商"
+     */
+    getMessage(
+      messageName: "popup_load_balance_active",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "模型顺序决定 fallback 优先级，排在前面的模型优先使用。"
+     */
+    getMessage(
+      messageName: "hint_model_order",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "上移"
+     */
+    getMessage(
+      messageName: "btn_move_up",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "下移"
+     */
+    getMessage(
+      messageName: "btn_move_down",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "优先模型"
+     */
+    getMessage(
+      messageName: "lb_preferred_model",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "按配置顺序"
+     */
+    getMessage(
+      messageName: "lb_model_default",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "请求设置"
+     */
+    getMessage(
+      messageName: "title_request_settings",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "适用于所有翻译请求（包括聚合和非聚合翻译）。"
+     */
+    getMessage(
+      messageName: "desc_request_settings",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    getMessage(
+      messageName: "@@extension_id" | "@@ui_locale" | "@@bidi_dir" | "@@bidi_reversed_dir" | "@@bidi_start_edge" | "@@bidi_end_edge" | "extName" | "extDescription" | "command_toggle_desc" | "popup_subtitle" | "popup_provider" | "popup_model" | "popup_translate_to" | "popup_placeholder" | "popup_translating" | "popup_translate" | "popup_result" | "popup_error" | "popup_error_hint" | "popup_dismiss_error" | "popup_open_settings" | "popup_auto_detect_hint" | "popup_target_auto" | "popup_manual_override_hint" | "popup_copied" | "options_title" | "options_subtitle" | "options_saved" | "options_imported" | "tab_providers" | "tab_model_queue" | "tab_language" | "tab_general" | "btn_add_provider" | "title_add_provider" | "title_edit_provider" | "btn_save" | "btn_cancel" | "label_name" | "label_base_url" | "label_api_key" | "placeholder_api_key" | "hint_api_key" | "btn_show" | "btn_hide" | "label_headers" | "label_query_params" | "label_extra_body" | "label_models" | "label_model_id" | "label_display_name" | "btn_add_model" | "btn_edit" | "btn_delete" | "queue_description" | "label_timeout" | "label_ui_language" | "hint_ui_language" | "label_native_language" | "hint_native_language" | "label_default_source_language" | "hint_default_source_language" | "title_lang_detect_providers" | "btn_add_api_detector" | "btn_add_google_free_detector" | "preset_google_free_name" | "hint_google_free_detector" | "lang_detect_description" | "label_default_style" | "style_original" | "style_bilingual" | "style_underline" | "style_clean" | "style_original_desc" | "style_bilingual_desc" | "style_underline_desc" | "style_clean_desc" | "label_keyboard_shortcut" | "shortcut_hint" | "shortcut_unbound" | "title_backup_restore" | "btn_export_settings" | "btn_import_settings" | "btn_reset_default" | "error_load_settings" | "error_save_failed" | "error_export_failed" | "error_import_failed" | "error_required_fields" | "error_translation_failed" | "error_unknown" | "new_provider" | "new_api_detector" | "label_endpoint_url" | "label_api_key_optional" | "label_key" | "label_value" | "btn_add" | "label_provider_prompt" | "placeholder_provider_prompt" | "hint_provider_prompt" | "title_global_prompt" | "desc_global_prompt" | "hint_prompt_vars" | "title_aggregation" | "label_aggregate_enabled" | "desc_aggregate_enabled" | "label_max_paragraphs" | "label_max_text_length" | "label_max_concurrent" | "label_request_timeout" | "title_display_settings" | "label_sampling" | "label_temperature" | "label_top_p" | "label_max_tokens" | "label_top_p_enable" | "label_stream" | "hint_stream" | "hint_extra_body_override" | "hint_content_type_auto" | "badge_stream" | "label_export_passphrase" | "hint_export_passphrase" | "hint_export_passphrase_warn" | "label_import_passphrase" | "btn_import_confirm" | "btn_import_cancel" | "toast_export_encrypted_remember" | "error_import_decrypt_failed" | "error_import_passphrase_required" | "tab_load_balance" | "title_load_balance" | "desc_load_balance" | "warn_no_lb_providers" | "label_weight" | "hint_load_balance" | "popup_load_balance" | "popup_load_balance_active" | "hint_model_order" | "btn_move_up" | "btn_move_down" | "lb_preferred_model" | "lb_model_default" | "title_request_settings" | "desc_request_settings",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;

@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import '@/assets/styles.css';
 import { Toast } from '@/components/ui/toast';
 import { OptionsProviderSettings } from '@/components/options/provider-settings';
-import { OptionsModelQueue } from '@/components/options/model-queue';
+import { OptionsLoadBalanceSettings } from '@/components/options/load-balance-settings';
 import { OptionsLanguageSettings } from '@/components/options/language-settings';
 import { OptionsGeneralSettings } from '@/components/options/general-settings';
 import type { GlobalSettings } from '@/types';
@@ -11,9 +11,9 @@ import { cn } from '@/lib/utils';
 import { getSettings, saveSettings, DEFAULT_SETTINGS } from '@/lib/storage';
 import { t, setUILanguage } from '@/lib/i18n';
 import { useToast } from '@/hooks/use-toast';
-import { Languages, Server, Settings2, Globe } from 'lucide-react';
+import { Languages, Server, Globe, Scale } from 'lucide-react';
 
-type Tab = 'providers' | 'queue' | 'language' | 'general';
+type Tab = 'providers' | 'loadbalance' | 'language' | 'general';
 
 function App() {
   const { toast, showSuccess, showError, dismiss } = useToast();
@@ -65,7 +65,7 @@ function App() {
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'providers', label: t('tab_providers'), icon: <Server className="h-4 w-4" /> },
-    { id: 'queue', label: t('tab_model_queue'), icon: <Settings2 className="h-4 w-4" /> },
+    { id: 'loadbalance', label: t('tab_load_balance'), icon: <Scale className="h-4 w-4" /> },
     { id: 'language', label: t('tab_language'), icon: <Languages className="h-4 w-4" /> },
     { id: 'general', label: t('tab_general'), icon: <Globe className="h-4 w-4" /> },
   ];
@@ -117,8 +117,8 @@ function App() {
           />
         )}
 
-        {activeTab === 'queue' && (
-          <OptionsModelQueue settings={settings} onSave={handleSave} />
+        {activeTab === 'loadbalance' && (
+          <OptionsLoadBalanceSettings settings={settings} onSave={handleSave} />
         )}
 
         {activeTab === 'language' && (

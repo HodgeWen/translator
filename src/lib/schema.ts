@@ -22,10 +22,15 @@ const providerConfigSchema = z.object({
   ).min(1, 'At least one model is required'),
 });
 
-const modelQueueItemSchema = z.object({
+const loadBalanceProviderSchema = z.object({
   providerId: z.string().min(1),
-  modelId: z.string().min(1),
-  enabled: z.boolean().default(true),
+  modelId: z.string().optional(),
+  weight: z.number().min(1).max(100).default(1),
+});
+
+const loadBalanceConfigSchema = z.object({
+  enabled: z.boolean().default(false),
+  providers: z.array(loadBalanceProviderSchema).default([]),
 });
 
 const langDetectProviderSchema = z.object({
@@ -40,7 +45,9 @@ const langDetectProviderSchema = z.object({
 
 export const globalSettingsSchema = z.object({
   providers: z.array(providerConfigSchema).min(1, 'At least one provider is required'),
-  modelQueue: z.array(modelQueueItemSchema).min(1, 'At least one model queue item is required'),
+  selectedProviderId: z.string().default(''),
+  selectedModelId: z.string().default(''),
+  loadBalance: loadBalanceConfigSchema.default({ enabled: false, providers: [] }),
   nativeLanguage: z.string().min(2).max(10).default('zh-CN'),
   defaultSourceLanguage: z.string().min(2).max(10).default('en'),
   uiLanguage: z.string().min(2).max(10).default('zh-CN'),

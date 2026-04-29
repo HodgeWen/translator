@@ -362,7 +362,7 @@ function cleanupRemovedSubtree(root: HTMLElement): void {
 
 // ─── Translation Logic ──────────────────────────────────────────────────
 
-async function translateSingleElement(el: HTMLElement, force = false): Promise<void> {
+async function translateSingleElement(el: HTMLElement, force = false, skipActiveCheck = false): Promise<void> {
   if (!force && state.elementMap.has(el)) return;
   if (el.hasAttribute('data-translator-pending')) return;
 
@@ -397,7 +397,8 @@ async function translateSingleElement(el: HTMLElement, force = false): Promise<v
 
     el.removeAttribute('data-translator-pending');
     // 如果用户已在翻译完成前按快捷键关闭翻译，则不再应用结果
-    if (!state.isActive) {
+    // skipActiveCheck: Ctrl+Hover 独立翻译时 state.isActive 始终为 false，需跳过此检查
+    if (!skipActiveCheck && !state.isActive) {
       console.log('[Translator] Translation completed but state.isActive is false, skipping apply');
       return;
     }
@@ -877,7 +878,7 @@ function tryStartHoverFor(target: HTMLElement | null): void {
     // 此时短路（hoverTimer === null），mouseout / keyup / blur 都不会清掉高亮。
     try {
       await ensureCtrlHoverSettings();
-      await translateSingleElement(paragraph, true);
+      await translateSingleElement(paragraph, true, true);
     } finally {
       const elapsed = performance.now() - startedAt;
       const wait = Math.max(0, HOVER_MIN_VISIBLE_MS - elapsed);

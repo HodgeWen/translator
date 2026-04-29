@@ -186,6 +186,27 @@ export function OptionsGeneralSettings({ settings, onSave, onError, onSuccess, o
         </div>
       </div>
 
+      {/* Request Settings */}
+      <div className="rounded-lg border border-border p-6 space-y-4">
+        <div className="flex items-center gap-2">
+          <Clock className="h-5 w-5 text-cyan-500" />
+          <h3 className="text-lg font-semibold">{t('title_request_settings')}</h3>
+        </div>
+        <p className="text-sm text-muted-foreground">{t('desc_request_settings')}</p>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">{t('label_request_timeout')}</label>
+          <input
+            type="number"
+            min={5000}
+            max={120000}
+            step={1000}
+            value={settings.requestTimeout}
+            onChange={(e) => onSave({ ...settings, requestTimeout: Math.max(5000, Math.min(120000, parseInt(e.target.value) || 30000)) })}
+            className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+          />
+        </div>
+      </div>
+
       {/* Aggregation Settings */}
       <div className="rounded-lg border border-border p-6 space-y-6">
         <div className="flex items-center gap-2">
@@ -214,7 +235,7 @@ export function OptionsGeneralSettings({ settings, onSave, onError, onSuccess, o
           </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">{t('label_max_paragraphs')}</label>
             <input
@@ -245,21 +266,6 @@ export function OptionsGeneralSettings({ settings, onSave, onError, onSuccess, o
               max={10}
               value={settings.maxConcurrentRequests}
               onChange={(e) => onSave({ ...settings, maxConcurrentRequests: Math.max(1, Math.min(10, parseInt(e.target.value) || 3)) })}
-              className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium flex items-center gap-1.5">
-              <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-              {t('label_request_timeout')}
-            </label>
-            <input
-              type="number"
-              min={5000}
-              max={120000}
-              step={1000}
-              value={settings.requestTimeout}
-              onChange={(e) => onSave({ ...settings, requestTimeout: Math.max(5000, Math.min(120000, parseInt(e.target.value) || 30000)) })}
               className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm"
             />
           </div>

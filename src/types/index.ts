@@ -26,11 +26,16 @@ export interface ProviderConfig {
   }>;
 }
 
-// Individual model in the global priority queue
-export interface ModelQueueItem {
+// Load balance configuration
+export interface LoadBalanceProvider {
   providerId: string;
-  modelId: string;
+  modelId?: string; // 优先使用的模型 ID，空则使用模型列表第一个
+  weight: number; // 权重，默认 1
+}
+
+export interface LoadBalanceConfig {
   enabled: boolean;
+  providers: LoadBalanceProvider[];
 }
 
 // Language detection provider configuration
@@ -48,7 +53,9 @@ export interface LangDetectProvider {
 // Global application settings
 export interface GlobalSettings {
   providers: ProviderConfig[];
-  modelQueue: ModelQueueItem[];
+  selectedProviderId: string;
+  selectedModelId: string;
+  loadBalance: LoadBalanceConfig;
   nativeLanguage: LangCode;
   defaultSourceLanguage: LangCode;
   uiLanguage: LangCode;
