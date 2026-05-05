@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import type { GlobalSettings, TranslationStyle } from '@/types';
 import { cn } from '@/lib/utils';
@@ -45,6 +45,28 @@ export function OptionsGeneralSettings({ settings, onSave, onError, onSuccess, o
   const [pendingImportText, setPendingImportText] = useState<string | null>(null);
   const [pendingImportPassphrase, setPendingImportPassphrase] = useState('');
   const [showImportPassphrase, setShowImportPassphrase] = useState(false);
+
+  // Local draft state for text/number inputs to avoid hitting chrome.storage.sync rate limits
+  const [draftPrompt, setDraftPrompt] = useState(settings.globalPrompt);
+  const [draftTimeout, setDraftTimeout] = useState(settings.requestTimeout);
+  const [draftMaxParagraphs, setDraftMaxParagraphs] = useState(settings.maxParagraphsPerRequest);
+  const [draftMaxTextLength, setDraftMaxTextLength] = useState(settings.maxTextLengthPerRequest);
+  const [draftMaxConcurrent, setDraftMaxConcurrent] = useState(settings.maxConcurrentRequests);
+
+  useEffect(() => { setDraftPrompt(settings.globalPrompt); }, [settings.globalPrompt]);
+  useEffect(() => { setDraftTimeout(settings.requestTimeout); }, [settings.requestTimeout]);
+  useEffect(() => { setDraftMaxParagraphs(settings.maxParagraphsPerRequest); }, [settings.maxParagraphsPerRequest]);
+  useEffect(() => { setDraftMaxTextLength(settings.maxTextLengthPerRequest); }, [settings.maxTextLengthPerRequest]);
+  useEffect(() => { setDraftMaxConcurrent(settings.maxConcurrentRequests); }, [settings.maxConcurrentRequests]);
+
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const debouncedSave = useCallback((patch: Partial<GlobalSettings>) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      onSave({ ...settings, ...patch });
+    }, 500);
+  }, [settings, onSave]);
+  useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
 
   const hasApiKey = useMemo(
     () => settings.providers.some((p) => p.apiKey?.trim()),
@@ -173,16 +195,15 @@ export function OptionsGeneralSettings({ settings, onSave, onError, onSuccess, o
         </div>
         <p className="text-sm text-muted-foreground">{t('desc_global_prompt')}</p>
         <textarea
-          value={settings.globalPrompt}
-          onChange={(e) => onSave({ ...settings, globalPrompt: e.target.value })}
+          value={draftPrompt}
+          onChange={(e) => { setDraftPrompt(e.target.value); debouncedSave({ globalPrompt: e.target.value }); }}
           rows={4}
           className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm resize-y font-mono"
         />
         <div className="text-xs text-muted-foreground space-y-1">
           <p>{t('hint_prompt_vars')}</p>
           <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded">{'{{sourceLang}}'}</code>{' '}
-          <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded">{'{{targetLang}}'}</code>{' '}
-          <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded">{'{{text}}'}</code>
+          <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded">{'{{targetLang}}'}</code>
         </div>
       </div>
 
@@ -200,8 +221,8 @@ export function OptionsGeneralSettings({ settings, onSave, onError, onSuccess, o
             min={5000}
             max={120000}
             step={1000}
-            value={settings.requestTimeout}
-            onChange={(e) => onSave({ ...settings, requestTimeout: Math.max(5000, Math.min(120000, parseInt(e.target.value) || 30000)) })}
+            value={draftTimeout}
+            onChange={(e) => { const v = Math.max(5000, Math.min(120000, parseInt(e.target.value) || 30000)); setDraftTimeout(v); debouncedSave({ requestTimeout: v }); }}
             className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm"
           />
         </div>
@@ -242,8 +263,8 @@ export function OptionsGeneralSettings({ settings, onSave, onError, onSuccess, o
               type="number"
               min={1}
               max={20}
-              value={settings.maxParagraphsPerRequest}
-              onChange={(e) => onSave({ ...settings, maxParagraphsPerRequest: Math.max(1, Math.min(20, parseInt(e.target.value) || 5)) })}
+              value={draftMaxParagraphs}
+              onChange={(e) => { const v = Math.max(1, Math.min(20, parseInt(e.target.value) || 5)); setDraftMaxParagraphs(v); debouncedSave({ maxParagraphsPerRequest: v }); }}
               className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm"
             />
           </div>
@@ -253,8 +274,8 @@ export function OptionsGeneralSettings({ settings, onSave, onError, onSuccess, o
               type="number"
               min={100}
               max={10000}
-              value={settings.maxTextLengthPerRequest}
-              onChange={(e) => onSave({ ...settings, maxTextLengthPerRequest: Math.max(100, Math.min(10000, parseInt(e.target.value) || 2000)) })}
+              value={draftMaxTextLength}
+              onChange={(e) => { const v = Math.max(100, Math.min(10000, parseInt(e.target.value) || 2000)); setDraftMaxTextLength(v); debouncedSave({ maxTextLengthPerRequest: v }); }}
               className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm"
             />
           </div>
@@ -264,8 +285,8 @@ export function OptionsGeneralSettings({ settings, onSave, onError, onSuccess, o
               type="number"
               min={1}
               max={10}
-              value={settings.maxConcurrentRequests}
-              onChange={(e) => onSave({ ...settings, maxConcurrentRequests: Math.max(1, Math.min(10, parseInt(e.target.value) || 3)) })}
+              value={draftMaxConcurrent}
+              onChange={(e) => { const v = Math.max(1, Math.min(10, parseInt(e.target.value) || 3)); setDraftMaxConcurrent(v); debouncedSave({ maxConcurrentRequests: v }); }}
               className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm"
             />
           </div>

@@ -31,11 +31,10 @@ function isBlockElement(el: HTMLElement): boolean {
 // 这样 wrapper 拥有与原 el 完全一致的兄弟位置，所有 `:nth-child` /
 // `:not(:first-child)` / 相邻兄弟选择器对译文与原文的判定一致，避免站点
 // CSS（如 markdown 渲染常见的「首段无 margin-top」）在译文上失效。
-function applyOriginalStyle(el: HTMLElement, translatedText: string, fragments: DocumentFragment[]): void {
+function applyReplaceStyle(el: HTMLElement, translatedText: string, fragments: DocumentFragment[]): void {
   const originalHTML = el.innerHTML;
   const wrapper = cloneAsWrapper(el);
   wrapper.appendChild(decodeInline(translatedText, fragments));
-  wrapper.classList.add('translator-ext-wrapper');
   wrapper.setAttribute('data-translator-clone', 'true');
   wrapper.setAttribute('data-translator-processed', 'true');
 
@@ -46,28 +45,30 @@ function applyOriginalStyle(el: HTMLElement, translatedText: string, fragments: 
   state.elementMap.set(el, { originalHTML, translatedText, status: 'translated', cloneEl: wrapper, showingOriginal: false });
 }
 
-function applyCleanStyle(el: HTMLElement, translatedText: string, fragments: DocumentFragment[]): void {
-  const originalHTML = el.innerHTML;
-  const wrapper = cloneAsWrapper(el);
-  wrapper.appendChild(decodeInline(translatedText, fragments));
-  wrapper.classList.add('translator-ext-wrapper');
-  wrapper.setAttribute('data-translator-clone', 'true');
-  wrapper.setAttribute('data-translator-processed', 'true');
+function saveChildNodes(el: HTMLElement): DocumentFragment {
+  const frag = document.createDocumentFragment();
+  while (el.firstChild) frag.appendChild(el.firstChild);
+  return frag;
+}
 
-  wrapperToOriginal.set(wrapper, el);
-  mutationIgnoredNodes.add(el);
-  el.replaceWith(wrapper);
-
-  state.elementMap.set(el, { originalHTML, translatedText, status: 'translated', cloneEl: wrapper, showingOriginal: false });
+function restoreChildNodes(el: HTMLElement, elState: ElementState): void {
+  if (elState.originalNodes) {
+    el.innerHTML = '';
+    el.appendChild(elState.originalNodes);
+  } else {
+    el.innerHTML = elState.originalHTML;
+  }
 }
 
 function applyBilingualStyle(el: HTMLElement, translatedText: string, fragments: DocumentFragment[]): void {
   const originalHTML = el.innerHTML;
+  const originalNodes = saveChildNodes(el);
+  // Restore original content first, then append bilingual elements
+  el.appendChild(originalNodes);
   const br = document.createElement('br');
   br.setAttribute('data-translator-br', 'true');
 
   const span = document.createElement('span');
-  span.classList.add('translator-ext-wrapper');
   span.setAttribute('data-translator-bilingual', 'true');
   span.dataset.display = isBlockElement(el) ? 'block' : 'inline';
   span.appendChild(decodeInline(translatedText, fragments));
@@ -76,24 +77,23 @@ function applyBilingualStyle(el: HTMLElement, translatedText: string, fragments:
   el.appendChild(span);
   el.setAttribute('data-translator-processed', 'true');
 
-  state.elementMap.set(el, { originalHTML, translatedText, status: 'translated', showingOriginal: false });
+  state.elementMap.set(el, { originalHTML, originalNodes, translatedText, status: 'translated', showingOriginal: false });
 }
 
 function applyUnderlineStyle(el: HTMLElement, translatedText: string, fragments: DocumentFragment[]): void {
   const originalHTML = el.innerHTML;
   const originalText = el.textContent?.trim() ?? '';
+  const originalNodes = saveChildNodes(el);
 
   const wrapper = document.createElement('span');
-  wrapper.classList.add('translator-ext-wrapper');
   wrapper.setAttribute('data-translator-underline', 'true');
   wrapper.title = originalText;
   wrapper.appendChild(decodeInline(translatedText, fragments));
 
-  el.innerHTML = '';
   el.appendChild(wrapper);
   el.setAttribute('data-translator-processed', 'true');
 
-  state.elementMap.set(el, { originalHTML, translatedText, status: 'translated', cloneEl: wrapper, showingOriginal: false });
+  state.elementMap.set(el, { originalHTML, originalNodes, translatedText, status: 'translated', cloneEl: wrapper, showingOriginal: false });
 }
 
 export function applyTranslation(el: HTMLElement, translatedText: string, fragments: DocumentFragment[]): void {
@@ -101,10 +101,8 @@ export function applyTranslation(el: HTMLElement, translatedText: string, fragme
 
   switch (state.style) {
     case 'original':
-      applyOriginalStyle(el, translatedText, fragments);
-      break;
     case 'clean':
-      applyCleanStyle(el, translatedText, fragments);
+      applyReplaceStyle(el, translatedText, fragments);
       break;
     case 'bilingual':
       applyBilingualStyle(el, translatedText, fragments);
@@ -121,7 +119,7 @@ export function applyTranslation(el: HTMLElement, translatedText: string, fragme
   }
 }
 
-export function restoreElement(el: HTMLElement): void {
+function restoreElement(el: HTMLElement): void {
   const elState = state.elementMap.get(el);
   if (!elState) return;
 
@@ -138,13 +136,9 @@ export function restoreElement(el: HTMLElement): void {
       }
       break;
     }
-    case 'bilingual': {
-      el.innerHTML = elState.originalHTML;
-      el.removeAttribute('data-translator-processed');
-      break;
-    }
+    case 'bilingual':
     case 'underline': {
-      el.innerHTML = elState.originalHTML;
+      restoreChildNodes(el, elState);
       el.removeAttribute('data-translator-processed');
       break;
     }
@@ -200,7 +194,7 @@ export function toggleElementDisplay(el: HTMLElement): void {
         el.setAttribute('data-translator-processed', 'true');
       } else {
         // 译文 → 原文：恢复原内容
-        el.innerHTML = elState.originalHTML;
+        restoreChildNodes(el, elState);
         el.removeAttribute('data-translator-processed');
       }
       break;
@@ -220,10 +214,33 @@ export function restoreAll(): void {
 // 全页 toggle：把 elementMap 中所有「当前 showingOriginal 与目标态不一致」的段落
 // 都切到目标态。成功翻译的段落（status === 'translated'）才有切换价值；
 // 失败/pending 的段落跳过（其 cloneEl 可能不存在，toggleElementDisplay 会 break）。
+// 为避免长页面阻塞主线程，使用 requestAnimationFrame 分片处理。
+const TOGGLE_BATCH_SIZE = 50;
+let toggleRunId = 0;
+
 export function toggleAllDisplay(targetShowOriginal: boolean): void {
+  const runId = ++toggleRunId;
+  const targets: HTMLElement[] = [];
   state.elementMap.forEach((entry: ElementState, el: HTMLElement) => {
     if (entry.status !== 'translated') return;
     if (entry.showingOriginal === targetShowOriginal) return;
-    toggleElementDisplay(el);
+    targets.push(el);
   });
+
+  let index = 0;
+  function processBatch(): void {
+    if (runId !== toggleRunId) return;
+    const end = Math.min(index + TOGGLE_BATCH_SIZE, targets.length);
+    for (; index < end; index++) {
+      const el = targets[index];
+      const entry = state.elementMap.get(el);
+      if (entry?.status === 'translated' && entry.showingOriginal !== targetShowOriginal) {
+        toggleElementDisplay(el);
+      }
+    }
+    if (index < targets.length) {
+      requestAnimationFrame(processBatch);
+    }
+  }
+  processBatch();
 }

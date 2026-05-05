@@ -15,22 +15,24 @@ const db = new Dexie(DB_NAME, { autoOpen: false }) as CacheDatabase;
 // v1 → v2 迁移：直接清空旧表，因为旧 hash 无法与新 SHA-256 共存。
 // 缓存本就是可丢弃数据（7 天 TTL），用户无感。
 db.version(1).stores({
-  translations: '++hash, sourceLang, targetLang, createdAt',
+  translations: 'hash, sourceLang, targetLang, createdAt',
 });
 db.version(DB_VERSION).stores({
-  translations: '++hash, sourceLang, targetLang, createdAt',
+  translations: 'hash, sourceLang, targetLang, createdAt',
 }).upgrade(tx => {
   return tx.table('translations').clear();
 });
 
-let initialized = false;
+let openPromise: Promise<CacheDatabase> | null = null;
 
 async function ensureDb(): Promise<CacheDatabase> {
-  if (!initialized) {
-    await db.open();
-    initialized = true;
+  if (!openPromise) {
+    openPromise = db.open().then(() => db).catch((err) => {
+      openPromise = null;
+      throw err;
+    });
   }
-  return db;
+  return openPromise;
 }
 
 // SHA-256 哈希：碰撞概率 ~2^-128（birthday bound），消除 djb2 32-bit 碰撞风险。
@@ -39,47 +41,43 @@ async function hashKey(text: string, sourceLang: string, targetLang: string): Pr
   const str = `${text}:${sourceLang}:${targetLang}`;
   const data = new TextEncoder().encode(str);
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = new Uint8Array(hashBuffer);
-  let hex = '';
-  for (let i = 0; i < hashArray.length; i++) {
-    hex += hashArray[i].toString(16).padStart(2, '0');
-  }
-  return hex;
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 export async function getCachedTranslation(
   text: string,
   sourceLang: string,
   targetLang: string
-): Promise<string | null> {
+): Promise<{ text: string; hash: string } | null> {
   const dbInstance = await ensureDb();
   const hash = await hashKey(text, sourceLang, targetLang);
   const entry = await dbInstance.translations.get(hash);
 
   if (!entry) return null;
 
-  // Check TTL
   if (Date.now() - entry.createdAt > TTL_MS) {
     await dbInstance.translations.delete(hash);
     return null;
   }
 
-  // 二次校验：即使 SHA-256 碰撞极不可能，仍核对原文确保 100% 正确
   if (entry.sourceText !== text) {
     return null;
   }
 
-  return entry.text;
+  return { text: entry.text, hash };
 }
 
 export async function setCachedTranslation(
   text: string,
   sourceLang: string,
   targetLang: string,
-  translatedText: string
+  translatedText: string,
+  precomputedHash?: string
 ): Promise<void> {
   const dbInstance = await ensureDb();
-  const hash = await hashKey(text, sourceLang, targetLang);
+  const hash = precomputedHash ?? await hashKey(text, sourceLang, targetLang);
   await dbInstance.translations.put({
     hash,
     sourceText: text,

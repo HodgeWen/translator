@@ -29,7 +29,20 @@ const HARD_EXCLUDE_TAGS = new Set([
 // 软排除标签：这些标签内的后代元素默认跳过翻译（导航、页头页脚等 UI chrome）。
 // 与 HARD_EXCLUDE 的区别：元素自身不会出现在候选列表（它们不在白/灰名单），
 // 但内部的 <li>/<p> 等白名单元素会被 hasExcludedAncestor 拦截。
-const SOFT_EXCLUDE_TAGS = new Set(['NAV', 'FOOTER', 'HEADER']);
+const SOFT_EXCLUDE_TAGS = new Set(['NAV', 'FOOTER']);
+
+const SECTIONING_CONTENT_TAGS = new Set(['MAIN', 'SECTION', 'ARTICLE', 'ASIDE']);
+
+function isPageLevelHeader(el: HTMLElement): boolean {
+  if (el.getAttribute('role') === 'banner') return true;
+  if (el.parentElement?.tagName === 'BODY') return true;
+  let cur = el.parentElement;
+  while (cur && cur.tagName !== 'BODY') {
+    if (SECTIONING_CONTENT_TAGS.has(cur.tagName)) return false;
+    cur = cur.parentElement;
+  }
+  return true;
+}
 
 // 交互式 UI 组件的 ARIA role：这些角色下的文本是 UI 控件而非可读内容。
 const UI_ROLES = new Set([
@@ -61,32 +74,54 @@ function getDirectTextLength(el: HTMLElement): number {
   return len;
 }
 
-function hasExcludedAncestor(el: HTMLElement): boolean {
+function hasExcludedAncestor(
+  el: HTMLElement,
+  excludedCache?: WeakSet<HTMLElement>,
+  safeCache?: WeakSet<HTMLElement>,
+  relaxed?: boolean,
+): boolean {
+  const walked: HTMLElement[] = [];
   let cur: HTMLElement | null = el;
   while (cur) {
-    if (cur.isContentEditable) return true;
-    if (cur.getAttribute?.('contenteditable') === 'true') return true;
-    if (cur.getAttribute?.('translate') === 'no') return true;
-    if (cur.classList?.contains('notranslate')) return true;
-    if (cur.getAttribute?.('aria-hidden') === 'true') return true;
+    if (excludedCache?.has(cur)) {
+      for (const w of walked) excludedCache.add(w);
+      return true;
+    }
+    if (safeCache?.has(cur)) return false;
+
+    if (cur.isContentEditable) { markExcluded(); return true; }
+    if (cur.getAttribute?.('contenteditable') === 'true') { markExcluded(); return true; }
     const role = cur.getAttribute?.('role');
-    if (role === 'code' || role === 'math') return true;
-    if (role && UI_ROLES.has(role)) return true;
-    if (SOFT_EXCLUDE_TAGS.has(cur.tagName)) return true;
-    if (cur.hasAttribute?.('data-translator-processed')) return true;
-    if (cur.hasAttribute?.('data-translator-clone')) return true;
+    if (role === 'code' || role === 'math') { markExcluded(); return true; }
+    if (cur.hasAttribute?.('data-translator-processed')) { markExcluded(); return true; }
+    if (cur.hasAttribute?.('data-translator-clone')) { markExcluded(); return true; }
+
+    if (!relaxed) {
+      if (cur.getAttribute?.('translate') === 'no') { markExcluded(); return true; }
+      if (cur.classList?.contains('notranslate')) { markExcluded(); return true; }
+      if (cur.getAttribute?.('aria-hidden') === 'true') { markExcluded(); return true; }
+      if (role && UI_ROLES.has(role)) { markExcluded(); return true; }
+      if (SOFT_EXCLUDE_TAGS.has(cur.tagName)) { markExcluded(); return true; }
+      if (cur.tagName === 'HEADER' && isPageLevelHeader(cur)) { markExcluded(); return true; }
+    }
+
+    walked.push(cur);
     cur = cur.parentElement;
   }
+  if (safeCache) { for (const w of walked) safeCache.add(w); }
   return false;
+
+  function markExcluded() {
+    if (excludedCache) { for (const w of walked) excludedCache.add(w); if (cur) excludedCache.add(cur); }
+  }
 }
 
 function isVisible(el: HTMLElement): boolean {
-  if (el.offsetParent === null) {
-    // offsetParent === null 对 position:fixed 会误判，退化到 rect 判定
-    const style = window.getComputedStyle(el);
-    if (style.display === 'none' || style.visibility === 'hidden') return false;
-    if (style.position !== 'fixed') return false;
+  // Use native checkVisibility when available to avoid forced synchronous layout.
+  if (typeof el.checkVisibility === 'function') {
+    return el.checkVisibility({ checkOpacity: false, checkVisibilityCSS: true });
   }
+  // Fallback for older browsers: minimal checks without getComputedStyle.
   const rect = el.getBoundingClientRect();
   return rect.width > 0 || rect.height > 0;
 }
@@ -107,7 +142,12 @@ function isLinkHeavy(el: HTMLElement): boolean {
   return linkTextLen / totalLen > LINK_DENSITY_THRESHOLD;
 }
 
-export function isTranslatableBlock(el: HTMLElement | null | undefined): el is HTMLElement {
+export function isTranslatableBlock(
+  el: HTMLElement | null | undefined,
+  excludedCache?: WeakSet<HTMLElement>,
+  safeCache?: WeakSet<HTMLElement>,
+  relaxed?: boolean,
+): el is HTMLElement {
   if (!el) return false;
 
   const tag = el.tagName;
@@ -117,7 +157,7 @@ export function isTranslatableBlock(el: HTMLElement | null | undefined): el is H
   const isGraylist = GRAYLIST_TAGS.has(tag);
   if (!isWhitelist && !isGraylist) return false;
 
-  if (hasExcludedAncestor(el)) return false;
+  if (hasExcludedAncestor(el, excludedCache, safeCache, relaxed)) return false;
 
   const text = el.textContent?.trim() ?? '';
   if (text.length < MIN_TEXT_LENGTH) return false;
@@ -125,15 +165,13 @@ export function isTranslatableBlock(el: HTMLElement | null | undefined): el is H
   if (!isVisible(el)) return false;
 
   if (isGraylist) {
-    // 灰名单：必须"直接文本"占比够高才视作段落，否则让子元素去匹配。
     const directLen = getDirectTextLength(el);
     const totalLen = text.length;
     if (totalLen === 0) return false;
     if (directLen / totalLen < DIRECT_TEXT_RATIO_THRESHOLD) return false;
   }
 
-  // 链接密度过高的 <li> 等通常是导航列表，跳过
-  if (tag === 'LI' && isLinkHeavy(el)) return false;
+  if (!relaxed && tag === 'LI' && isLinkHeavy(el)) return false;
 
   return true;
 }
@@ -145,15 +183,17 @@ export function collectBlocks(root: ParentNode = document): HTMLElement[] {
   const scope: Element = (root instanceof Document) ? root.documentElement : (root as Element);
   if (!scope) return [];
 
+  const excludedCache = new WeakSet<HTMLElement>();
+  const safeCache = new WeakSet<HTMLElement>();
+
   const all = Array.from(scope.querySelectorAll(CANDIDATE_SELECTOR)) as HTMLElement[];
-  // 把 root 自身也纳入候选（MutationObserver 传入单个新增节点时需要）
   if (scope instanceof HTMLElement && scope.matches(CANDIDATE_SELECTOR)) {
     all.unshift(scope);
   }
 
   const passed: HTMLElement[] = [];
   for (const el of all) {
-    if (isTranslatableBlock(el)) passed.push(el);
+    if (isTranslatableBlock(el, excludedCache, safeCache)) passed.push(el);
   }
 
   if (passed.length === 0) return [];

@@ -8,6 +8,7 @@ import { OptionsLanguageSettings } from '@/components/options/language-settings'
 import { OptionsGeneralSettings } from '@/components/options/general-settings';
 import type { GlobalSettings } from '@/types';
 import { cn } from '@/lib/utils';
+import { useDarkMode } from '@/hooks/use-dark-mode';
 import { getSettings, saveSettings, DEFAULT_SETTINGS } from '@/lib/storage';
 import { t, setUILanguage } from '@/lib/i18n';
 import { useToast } from '@/hooks/use-toast';
@@ -23,12 +24,9 @@ function App() {
 
   useEffect(() => {
     loadSettings();
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    if (mq.matches) document.documentElement.classList.add('dark');
-    const handler = (e: MediaQueryListEvent) => document.documentElement.classList.toggle('dark', e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
   }, []);
+
+  useDarkMode();
 
   const loadSettings = async () => {
     try {

@@ -19,6 +19,7 @@ declare global {
   const injectScript: typeof import('wxt/utils/inject-script').injectScript
   const storage: typeof import('wxt/utils/storage').storage
   const useAppConfig: typeof import('wxt/utils/app-config').useAppConfig
+  const useDarkMode: typeof import('/Users/whj/codes/translator/src/hooks/use-dark-mode').useDarkMode
   const useToast: typeof import('/Users/whj/codes/translator/src/hooks/use-toast').useToast
 }
 // for type re-export
@@ -51,6 +52,6 @@ declare global {
   export type { ScriptPublicPath, InjectScriptOptions } from 'wxt/utils/inject-script'
   import('wxt/utils/inject-script')
   // @ts-ignore
-  export type { ToastType, ToastItem, UseToastReturn } from '/Users/whj/codes/translator/src/hooks/use-toast'
+  export type { ToastItem } from '/Users/whj/codes/translator/src/hooks/use-toast'
   import('/Users/whj/codes/translator/src/hooks/use-toast')
 }

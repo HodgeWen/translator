@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 
-export type ToastType = 'success' | 'error';
+type ToastType = 'success' | 'error';
 
 export interface ToastItem {
   id: string;
@@ -8,9 +8,8 @@ export interface ToastItem {
   type: ToastType;
 }
 
-export interface UseToastReturn {
+interface UseToastReturn {
   toast: ToastItem | null;
-  showToast: (message: string, type?: ToastType) => void;
   showSuccess: (message: string) => void;
   showError: (message: string) => void;
   dismiss: () => void;
@@ -61,5 +60,5 @@ export function useToast(autoDismissMs = 3000): UseToastReturn {
     };
   }, []);
 
-  return { toast, showToast, showSuccess, showError, dismiss };
+  return { toast, showSuccess, showError, dismiss };
 }

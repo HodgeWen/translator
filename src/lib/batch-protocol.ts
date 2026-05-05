@@ -1,9 +1,9 @@
-export interface BatchItem {
+interface BatchItem {
   id: number;
   text: string;
 }
 
-export interface DecodedBatch {
+interface DecodedBatch {
   translations: Map<number, string>;
   missing: number[];
 }

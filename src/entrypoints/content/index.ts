@@ -1,8 +1,8 @@
 import { defineContentScript } from 'wxt/utils/define-content-script';
 import { sendBgMessage } from '@/lib/messaging';
-import { state } from './state';
+import { state, applySettingsToState } from './state';
 import { toggleAllDisplay } from './style-apply';
-import { startTranslation, setupMutationObserver, setupSPADetection } from './observer';
+import { startTranslation, setupSPADetection } from './observer';
 import { setupInputListeners } from './input-translate';
 import { setupCtrlHover } from './ctrl-hover';
 import './styles.css';
@@ -21,7 +21,12 @@ function isValidPage(): boolean {
 //   active + translation              → press → active + original（全页 toggle 到原文，不停止 observer）
 //   active + original                 → press → active + translation（全页 toggle 回译文）
 // 目的：避免每次按 Alt+W 都重新请求 API；翻译结果保留在 elementMap，纯切换 DOM 显示。
+
+let isToggling = false;
+
 async function toggleTranslation(): Promise<void> {
+  if (isToggling) return;
+
   if (state.isActive) {
     if (state.displayMode === 'translation') {
       state.displayMode = 'original';
@@ -33,28 +38,22 @@ async function toggleTranslation(): Promise<void> {
     return;
   }
 
+  isToggling = true;
   try {
     await sendBgMessage({ type: 'PING' }).catch(() => null);
 
     const { getSettings } = await import('@/lib/storage');
     const s = await getSettings();
 
-    state.style = s.defaultStyle;
-    state.nativeLanguage = s.nativeLanguage;
-    state.targetLang = s.nativeLanguage;
-    state.aggregate = {
-      aggregateEnabled: s.aggregateEnabled,
-      maxParagraphsPerRequest: s.maxParagraphsPerRequest,
-      maxTextLengthPerRequest: s.maxTextLengthPerRequest,
-      maxConcurrentRequests: s.maxConcurrentRequests,
-      requestTimeout: s.requestTimeout,
-    };
+    applySettingsToState(s);
     state.isActive = true;
     state.displayMode = 'translation';
 
     startTranslation();
   } catch (err) {
     console.warn('[Translator] toggleTranslation failed:', err);
+  } finally {
+    isToggling = false;
   }
 }
 
@@ -81,6 +80,5 @@ export default defineContentScript({
     setupInputListeners();
     setupCtrlHover();
     setupSPADetection();
-    setupMutationObserver();
   },
 });

@@ -5,8 +5,31 @@ import { state } from './state';
 
 // ─── Input Box Translation ──────────────────────────────────────────────
 
-let spaceCount = 0;
-let inputDebounceTimer: number | null = null;
+interface InputState {
+  spaceCount: number;
+  debounceTimer: number | null;
+}
+
+const inputStateMap = new WeakMap<HTMLInputElement | HTMLTextAreaElement, InputState>();
+let inputSettingsLoaded = false;
+
+function getInputState(el: HTMLInputElement | HTMLTextAreaElement): InputState {
+  let st = inputStateMap.get(el);
+  if (!st) {
+    st = { spaceCount: 0, debounceTimer: null };
+    inputStateMap.set(el, st);
+  }
+  return st;
+}
+
+async function ensureInputSettings(): Promise<void> {
+  if (inputSettingsLoaded || state.isActive) return;
+  const { getSettings } = await import('@/lib/storage');
+  const s = await getSettings();
+  state.nativeLanguage = s.nativeLanguage;
+  state.targetLang = s.nativeLanguage;
+  inputSettingsLoaded = true;
+}
 
 async function translateInput(el: HTMLInputElement | HTMLTextAreaElement): Promise<void> {
   if (!el.isConnected) return;
@@ -14,6 +37,8 @@ async function translateInput(el: HTMLInputElement | HTMLTextAreaElement): Promi
   if (!text || text.length < 2) return;
 
   try {
+    await ensureInputSettings();
+
     const detectResult = await sendBgMessage<{ lang: string | null }>({
       type: 'DETECT_LANG',
       payload: { text },
@@ -46,17 +71,20 @@ export function setupInputListeners(): void {
       return;
     }
 
+    const st = getInputState(target);
+
     if (e.key === ' ') {
-      spaceCount++;
-      if (spaceCount >= 3) {
-        spaceCount = 0;
-        if (inputDebounceTimer) window.clearTimeout(inputDebounceTimer);
-        inputDebounceTimer = window.setTimeout(() => {
+      st.spaceCount++;
+      if (st.spaceCount >= 3) {
+        st.spaceCount = 0;
+        if (st.debounceTimer) window.clearTimeout(st.debounceTimer);
+        st.debounceTimer = window.setTimeout(() => {
+          st.debounceTimer = null;
           translateInput(target);
         }, 300);
       }
     } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-      spaceCount = 0;
+      st.spaceCount = 0;
     }
   });
 }

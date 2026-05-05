@@ -8,6 +8,15 @@ import { applyTranslation } from './style-apply';
 
 // ─── Single Element Translation ─────────────────────────────────────────
 
+function markElementIdle(el: HTMLElement): void {
+  state.elementMap.set(el, {
+    originalHTML: el.innerHTML,
+    translatedText: '',
+    status: 'idle',
+    showingOriginal: false,
+  });
+}
+
 export async function translateSingleElement(el: HTMLElement, force = false, skipActiveCheck = false): Promise<void> {
   if (!force && state.elementMap.has(el)) return;
   if (el.hasAttribute('data-translator-pending')) return;
@@ -15,19 +24,29 @@ export async function translateSingleElement(el: HTMLElement, force = false, ski
   const rawText = el.textContent?.trim();
   if (!rawText || rawText.length < 5) return;
 
-  const { placeholderText, fragments } = encodeInline(el);
-  if (!placeholderText) return;
-
   el.setAttribute('data-translator-pending', 'true');
 
   try {
-    const detectResult = await sendBgMessage<{ lang: string | null }>({
-      type: 'DETECT_LANG',
-      payload: { text: rawText },
-    });
-    const detectedLang = detectResult.lang;
+    let detectedLang: string | null = null;
+    try {
+      const detectResult = await sendBgMessage<{ lang: string | null }>({
+        type: 'DETECT_LANG',
+        payload: { text: rawText },
+      });
+      detectedLang = detectResult.lang;
+    } catch {
+      // 语言检测失败时继续翻译，避免检测提供商故障阻断正文翻译。
+    }
 
     if (detectedLang && shouldSkipTranslation(detectedLang, state.nativeLanguage)) {
+      el.removeAttribute('data-translator-pending');
+      markElementIdle(el);
+      return;
+    }
+
+    // encodeInline 在语言检测之后执行，避免跳过翻译时浪费 DOM clone 开销
+    const { placeholderText, fragments } = encodeInline(el);
+    if (!placeholderText) {
       el.removeAttribute('data-translator-pending');
       return;
     }
@@ -45,6 +64,8 @@ export async function translateSingleElement(el: HTMLElement, force = false, ski
     // 如果用户已在翻译完成前按快捷键关闭翻译，则不再应用结果
     // skipActiveCheck: Ctrl+Hover 独立翻译时 state.isActive 始终为 false，需跳过此检查
     if (!skipActiveCheck && !state.isActive) {
+      // 标记为已处理，避免用户再次启动翻译时重复请求
+      markElementIdle(el);
       return;
     }
     applyTranslation(el, result.text, fragments);
@@ -63,7 +84,7 @@ export async function translateSingleElement(el: HTMLElement, force = false, ski
 
 // ─── Concurrency Limiter ────────────────────────────────────────────────
 
-export async function limitConcurrency<T>(tasks: (() => Promise<T>)[], limit: number): Promise<T[]> {
+async function limitConcurrency<T>(tasks: (() => Promise<T>)[], limit: number): Promise<(T | undefined)[]> {
   const results: (T | undefined)[] = new Array(tasks.length);
   let index = 0;
 
@@ -80,7 +101,7 @@ export async function limitConcurrency<T>(tasks: (() => Promise<T>)[], limit: nu
 
   const workers = Array.from({ length: Math.min(limit, tasks.length) }, () => worker());
   await Promise.all(workers);
-  return results as T[];
+  return results;
 }
 
 // ─── Aggregate Translation ──────────────────────────────────────────────
@@ -121,22 +142,29 @@ async function translateBatchWithFallback(batch: HTMLElement[]): Promise<void> {
   const fragmentsList: DocumentFragment[][] = [];
   const validElements: HTMLElement[] = [];
 
-  for (const el of batch) {
-    const rawText = el.textContent?.trim();
-    if (!rawText || rawText.length < 5) continue;
-
-    // 聚合翻译也做语言检测，过滤掉母语段落以节省 API 调用
+  // Detect language once on a representative sample, apply to entire batch.
+  let batchDetectedLang: string | null = null;
+  const sampleEl = batch.find(el => (el.textContent?.trim()?.length ?? 0) >= 5);
+  if (sampleEl) {
     try {
       const detectResult = await sendBgMessage<{ lang: string | null }>({
         type: 'DETECT_LANG',
-        payload: { text: rawText },
+        payload: { text: sampleEl.textContent!.trim() },
       });
-      if (detectResult.lang && shouldSkipTranslation(detectResult.lang, state.nativeLanguage)) {
-        continue;
-      }
+      batchDetectedLang = detectResult.lang;
     } catch {
       // 语言检测失败时不跳过，继续翻译
     }
+  }
+
+  if (batchDetectedLang && shouldSkipTranslation(batchDetectedLang, state.nativeLanguage)) {
+    for (const el of batch) markElementIdle(el);
+    return;
+  }
+
+  for (const el of batch) {
+    const rawText = el.textContent?.trim();
+    if (!rawText || rawText.length < 5) continue;
 
     const encoded = encodeInline(el);
     if (!encoded.placeholderText) continue;
@@ -187,6 +215,9 @@ async function translateBatchWithFallback(batch: HTMLElement[]): Promise<void> {
     // 如果用户已在翻译完成前按快捷键关闭翻译，则不再应用结果
     if (!state.isActive) {
       clearPending();
+      for (const el of validElements) {
+        markElementIdle(el);
+      }
       return;
     }
 
@@ -211,7 +242,7 @@ async function translateBatchWithFallback(batch: HTMLElement[]): Promise<void> {
   }
 }
 
-export async function flushAggregateQueue(): Promise<void> {
+async function flushAggregateQueue(): Promise<void> {
   if (state.pendingAggregateElements.size === 0) return;
 
   const elements = Array.from(state.pendingAggregateElements);

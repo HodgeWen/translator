@@ -7,6 +7,16 @@ import { encryptJSON, decryptJSON, isEncryptedPayload, ENCRYPTED_FORMAT } from '
 
 const SETTINGS_KEY = 'translator_settings_v1';
 
+let settingsCache: ValidatedSettings | null = null;
+
+if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'sync' && changes[SETTINGS_KEY]) {
+      settingsCache = null;
+    }
+  });
+}
+
 export const DEFAULT_SETTINGS: GlobalSettings = {
   providers: [
     {
@@ -46,57 +56,45 @@ export const DEFAULT_SETTINGS: GlobalSettings = {
 
 // 旧版 provider 的 body.* 采样字段一次性平滑迁移到独立字段（幂等）。
 // 同时清理 headers 中冗余的默认 Content-Type（请求层会自动注入）。
+
+const MIGRATIONS: { key: keyof ValidatedProvider; bodyKey: string; type: 'number' | 'boolean' }[] = [
+  { key: 'temperature', bodyKey: 'temperature', type: 'number' },
+  { key: 'topP', bodyKey: 'top_p', type: 'number' },
+  { key: 'maxTokens', bodyKey: 'max_tokens', type: 'number' },
+  { key: 'stream', bodyKey: 'stream', type: 'boolean' },
+];
+
 function normalizeProvider(provider: ValidatedProvider): ValidatedProvider {
   const body = { ...provider.body };
   const headers = { ...provider.headers };
 
   for (const headerKey of Object.keys(headers)) {
-    if (headerKey.toLowerCase() === 'content-type' && headers[headerKey].toLowerCase() === 'application/json') {
+    const val = headers[headerKey];
+    if (
+      headerKey.toLowerCase() === 'content-type' &&
+      typeof val === 'string' &&
+      val.toLowerCase() === 'application/json'
+    ) {
       delete headers[headerKey];
     }
   }
 
-  let temperature = provider.temperature;
-  let topP = provider.topP;
-  let maxTokens = provider.maxTokens;
-  let stream = provider.stream;
-
-  if (temperature === undefined && typeof body.temperature === 'number') {
-    temperature = body.temperature;
-  }
-  if (typeof body.temperature === 'number') {
-    delete body.temperature;
-  }
-
-  if (topP === undefined && typeof body.top_p === 'number') {
-    topP = body.top_p;
-  }
-  if (typeof body.top_p === 'number') {
-    delete body.top_p;
-  }
-
-  if (maxTokens === undefined && typeof body.max_tokens === 'number') {
-    maxTokens = body.max_tokens;
-  }
-  if (typeof body.max_tokens === 'number') {
-    delete body.max_tokens;
-  }
-
-  if (stream === undefined && typeof body.stream === 'boolean') {
-    stream = body.stream;
-  }
-  if (typeof body.stream === 'boolean') {
-    delete body.stream;
+  const migrated: Partial<Pick<ValidatedProvider, 'temperature' | 'topP' | 'maxTokens' | 'stream'>> = {};
+  for (const { key, bodyKey, type } of MIGRATIONS) {
+    if (provider[key] === undefined && typeof (body as Record<string, unknown>)[bodyKey] === type) {
+      (migrated as Record<string, unknown>)[key] = (body as Record<string, unknown>)[bodyKey];
+    }
+    if (typeof (body as Record<string, unknown>)[bodyKey] === type) {
+      delete (body as Record<string, unknown>)[bodyKey];
+    }
   }
 
   return {
     ...provider,
     headers,
     body,
-    temperature,
-    topP,
-    maxTokens,
-    stream: stream ?? false,
+    ...migrated,
+    stream: (migrated.stream ?? provider.stream ?? false) as boolean,
   };
 }
 
@@ -116,16 +114,17 @@ function validateSettings(data: unknown): ValidatedSettings {
 }
 
 export async function getSettings(): Promise<ValidatedSettings> {
+  if (settingsCache) return settingsCache;
   const result = await chrome.storage.sync.get(SETTINGS_KEY);
   const data = result[SETTINGS_KEY];
-  if (data) {
-    return validateSettings(data);
-  }
-  return validateSettings(DEFAULT_SETTINGS);
+  const validated = data ? validateSettings(data) : validateSettings(DEFAULT_SETTINGS);
+  settingsCache = validated;
+  return validated;
 }
 
 export async function saveSettings(settings: GlobalSettings): Promise<void> {
   const validated = validateSettings(settings);
+  settingsCache = validated;
   await chrome.storage.sync.set({ [SETTINGS_KEY]: validated });
 }
 

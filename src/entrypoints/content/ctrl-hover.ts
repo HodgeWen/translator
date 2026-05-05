@@ -1,5 +1,5 @@
 import { isTranslatableBlock, BLOCK_SELECTOR } from '@/lib/block-detect';
-import { state, wrapperToOriginal } from './state';
+import { state, wrapperToOriginal, applySettingsToState } from './state';
 import { toggleElementDisplay } from './style-apply';
 import { translateSingleElement } from './translate';
 
@@ -41,16 +41,7 @@ async function ensureCtrlHoverSettings(): Promise<void> {
   try {
     const { getSettings } = await import('@/lib/storage');
     const s = await getSettings();
-    state.style = s.defaultStyle;
-    state.nativeLanguage = s.nativeLanguage;
-    state.targetLang = s.nativeLanguage;
-    state.aggregate = {
-      aggregateEnabled: s.aggregateEnabled,
-      maxParagraphsPerRequest: s.maxParagraphsPerRequest,
-      maxTextLengthPerRequest: s.maxTextLengthPerRequest,
-      maxConcurrentRequests: s.maxConcurrentRequests,
-      requestTimeout: s.requestTimeout,
-    };
+    applySettingsToState(s);
     ctrlHoverSettingsLoaded = true;
   } catch (err) {
     console.warn('[Translator] Ctrl+Hover settings loading failed:', err);
@@ -60,7 +51,7 @@ async function ensureCtrlHoverSettings(): Promise<void> {
 function findNearestTranslatableBlock(el: HTMLElement | null): HTMLElement | null {
   let cur: HTMLElement | null = el;
   while (cur) {
-    if (cur.matches?.(BLOCK_SELECTOR) && isTranslatableBlock(cur)) return cur;
+    if (cur.matches?.(BLOCK_SELECTOR) && isTranslatableBlock(cur, undefined, undefined, true)) return cur;
     cur = cur.parentElement;
   }
   return null;
@@ -174,7 +165,6 @@ function tryStartHoverFor(target: HTMLElement | null): void {
 }
 
 export function setupCtrlHover(): void {
-  // 仅记录鼠标坐标，供 keydown 路径用 elementFromPoint 反查当前 hover 目标
   document.addEventListener('mousemove', (e) => {
     lastMouseX = e.clientX;
     lastMouseY = e.clientY;
@@ -217,12 +207,9 @@ export function setupCtrlHover(): void {
   document.addEventListener('keyup', (e) => {
     if (e.key !== 'Control') return;
     ctrlPressed = false;
-    // 释放 Ctrl 视为「上一轮交互结束」：清空去重锚点，下次按下 Ctrl
-    // 即使鼠标停留原段落也允许再次 toggle（再按 Ctrl 切回另一面）。
     lastCtrlToggledEl = null;
   });
 
-  // 窗口失焦视作用户主动离开，仍走防抖期取消逻辑。
   window.addEventListener('blur', () => {
     ctrlPressed = false;
     lastCtrlToggledEl = null;

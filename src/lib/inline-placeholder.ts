@@ -9,7 +9,7 @@
  * - 编号从 1 开始，格式 `#N#`，主流 LLM 保留率最高。
  */
 
-export interface EncodedBlock {
+interface EncodedBlock {
   placeholderText: string;
   fragments: DocumentFragment[];
 }

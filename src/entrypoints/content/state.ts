@@ -1,9 +1,10 @@
-import type { LangCode, TranslationStyle } from '@/types';
+import type { LangCode, TranslationStyle, GlobalSettings } from '@/types';
 
 // ─── Types ──────────────────────────────────────────────────────────────
 
 export interface ElementState {
   originalHTML: string;
+  originalNodes?: DocumentFragment;
   translatedText: string;
   status: 'idle' | 'pending' | 'translated' | 'error';
   cloneEl?: HTMLElement;
@@ -66,3 +67,16 @@ export const state: GlobalState = {
   aggregateDebounceTimer: null,
   displayMode: 'translation',
 };
+
+export function applySettingsToState(s: GlobalSettings): void {
+  state.style = s.defaultStyle;
+  state.nativeLanguage = s.nativeLanguage;
+  state.targetLang = s.nativeLanguage;
+  state.aggregate = {
+    aggregateEnabled: s.aggregateEnabled,
+    maxParagraphsPerRequest: s.maxParagraphsPerRequest,
+    maxTextLengthPerRequest: s.maxTextLengthPerRequest,
+    maxConcurrentRequests: s.maxConcurrentRequests,
+    requestTimeout: s.requestTimeout,
+  };
+}

@@ -147,7 +147,7 @@ async function detectWithApi(provider: LangDetectProvider, text: string): Promis
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...provider.headers,
+        ...(provider.headers || {}),
       },
       body: JSON.stringify({ text }),
       signal: controller.signal,

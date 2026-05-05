@@ -12,40 +12,21 @@ export function getTranslatableElements(root: ParentNode = document): HTMLElemen
 // ─── Cleanup ────────────────────────────────────────────────────────────
 
 // 节点（或其子树）离开 DOM 时主动从 elementMap 清理对应 entry。
-// elementMap 强引用 HTMLElement，缺少这条主动回收路径时长会话单 Tab 会持续累积。
-//
-// 关键约束：
-//   - bilingual / underline 模式：elementMap 的 key 是原 el，仍在 DOM 树内；
-//     站点移除节点时 removedNodes 直接包含 key，命中 `inByKey` 路径。
-//   - original / clean 模式：key（原 el）已离开 DOM，DOM 槽位由 cloneEl(wrapper) 占据。
-//     站点移除的 root 包含的是 wrapper 而非原 el，必须额外检查 `cloneEl`。
-//
-// 在 detached subtree 上 `Node.contains` 仍正确判定父子关系。
-export function cleanupRemovedSubtrees(roots: HTMLElement[]): void {
+// 使用 isConnected 检查代替 root.contains() 遍历，将复杂度从 O(roots × elementMap)
+// 降为 O(elementMap)，每个 entry 仅做常量时间检查。
+function cleanupDisconnectedEntries(): void {
   const victims: HTMLElement[] = [];
   state.elementMap.forEach((entry, key) => {
-    let hit = false;
-    let hitByKey = false;
-    let hitByClone = false;
-    for (const root of roots) {
-      if (key === root || root.contains(key)) {
-        hit = true;
-        hitByKey = true;
-        break;
-      }
-      if (entry.cloneEl !== undefined && (entry.cloneEl === root || root.contains(entry.cloneEl))) {
-        hit = true;
-        hitByClone = true;
-        break;
-      }
-    }
-    if (!hit) return;
+    const keyConnected = key.isConnected;
+    const cloneConnected = entry.cloneEl?.isConnected ?? false;
 
-    if (hitByKey && mutationIgnoredNodes.has(key)) {
+    if (keyConnected || cloneConnected) return;
+
+    if (mutationIgnoredNodes.has(key)) {
       mutationIgnoredNodes.delete(key);
       return;
     }
-    if (hitByClone && entry.cloneEl && mutationIgnoredNodes.has(entry.cloneEl)) {
+    if (entry.cloneEl && mutationIgnoredNodes.has(entry.cloneEl)) {
       mutationIgnoredNodes.delete(entry.cloneEl);
       return;
     }
@@ -62,6 +43,38 @@ export function cleanupRemovedSubtrees(roots: HTMLElement[]): void {
 
 function createObserver(): IntersectionObserver {
   const pending = new Set<HTMLElement>();
+  // Global concurrency limit for single-element mode to prevent request storms on rapid scroll.
+  let inflightCount = 0;
+  const queued: HTMLElement[] = [];
+  const queuedSet = new Set<HTMLElement>();
+
+  async function runSingle(el: HTMLElement): Promise<void> {
+    inflightCount++;
+    try {
+      if (state.isActive && el.isConnected && !state.elementMap.has(el)) {
+        await translateSingleElement(el);
+      }
+    } finally {
+      inflightCount--;
+      const next = queued.shift();
+      if (next) queuedSet.delete(next);
+      if (next) {
+        void runSingle(next);
+      }
+    }
+  }
+
+  function scheduleSingle(el: HTMLElement): void {
+    if (!state.isActive) return;
+    if (state.elementMap.has(el) || el.hasAttribute('data-translator-pending')) return;
+    const limit = Math.max(1, state.aggregate.maxConcurrentRequests);
+    if (inflightCount < limit) {
+      void runSingle(el);
+    } else if (!queuedSet.has(el)) {
+      queued.push(el);
+      queuedSet.add(el);
+    }
+  }
 
   return new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
@@ -81,9 +94,7 @@ function createObserver(): IntersectionObserver {
         window.setTimeout(() => {
           pending.delete(el);
           if (state.elementMap.has(el)) return;
-          if (el.isConnected) {
-            translateSingleElement(el);
-          }
+          scheduleSingle(el);
         }, 200);
       }
     });
@@ -95,11 +106,22 @@ function createObserver(): IntersectionObserver {
 // MutationObserver 节流批处理：模块级保存（不放进 state，避免 restoreAll 误清）。
 // 节点离场清理路径仍实时执行；新增路径入队后由 flush 批处理。
 let mutationFlushTimer: number | null = null;
+let cleanupFlushTimer: number | null = null;
 const pendingMutationNodes: Set<HTMLElement> = new Set();
 const MUTATION_FLUSH_DELAY_MS = 200;
+const CLEANUP_FLUSH_DELAY_MS = 150;
 
 let mutationObserver: MutationObserver | null = null;
 let routeChangeTimer: number | null = null;
+let gcIntervalId: number | null = null;
+
+function scheduleCleanupFlush(): void {
+  if (cleanupFlushTimer !== null) return;
+  cleanupFlushTimer = window.setTimeout(() => {
+    cleanupFlushTimer = null;
+    cleanupDisconnectedEntries();
+  }, CLEANUP_FLUSH_DELAY_MS);
+}
 
 function scheduleMutationFlush(): void {
   if (mutationFlushTimer !== null) return;
@@ -117,12 +139,25 @@ function flushMutationQueue(): void {
   const nodes = Array.from(pendingMutationNodes);
   pendingMutationNodes.clear();
 
-  // 祖先去重：若 A 包含 B 且都在集合里，仅扫描 A。
-  // 复杂度 O(n²)，单次 flush 节点数实测 < 500，可接受；
-  // 若日后量级超出，改为按 DOM 深度排序 + Set 标记。
-  const roots = nodes.filter(
-    (n) => !nodes.some((m) => m !== n && m.contains(n))
-  );
+  // 祖先去重：按 DOM 深度排序（浅→深），逐个检查是否已被已接受的根包含。
+  // 复杂度 O(n log n) 排序 + O(n × accepted.size) 遍历，accepted 通常很小。
+  nodes.sort((a, b) => {
+    let da = 0, db = 0;
+    let p: Node | null = a;
+    while (p) { da++; p = p.parentNode; }
+    p = b;
+    while (p) { db++; p = p.parentNode; }
+    return da - db;
+  });
+
+  const roots: HTMLElement[] = [];
+  for (const n of nodes) {
+    let contained = false;
+    for (const r of roots) {
+      if (r.contains(n)) { contained = true; break; }
+    }
+    if (!contained) roots.push(n);
+  }
 
   const newElements: HTMLElement[] = [];
   for (const root of roots) {
@@ -137,19 +172,18 @@ function flushMutationQueue(): void {
 }
 
 export function setupMutationObserver(): void {
+  if (mutationObserver || !document.body) return;
+
   mutationObserver = new MutationObserver((mutations) => {
     if (!state.isActive || !state.observer) return;
 
-    // 移除路径：先收集所有被移除节点，再对 elementMap 做一次遍历完成清理，
-    // 避免 O(mutations × elementMap) 的重复扫描。GC 仍然实时，泄漏窗口极小。
-    const removedRoots: HTMLElement[] = [];
+    // 移除路径：延迟批处理，避免同步阻塞主线程。
+    let hasRemovals = false;
     for (const m of mutations) {
-      m.removedNodes.forEach((node) => {
-        if (node instanceof HTMLElement) removedRoots.push(node);
-      });
+      if (m.removedNodes.length > 0) { hasRemovals = true; break; }
     }
-    if (removedRoots.length > 0) {
-      cleanupRemovedSubtrees(removedRoots);
+    if (hasRemovals) {
+      scheduleCleanupFlush();
     }
 
     // 添加路径：仅入队 + 调度 flush，避免对每条 mutation 同步跑
@@ -172,6 +206,15 @@ export function setupMutationObserver(): void {
 // ─── Start / Stop ───────────────────────────────────────────────────────
 
 export function startTranslation(): void {
+  if (!mutationObserver) {
+    setupMutationObserver();
+  }
+
+  // Periodic GC for disconnected entries on long SPA sessions
+  if (gcIntervalId === null) {
+    gcIntervalId = window.setInterval(cleanupDisconnectedEntries, 30_000);
+  }
+
   const elements = getTranslatableElements();
   if (!state.observer) {
     state.observer = createObserver();
@@ -181,22 +224,27 @@ export function startTranslation(): void {
     state.observer!.observe(el);
   });
 
-  // If aggregate is enabled, also immediately flush any elements already in viewport
+  // If aggregate is enabled, also immediately flush any elements already in viewport.
+  // Avoid synchronous getBoundingClientRect on all elements; rely on IntersectionObserver
+  // with rootMargin to naturally catch viewport elements. Only enqueue a small initial
+  // batch to avoid startup jank.
   if (state.aggregate.aggregateEnabled) {
-    const visibleElements = elements.filter(el => {
-      const rect = el.getBoundingClientRect();
-      return rect.top < window.innerHeight && rect.bottom > 0;
-    });
-    visibleElements.forEach(el => state.pendingAggregateElements.add(el));
+    const initialBatch = elements.slice(0, Math.min(elements.length, 20));
+    initialBatch.forEach(el => state.pendingAggregateElements.add(el));
     scheduleAggregateFlush();
   }
 }
 
 export function stopTranslation(): void {
+  state.isActive = false;
   state.observer?.disconnect();
   state.observer = null;
   mutationObserver?.disconnect();
   mutationObserver = null;
+  if (gcIntervalId !== null) {
+    window.clearInterval(gcIntervalId);
+    gcIntervalId = null;
+  }
   restoreAll();
   state.pendingAggregateElements.clear();
   if (state.aggregateDebounceTimer !== null) {
@@ -208,6 +256,10 @@ export function stopTranslation(): void {
     window.clearTimeout(mutationFlushTimer);
     mutationFlushTimer = null;
   }
+  if (cleanupFlushTimer !== null) {
+    window.clearTimeout(cleanupFlushTimer);
+    cleanupFlushTimer = null;
+  }
   if (routeChangeTimer !== null) {
     window.clearTimeout(routeChangeTimer);
     routeChangeTimer = null;
@@ -217,18 +269,21 @@ export function stopTranslation(): void {
 // ─── SPA Route Change Detection ─────────────────────────────────────────
 
 function handleRouteChange(): void {
+  const shouldRestart = state.isActive || routeChangeTimer !== null;
+  if (!shouldRestart) return;
+
+  if (routeChangeTimer !== null) {
+    window.clearTimeout(routeChangeTimer);
+    routeChangeTimer = null;
+  }
   if (state.isActive) {
     stopTranslation();
-    if (routeChangeTimer !== null) {
-      window.clearTimeout(routeChangeTimer);
-    }
-    routeChangeTimer = window.setTimeout(() => {
-      routeChangeTimer = null;
-      if (state.isActive) {
-        startTranslation();
-      }
-    }, 500);
   }
+  routeChangeTimer = window.setTimeout(() => {
+    routeChangeTimer = null;
+    state.isActive = true;
+    startTranslation();
+  }, 500);
 }
 
 export function setupSPADetection(): void {

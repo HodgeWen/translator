@@ -17,7 +17,7 @@ const SALT_BYTES = 16;
 const IV_BYTES = 12;
 const KEY_BITS = 256;
 
-export interface EncryptedPayload {
+interface EncryptedPayload {
   format: typeof ENCRYPTED_FORMAT;
   kdf: typeof KDF_NAME;
   iterations: number;
@@ -52,10 +52,7 @@ function base64ToBuffer(b64: string): ArrayBuffer {
 }
 
 function utf8Encode(text: string): ArrayBuffer {
-  const bytes = new TextEncoder().encode(text);
-  const buf = new ArrayBuffer(bytes.byteLength);
-  new Uint8Array(buf).set(bytes);
-  return buf;
+  return new TextEncoder().encode(text).buffer as ArrayBuffer;
 }
 
 async function deriveAesKey(passphrase: string, salt: ArrayBuffer, iterations: number): Promise<CryptoKey> {

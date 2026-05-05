@@ -51,7 +51,6 @@ const PLACEHOLDER_RULE = `\n\nThe text may contain numeric placeholders in the f
 
 function renderPrompt(
   template: string,
-  text: string,
   targetLang: string,
   sourceLang: string | undefined,
   isAggregate: boolean
@@ -60,7 +59,7 @@ function renderPrompt(
   let prompt = template
     .replace(/\{\{sourceLang\}\}/g, sourceLangLabel)
     .replace(/\{\{targetLang\}\}/g, targetLang)
-    .replace(/\{\{text\}\}/g, text);
+    .replace(/\{\{text\}\}/g, '');
 
   prompt += PLACEHOLDER_RULE;
 
@@ -87,7 +86,7 @@ function buildBody(
   isAggregate: boolean,
   provider: ProviderConfig
 ): Record<string, unknown> {
-  const systemPrompt = renderPrompt(promptTemplate, text, targetLang, sourceLang, isAggregate);
+  const systemPrompt = renderPrompt(promptTemplate, targetLang, sourceLang, isAggregate);
 
   // 装配顺序：基础字段 → extraBody → 独立采样字段（独立字段后置覆盖 extraBody 中的同名键）
   const body: Record<string, unknown> = {
@@ -122,6 +121,15 @@ function buildHeaders(provider: ProviderConfig): Record<string, string> {
   return headers;
 }
 
+function findSSEBoundary(buffer: string): { index: number; length: number } | null {
+  const lf = buffer.indexOf('\n\n');
+  const crlf = buffer.indexOf('\r\n\r\n');
+  if (lf === -1 && crlf === -1) return null;
+  if (lf === -1) return { index: crlf, length: 4 };
+  if (crlf === -1) return { index: lf, length: 2 };
+  return lf < crlf ? { index: lf, length: 2 } : { index: crlf, length: 4 };
+}
+
 // SSE 流式累积。注意：此处复用调用方传入的 timeout signal 作为"端到端"总超时；
 // 这是 YAGNI 决策——长文本若触发超时，请在通用设置中调高 requestTimeout。
 async function consumeOpenAIStream(
@@ -143,42 +151,50 @@ async function consumeOpenAIStream(
   };
   signal.addEventListener('abort', onAbort);
 
+  const processEvent = (rawEvent: string): void => {
+    const lines = rawEvent.split(/\r?\n/);
+    for (const line of lines) {
+      if (!line || !line.startsWith('data:')) continue;
+      const dataStr = line.slice(5).trim();
+      if (dataStr === '[DONE]') {
+        done = true;
+        break;
+      }
+      try {
+        const json = JSON.parse(dataStr) as OpenAIChatResponse;
+        const deltaContent = json.choices?.[0]?.delta?.content;
+        if (typeof deltaContent === 'string') acc += deltaContent;
+        const lang = json.detected_language ?? json.source_language;
+        if (lang && !detectedLang) detectedLang = lang;
+      } catch {
+        // JSON 解析失败的 chunk（多见于事件分隔不规则的服务端）。
+        // 丢弃无法解析的 chunk，避免将损坏的 JSON 片段混入翻译结果。
+      }
+    }
+  };
+
   try {
     while (!done) {
       const { value, done: streamDone } = await reader.read();
-      if (streamDone) break;
+      if (streamDone) {
+        buffer += decoder.decode();
+        break;
+      }
       buffer += decoder.decode(value, { stream: true });
 
-      let idx = buffer.indexOf('\n\n');
-      while (idx !== -1) {
-        const rawEvent = buffer.slice(0, idx);
-        buffer = buffer.slice(idx + 2);
-
-        const lines = rawEvent.split('\n');
-        for (const line of lines) {
-          if (!line || !line.startsWith('data:')) continue;
-          const dataStr = line.slice(5).trim();
-          if (dataStr === '[DONE]') {
-            done = true;
-            break;
-          }
-          try {
-            const json = JSON.parse(dataStr) as OpenAIChatResponse;
-            const deltaContent = json.choices?.[0]?.delta?.content;
-            if (typeof deltaContent === 'string') acc += deltaContent;
-            const lang = json.detected_language ?? json.source_language;
-            if (lang && !detectedLang) detectedLang = lang;
-          } catch {
-            // JSON 解析失败的 chunk（多见于事件分隔不规则的服务端），
-            // 尝试保留原始 data 作为 fallback 文本继续累积
-            if (dataStr && dataStr.length > 0 && dataStr !== '[DONE]') {
-              acc += dataStr;
-            }
-          }
-        }
+      let boundary = findSSEBoundary(buffer);
+      while (boundary) {
+        const rawEvent = buffer.slice(0, boundary.index);
+        buffer = buffer.slice(boundary.index + boundary.length);
+        processEvent(rawEvent);
         if (done) break;
-        idx = buffer.indexOf('\n\n');
+        boundary = findSSEBoundary(buffer);
       }
+    }
+
+    const trailing = buffer.trim();
+    if (!done && trailing) {
+      processEvent(trailing);
     }
   } finally {
     signal.removeEventListener('abort', onAbort);
@@ -226,20 +242,14 @@ async function callProvider(
     });
 
     if (!response.ok) {
-      clearTimeout(timeoutId);
       const errorText = await response.text().catch(() => 'Unknown error');
       throw new Error(`HTTP ${response.status}: ${errorText}`);
     }
 
     if (provider.stream === true) {
-      try {
-        return await consumeOpenAIStream(response, controller.signal);
-      } finally {
-        clearTimeout(timeoutId);
-      }
+      return await consumeOpenAIStream(response, controller.signal);
     }
 
-    clearTimeout(timeoutId);
     const data = (await response.json()) as OpenAIChatResponse;
     const translatedText = extractTranslatedText(data);
     if (!translatedText) {
@@ -248,9 +258,8 @@ async function callProvider(
     const detectedLang = data.detected_language ?? data.source_language;
 
     return { text: translatedText, detectedLang };
-  } catch (error) {
+  } finally {
     clearTimeout(timeoutId);
-    throw error;
   }
 }
 
@@ -388,7 +397,7 @@ export async function translate(request: TranslationRequest): Promise<Translatio
   const { text, sourceLang, targetLang, isAggregate } = request;
 
   const cacheKeySourceLang = sourceLang || 'auto';
-  const cacheKey = inflightKey(text, sourceLang, targetLang);
+  const cacheKey = inflightKey(text, cacheKeySourceLang, targetLang);
 
   const existing = inflightRequests.get(cacheKey);
   if (existing) return existing;
@@ -398,7 +407,7 @@ export async function translate(request: TranslationRequest): Promise<Translatio
       const cached = await getCachedTranslation(text, cacheKeySourceLang, targetLang);
       if (cached) {
         return {
-          text: cached,
+          text: cached.text,
           providerId: 'cache',
           modelId: 'cache',
         };

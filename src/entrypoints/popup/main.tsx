@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import '@/assets/styles.css';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { useDarkMode } from '@/hooks/use-dark-mode';
 import { Toast } from '@/components/ui/toast';
 import { Select } from '@/components/ui/select';
 import { PopupProviderSelector } from '@/components/popup/provider-selector';
@@ -54,16 +55,9 @@ function App() {
 
   useEffect(() => {
     loadSettingsData();
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    if (mq.matches) {
-      document.documentElement.classList.add('dark');
-    }
-    const handler = (e: MediaQueryListEvent) => {
-      document.documentElement.classList.toggle('dark', e.matches);
-    };
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
   }, []);
+
+  useDarkMode();
 
   useEffect(() => {
     if (!settings) return;
@@ -148,14 +142,15 @@ function App() {
     await saveSettings(newSettings);
   };
 
-  const handleTranslate = async () => {
-    if (!inputText.trim()) return;
+  const handleTranslate = async (textOverride?: string) => {
+    const text = textOverride ?? inputText;
+    if (!text.trim()) return;
     if (!settings) return;
     setLoading(true);
     setResult('');
 
     try {
-      const trimmed = inputText.trim();
+      const trimmed = text.trim();
       const targetLang =
         manualTarget !== TARGET_AUTO ? manualTarget : await resolveTargetLang(trimmed, settings);
       setTargetLangPreview(targetLang);
@@ -184,10 +179,12 @@ function App() {
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const pasted = e.clipboardData.getData('text');
     if (pasted && pasted.trim()) {
-      // 延迟触发以等待 state 更新
-      window.setTimeout(() => {
-        handleTranslate();
-      }, 0);
+      const textarea = e.currentTarget;
+      const before = textarea.value.slice(0, textarea.selectionStart);
+      const after = textarea.value.slice(textarea.selectionEnd);
+      const finalText = before + pasted + after;
+      setInputText(finalText);
+      window.setTimeout(() => handleTranslate(finalText), 0);
     }
   };
 
@@ -314,7 +311,7 @@ function App() {
         />
 
         <Button
-          onClick={handleTranslate}
+          onClick={() => handleTranslate()}
           disabled={loading || !inputText.trim()}
           className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
         >
