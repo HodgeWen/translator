@@ -1,5 +1,13 @@
 import { defineConfig } from 'wxt';
 import tailwindcss from '@tailwindcss/vite';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
+// manifest.version 跟随 package.json#version，发版只改一处。
+// 通过 fs 读取而非 import 断言：兼容不同版本的 Node/Bun 与 vite-node loader。
+const pkg = JSON.parse(
+  readFileSync(fileURLToPath(new URL('./package.json', import.meta.url)), 'utf8')
+) as { version: string };
 
 export default defineConfig({
   srcDir: 'src',
@@ -7,7 +15,7 @@ export default defineConfig({
     name: '__MSG_extName__',
     description: '__MSG_extDescription__',
     default_locale: 'zh_CN',
-    version: '0.1.0',
+    version: pkg.version,
     permissions: [
       'storage',
       'activeTab',

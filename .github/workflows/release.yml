@@ -1,0 +1,242 @@
+name: Release
+
+# 手动发版工作流：
+#   - 自动 bump package.json#version（patch / minor / major / 自定义）
+#   - 构建 Chrome + Firefox zip 包
+#   - 基于 commit history 生成分类 release notes
+#   - 创建 GitHub Release 并附带 zip 产物
+#
+# 触发：在 GitHub Actions 页面手动 Run workflow，选择 bump 类型即可。
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: '版本号 bump 类型（如填写 custom_version 则忽略此项）'
+        required: true
+        type: choice
+        default: patch
+        options:
+          - patch
+          - minor
+          - major
+      custom_version:
+        description: '自定义版本号（可选，留空则按上面的类型 bump；如 1.2.3，不要带 v 前缀）'
+        required: false
+        type: string
+        default: ''
+      prerelease:
+        description: '标记为 pre-release'
+        required: false
+        type: boolean
+        default: false
+      dry_run:
+        description: 'Dry-run：仅构建并预览 release notes，不打 tag、不发布'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # 使用默认 GITHUB_TOKEN 推送 commit + tag
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Configure git identity
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Compute next version
+        id: version
+        run: |
+          set -euo pipefail
+          OLD_VERSION=$(node -p "require('./package.json').version")
+          CUSTOM='${{ inputs.custom_version }}'
+          TYPE='${{ inputs.release_type }}'
+
+          if [ -n "$CUSTOM" ]; then
+            if ! echo "$CUSTOM" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+([-.+][0-9A-Za-z.-]+)?$'; then
+              echo "::error::custom_version 不是合法 semver: $CUSTOM"
+              exit 1
+            fi
+            NEW_VERSION="$CUSTOM"
+          else
+            NEW_VERSION=$(node -e "
+              const v = '$OLD_VERSION'.split('.').map(Number);
+              const t = '$TYPE';
+              if (t === 'major') { v[0]++; v[1] = 0; v[2] = 0; }
+              else if (t === 'minor') { v[1]++; v[2] = 0; }
+              else { v[2]++; }
+              console.log(v.join('.'));
+            ")
+          fi
+
+          TAG="v$NEW_VERSION"
+          if git rev-parse "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "::error::tag $TAG 已存在"
+            exit 1
+          fi
+
+          echo "old_version=$OLD_VERSION" >> "$GITHUB_OUTPUT"
+          echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG"                 >> "$GITHUB_OUTPUT"
+          echo "Bump: $OLD_VERSION → $NEW_VERSION (tag $TAG)"
+
+      - name: Generate release notes
+        id: notes
+        env:
+          NEW_VERSION: ${{ steps.version.outputs.new_version }}
+        run: |
+          set -euo pipefail
+          PREV_TAG=$(git tag --list 'v*' --sort=-v:refname | head -n 1 || true)
+          if [ -n "$PREV_TAG" ]; then
+            RANGE="$PREV_TAG..HEAD"
+            COMPARE="https://github.com/${{ github.repository }}/compare/$PREV_TAG...v$NEW_VERSION"
+          else
+            RANGE="HEAD"
+            COMPARE=""
+          fi
+          echo "上一个 tag: ${PREV_TAG:-<none>}, range=$RANGE"
+
+          # 按 conventional commit 前缀分类（兼容中英文描述）
+          group() {
+            local pattern="$1"
+            git log --pretty='- %s (%h)' "$RANGE" \
+              | grep -iE "^- ($pattern)(\(|:|!|/)" || true
+          }
+
+          OTHER=$(git log --pretty='- %s (%h)' "$RANGE" \
+            | grep -ivE '^- (feat|fix|refactor|perf|chore|docs|test|build|ci|style|revert)(\(|:|!|/)' || true)
+
+          {
+            echo "## $NEW_VERSION"
+            echo
+            FEATS=$(group 'feat')
+            FIXES=$(group 'fix')
+            PERFS=$(group 'perf')
+            REFACS=$(group 'refactor')
+            DOCS=$(group 'docs')
+            CHORES=$(group 'chore|build|ci|style|test|revert')
+
+            [ -n "$FEATS" ]  && { echo "### Features";       echo "$FEATS";  echo; }
+            [ -n "$FIXES" ]  && { echo "### Bug Fixes";      echo "$FIXES";  echo; }
+            [ -n "$PERFS" ]  && { echo "### Performance";    echo "$PERFS";  echo; }
+            [ -n "$REFACS" ] && { echo "### Refactors";      echo "$REFACS"; echo; }
+            [ -n "$DOCS" ]   && { echo "### Docs";           echo "$DOCS";   echo; }
+            [ -n "$OTHER" ]  && { echo "### Other";          echo "$OTHER";  echo; }
+            [ -n "$CHORES" ] && { echo "### Chore / CI";     echo "$CHORES"; echo; }
+
+            if [ -n "$COMPARE" ]; then
+              echo "**Full changelog**: $COMPARE"
+            fi
+          } > RELEASE_NOTES.md
+
+          echo "----- RELEASE_NOTES.md -----"
+          cat RELEASE_NOTES.md
+          echo "----------------------------"
+
+      - name: Bump package.json version
+        run: |
+          set -euo pipefail
+          node -e "
+            const fs = require('fs');
+            const p = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            p.version = '${{ steps.version.outputs.new_version }}';
+            fs.writeFileSync('package.json', JSON.stringify(p, null, 2) + '\n');
+          "
+          echo '--- package.json#version ---'
+          node -p "require('./package.json').version"
+
+      - name: Build Chrome zip
+        run: bun run zip
+
+      - name: Build Firefox zip
+        run: bun run zip:firefox
+
+      - name: Verify zip artifacts exist
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          chrome=( .output/*-chrome.zip )
+          firefox=( .output/*-firefox.zip )
+          if [ ${#chrome[@]} -eq 0 ] || [ ${#firefox[@]} -eq 0 ]; then
+            echo "::error::构建产物缺失"
+            ls -la .output || true
+            exit 1
+          fi
+          echo '构建产物：'
+          ls -la .output/*.zip
+
+      - name: Upload build artifacts (workflow only)
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-${{ steps.version.outputs.tag }}
+          path: |
+            .output/*-chrome.zip
+            .output/*-firefox.zip
+            .output/*-sources.zip
+            RELEASE_NOTES.md
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Commit version bump & push tag
+        if: ${{ inputs.dry_run != 'true' }}
+        run: |
+          set -euo pipefail
+          git add package.json
+          git commit -m "chore(release): ${{ steps.version.outputs.tag }}"
+          git tag -a "${{ steps.version.outputs.tag }}" \
+            -m "Release ${{ steps.version.outputs.tag }}"
+          git push origin HEAD --follow-tags
+
+      - name: Create GitHub Release
+        if: ${{ inputs.dry_run != 'true' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.tag }}
+          body_path: RELEASE_NOTES.md
+          prerelease: ${{ inputs.prerelease == 'true' }}
+          fail_on_unmatched_files: false
+          files: |
+            .output/*-chrome.zip
+            .output/*-firefox.zip
+            .output/*-sources.zip
+
+      - name: Summary
+        run: |
+          {
+            echo "## Release ${{ steps.version.outputs.tag }}"
+            echo
+            echo "- previous version: \`${{ steps.version.outputs.old_version }}\`"
+            echo "- new version: \`${{ steps.version.outputs.new_version }}\`"
+            echo "- dry-run: \`${{ inputs.dry_run }}\`"
+            echo "- prerelease: \`${{ inputs.prerelease }}\`"
+            echo
+            echo "### Release notes preview"
+            echo
+            cat RELEASE_NOTES.md
+          } >> "$GITHUB_STEP_SUMMARY"
