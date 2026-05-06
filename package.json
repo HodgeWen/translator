@@ -11,6 +11,8 @@
     "zip": "wxt zip",
     "zip:firefox": "wxt zip -b firefox",
     "compile": "tsc --noEmit",
+    "release": "bun scripts/release.mjs",
+    "release:verify": "bun scripts/verify-release.mjs",
     "postinstall": "wxt prepare"
   },
   "dependencies": {

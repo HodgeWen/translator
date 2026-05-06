@@ -1,44 +1,33 @@
 # 发版
 
-引用本文件即可直接发版。CI 工作流见 [`.github/workflows/release.yml`](.github/workflows/release.yml)。
+引用本文件后直接执行下面命令。CI：[`.github/workflows/release.yml`](.github/workflows/release.yml)。
 
-## 0. 前提（必须全部通过）
+## 一键发版
 
 ```bash
 git checkout main && git pull --ff-only
-[ -z "$(git status --porcelain)" ] || { echo 'dirty workspace'; exit 1; }
+bun scripts/release.mjs X.Y.Z    # 替换版本号，不要带 v
 ```
 
-## 1. 发版（把 `X.Y.Z` 替换为目标版本号）
+逻辑：`release.mjs`（ESM，`bun` 运行）会先 `pull`；若有未提交改动则 `git add -A`
+并用**中文约定式**自动生成一条 `feat`/`docs`/`ci`/`chore` 类消息再提交；然后 bump
+`package.json#version`、`chore(release): v*`、打 tag、`git push origin main --follow-tags`，触发 CI。
+
+## 等 Release 建好（约 24×5s）
 
 ```bash
-V=X.Y.Z
-
-node -e "const f=require('fs'),p=require('./package.json');p.version='$V';f.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n')"
-git add package.json
-git commit -m "chore(release): v$V"
-git tag -a "v$V" -m "Release v$V"
-git push origin main --follow-tags
+bun scripts/verify-release.mjs X.Y.Z
 ```
 
-push tag 会自动触发 CI：构建 Chrome / Firefox zip → 生成分类 release notes
-→ 创建 GitHub Release 并附 zip。
-
-## 2. 验证（约 90s 后）
+## 备选
 
 ```bash
-REPO=$(git remote get-url origin | sed -E 's#.*github\.com[:/]([^/]+/[^/.]+)(\.git)?#\1#')
-
-sleep 90
-curl -s "https://api.github.com/repos/$REPO/releases/tags/v$V" \
-  | python3 -c "import sys,json;r=json.load(sys.stdin);print('url:',r.get('html_url'));print('assets:');[print(' -',a['name']) for a in r.get('assets',[])]"
+bun run release -- X.Y.Z
+bun run release:verify -- X.Y.Z
 ```
 
-期望输出：1 个 release URL + 3 个 zip（`*-chrome.zip`、`*-firefox.zip`、`*-sources.zip`）。
+## 规矩
 
-## 约束
-
-- `X.Y.Z` 必须是合法 SemVer，**不要带 `v` 前缀**（脚本会自动加）。
-- 预发布用 `0.1.2-rc.1` 这类含 `-` 后缀的版本号，CI 会自动标 pre-release。
-- 已存在的版本号不可复用；发错了请 bump 一个新的 patch，不要改写历史。
-- 禁止在 dirty 工作区或非 `main` 分支打 tag。
+- 版本号为 SemVer，`X.Y.Z` 不带 `v`。
+- 预发布：`0.2.0-rc.1` 等含 `-` 即可，CI 会标 pre-release。
+- `main`、tag 不能与已有版本冲突。
