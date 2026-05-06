@@ -80,8 +80,14 @@
   "tab_language": {
     "message": "Language"
   },
+  "tab_display": {
+    "message": "Display"
+  },
   "tab_general": {
     "message": "General"
+  },
+  "tab_backup_restore": {
+    "message": "Backup & Restore"
   },
   "btn_add_provider": {
     "message": "Add Provider"
@@ -170,6 +176,15 @@
   "hint_default_source_language": {
     "message": "When the input language is your native language, translate into this."
   },
+  "label_input_default_source_language": {
+    "message": "Input default source language"
+  },
+  "hint_input_default_source_language": {
+    "message": "When input box content is your native language, translate into this first; leave blank to follow the default source language."
+  },
+  "option_follow_default_source_language": {
+    "message": "Follow default source language"
+  },
   "title_lang_detect_providers": {
     "message": "Language Detection Providers"
   },
@@ -223,6 +238,93 @@
   },
   "shortcut_unbound": {
     "message": "Not bound"
+  },
+  "title_shortcut_settings": {
+    "message": "Shortcut settings"
+  },
+  "label_hover_shortcut_key": {
+    "message": "Hover translation shortcut"
+  },
+  "label_input_shortcut_key": {
+    "message": "Input triple-press shortcut"
+  },
+  "hint_single_key_shortcut": {
+    "message": "Single key only; default Ctrl"
+  },
+  "hint_input_shortcut_key": {
+    "message": "Press three times to translate, then three times again to restore; default Space."
+  },
+  "shortcut_key_control": {
+    "message": "Ctrl"
+  },
+  "shortcut_key_alt": {
+    "message": "Alt"
+  },
+  "shortcut_key_option": {
+    "message": "Option"
+  },
+  "shortcut_key_shift": {
+    "message": "Shift"
+  },
+  "shortcut_key_command": {
+    "message": "Command"
+  },
+  "shortcut_key_win": {
+    "message": "Win"
+  },
+  "shortcut_key_space": {
+    "message": "Space"
+  },
+  "shortcut_key_escape": {
+    "message": "Esc"
+  },
+  "label_input_loading_pulse_color": {
+    "message": "Input loading pulse color"
+  },
+  "title_display_style_settings": {
+    "message": "Translation style"
+  },
+  "title_input_loading_settings": {
+    "message": "Input loading"
+  },
+  "label_input_loading_keyframe_0": {
+    "message": "0% color"
+  },
+  "label_input_loading_keyframe_1": {
+    "message": "50% color"
+  },
+  "label_input_loading_keyframe_2": {
+    "message": "100% color"
+  },
+  "error_invalid_hex_color": {
+    "message": "Use #RGB, #RGBA, #RRGGBB, or #RRGGBBAA"
+  },
+  "label_input_loading_pulse_duration": {
+    "message": "Input loading pulse duration (ms)"
+  },
+  "hint_input_loading_pulse_duration": {
+    "message": "Duration for one animation cycle. 800-1600 is usually comfortable."
+  },
+  "label_input_loading_pulse_easing": {
+    "message": "Input loading animation preset"
+  },
+  "hint_input_loading_pulse_easing": {
+    "message": "Controls the transition rhythm between keyframes."
+  },
+  "label_input_loading_preview": {
+    "message": "Animation preview"
+  },
+  "input_loading_preview_text": {
+    "message": "Translating input..."
+  },
+  "pulse_easing_linear": {
+    "message": "Linear"
+  },
+  "pulse_easing_ease_out": {
+    "message": "Fast then slow"
+  },
+  "pulse_easing_spring": {
+    "message": "Spring"
   },
   "title_backup_restore": {
     "message": "Backup & Restore"

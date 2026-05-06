@@ -287,10 +287,26 @@ declare module "wxt/browser" {
       options?: GetMessageOptions,
     ): string;
     /**
+     * "显示"
+     */
+    getMessage(
+      messageName: "tab_display",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
      * "通用"
      */
     getMessage(
       messageName: "tab_general",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "备份与恢复"
+     */
+    getMessage(
+      messageName: "tab_backup_restore",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
@@ -343,7 +359,7 @@ declare module "wxt/browser" {
       options?: GetMessageOptions,
     ): string;
     /**
-     * "基础地址"
+     * "接口地址"
      */
     getMessage(
       messageName: "label_base_url",
@@ -527,6 +543,30 @@ declare module "wxt/browser" {
       options?: GetMessageOptions,
     ): string;
     /**
+     * "输入框默认源语言"
+     */
+    getMessage(
+      messageName: "label_input_default_source_language",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "输入框内容为母语时优先翻译为该语言；留空则跟随默认源语言"
+     */
+    getMessage(
+      messageName: "hint_input_default_source_language",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "跟随默认源语言"
+     */
+    getMessage(
+      messageName: "option_follow_default_source_language",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
      * "语言检测服务商"
      */
     getMessage(
@@ -671,6 +711,238 @@ declare module "wxt/browser" {
       options?: GetMessageOptions,
     ): string;
     /**
+     * "快捷键设置"
+     */
+    getMessage(
+      messageName: "title_shortcut_settings",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "悬浮翻译快捷键"
+     */
+    getMessage(
+      messageName: "label_hover_shortcut_key",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "输入框三连按快捷键"
+     */
+    getMessage(
+      messageName: "label_input_shortcut_key",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "只支持单键；默认 Ctrl"
+     */
+    getMessage(
+      messageName: "hint_single_key_shortcut",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "连按三下翻译，再连按三下还原；默认空格键"
+     */
+    getMessage(
+      messageName: "hint_input_shortcut_key",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "Ctrl"
+     */
+    getMessage(
+      messageName: "shortcut_key_control",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "Alt"
+     */
+    getMessage(
+      messageName: "shortcut_key_alt",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "Option"
+     */
+    getMessage(
+      messageName: "shortcut_key_option",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "Shift"
+     */
+    getMessage(
+      messageName: "shortcut_key_shift",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "Command"
+     */
+    getMessage(
+      messageName: "shortcut_key_command",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "Win"
+     */
+    getMessage(
+      messageName: "shortcut_key_win",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "空格"
+     */
+    getMessage(
+      messageName: "shortcut_key_space",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "Esc"
+     */
+    getMessage(
+      messageName: "shortcut_key_escape",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "输入框 loading 脉冲颜色"
+     */
+    getMessage(
+      messageName: "label_input_loading_pulse_color",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "翻译样式"
+     */
+    getMessage(
+      messageName: "title_display_style_settings",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "输入框 loading"
+     */
+    getMessage(
+      messageName: "title_input_loading_settings",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "0% 颜色"
+     */
+    getMessage(
+      messageName: "label_input_loading_keyframe_0",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "50% 颜色"
+     */
+    getMessage(
+      messageName: "label_input_loading_keyframe_1",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "100% 颜色"
+     */
+    getMessage(
+      messageName: "label_input_loading_keyframe_2",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "请输入 #RGB、#RGBA、#RRGGBB 或 #RRGGBBAA 格式"
+     */
+    getMessage(
+      messageName: "error_invalid_hex_color",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "输入框 loading 脉冲时长 (毫秒)"
+     */
+    getMessage(
+      messageName: "label_input_loading_pulse_duration",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "单个动画循环时长，建议 800-1600"
+     */
+    getMessage(
+      messageName: "hint_input_loading_pulse_duration",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "输入框 loading 动画方案"
+     */
+    getMessage(
+      messageName: "label_input_loading_pulse_easing",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "控制关键帧之间的过渡节奏"
+     */
+    getMessage(
+      messageName: "hint_input_loading_pulse_easing",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "动画预览"
+     */
+    getMessage(
+      messageName: "label_input_loading_preview",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "输入框翻译中..."
+     */
+    getMessage(
+      messageName: "input_loading_preview_text",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "线性"
+     */
+    getMessage(
+      messageName: "pulse_easing_linear",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "先快后慢"
+     */
+    getMessage(
+      messageName: "pulse_easing_ease_out",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "弹簧"
+     */
+    getMessage(
+      messageName: "pulse_easing_spring",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
      * "备份与恢复"
      */
     getMessage(
@@ -735,7 +1007,7 @@ declare module "wxt/browser" {
       options?: GetMessageOptions,
     ): string;
     /**
-     * "名称和基础地址为必填项"
+     * "名称和接口地址为必填项"
      */
     getMessage(
       messageName: "error_required_fields",
@@ -1199,7 +1471,7 @@ declare module "wxt/browser" {
       options?: GetMessageOptions,
     ): string;
     getMessage(
-      messageName: "@@extension_id" | "@@ui_locale" | "@@bidi_dir" | "@@bidi_reversed_dir" | "@@bidi_start_edge" | "@@bidi_end_edge" | "extName" | "extDescription" | "command_toggle_desc" | "popup_subtitle" | "popup_provider" | "popup_model" | "popup_translate_to" | "popup_placeholder" | "popup_translating" | "popup_translate" | "popup_result" | "popup_error" | "popup_error_hint" | "popup_dismiss_error" | "popup_open_settings" | "popup_auto_detect_hint" | "popup_target_auto" | "popup_manual_override_hint" | "popup_copied" | "options_title" | "options_subtitle" | "options_saved" | "options_imported" | "tab_providers" | "tab_model_queue" | "tab_language" | "tab_general" | "btn_add_provider" | "title_add_provider" | "title_edit_provider" | "btn_save" | "btn_cancel" | "label_name" | "label_base_url" | "label_api_key" | "placeholder_api_key" | "hint_api_key" | "btn_show" | "btn_hide" | "label_headers" | "label_query_params" | "label_extra_body" | "label_models" | "label_model_id" | "label_display_name" | "btn_add_model" | "btn_edit" | "btn_delete" | "queue_description" | "label_timeout" | "label_ui_language" | "hint_ui_language" | "label_native_language" | "hint_native_language" | "label_default_source_language" | "hint_default_source_language" | "title_lang_detect_providers" | "btn_add_api_detector" | "btn_add_google_free_detector" | "preset_google_free_name" | "hint_google_free_detector" | "lang_detect_description" | "label_default_style" | "style_original" | "style_bilingual" | "style_underline" | "style_clean" | "style_original_desc" | "style_bilingual_desc" | "style_underline_desc" | "style_clean_desc" | "label_keyboard_shortcut" | "shortcut_hint" | "shortcut_unbound" | "title_backup_restore" | "btn_export_settings" | "btn_import_settings" | "btn_reset_default" | "error_load_settings" | "error_save_failed" | "error_export_failed" | "error_import_failed" | "error_required_fields" | "error_translation_failed" | "error_unknown" | "new_provider" | "new_api_detector" | "label_endpoint_url" | "label_api_key_optional" | "label_key" | "label_value" | "btn_add" | "label_provider_prompt" | "placeholder_provider_prompt" | "hint_provider_prompt" | "title_global_prompt" | "desc_global_prompt" | "hint_prompt_vars" | "title_aggregation" | "label_aggregate_enabled" | "desc_aggregate_enabled" | "label_max_paragraphs" | "label_max_text_length" | "label_max_concurrent" | "label_request_timeout" | "title_display_settings" | "label_sampling" | "label_temperature" | "label_top_p" | "label_max_tokens" | "label_top_p_enable" | "label_stream" | "hint_stream" | "hint_extra_body_override" | "hint_content_type_auto" | "badge_stream" | "label_export_passphrase" | "hint_export_passphrase" | "hint_export_passphrase_warn" | "label_import_passphrase" | "btn_import_confirm" | "btn_import_cancel" | "toast_export_encrypted_remember" | "error_import_decrypt_failed" | "error_import_passphrase_required" | "tab_load_balance" | "title_load_balance" | "desc_load_balance" | "warn_no_lb_providers" | "label_weight" | "hint_load_balance" | "popup_load_balance" | "popup_load_balance_active" | "hint_model_order" | "btn_move_up" | "btn_move_down" | "lb_preferred_model" | "lb_model_default" | "title_request_settings" | "desc_request_settings",
+      messageName: "@@extension_id" | "@@ui_locale" | "@@bidi_dir" | "@@bidi_reversed_dir" | "@@bidi_start_edge" | "@@bidi_end_edge" | "extName" | "extDescription" | "command_toggle_desc" | "popup_subtitle" | "popup_provider" | "popup_model" | "popup_translate_to" | "popup_placeholder" | "popup_translating" | "popup_translate" | "popup_result" | "popup_error" | "popup_error_hint" | "popup_dismiss_error" | "popup_open_settings" | "popup_auto_detect_hint" | "popup_target_auto" | "popup_manual_override_hint" | "popup_copied" | "options_title" | "options_subtitle" | "options_saved" | "options_imported" | "tab_providers" | "tab_model_queue" | "tab_language" | "tab_display" | "tab_general" | "tab_backup_restore" | "btn_add_provider" | "title_add_provider" | "title_edit_provider" | "btn_save" | "btn_cancel" | "label_name" | "label_base_url" | "label_api_key" | "placeholder_api_key" | "hint_api_key" | "btn_show" | "btn_hide" | "label_headers" | "label_query_params" | "label_extra_body" | "label_models" | "label_model_id" | "label_display_name" | "btn_add_model" | "btn_edit" | "btn_delete" | "queue_description" | "label_timeout" | "label_ui_language" | "hint_ui_language" | "label_native_language" | "hint_native_language" | "label_default_source_language" | "hint_default_source_language" | "label_input_default_source_language" | "hint_input_default_source_language" | "option_follow_default_source_language" | "title_lang_detect_providers" | "btn_add_api_detector" | "btn_add_google_free_detector" | "preset_google_free_name" | "hint_google_free_detector" | "lang_detect_description" | "label_default_style" | "style_original" | "style_bilingual" | "style_underline" | "style_clean" | "style_original_desc" | "style_bilingual_desc" | "style_underline_desc" | "style_clean_desc" | "label_keyboard_shortcut" | "shortcut_hint" | "shortcut_unbound" | "title_shortcut_settings" | "label_hover_shortcut_key" | "label_input_shortcut_key" | "hint_single_key_shortcut" | "hint_input_shortcut_key" | "shortcut_key_control" | "shortcut_key_alt" | "shortcut_key_option" | "shortcut_key_shift" | "shortcut_key_command" | "shortcut_key_win" | "shortcut_key_space" | "shortcut_key_escape" | "label_input_loading_pulse_color" | "title_display_style_settings" | "title_input_loading_settings" | "label_input_loading_keyframe_0" | "label_input_loading_keyframe_1" | "label_input_loading_keyframe_2" | "error_invalid_hex_color" | "label_input_loading_pulse_duration" | "hint_input_loading_pulse_duration" | "label_input_loading_pulse_easing" | "hint_input_loading_pulse_easing" | "label_input_loading_preview" | "input_loading_preview_text" | "pulse_easing_linear" | "pulse_easing_ease_out" | "pulse_easing_spring" | "title_backup_restore" | "btn_export_settings" | "btn_import_settings" | "btn_reset_default" | "error_load_settings" | "error_save_failed" | "error_export_failed" | "error_import_failed" | "error_required_fields" | "error_translation_failed" | "error_unknown" | "new_provider" | "new_api_detector" | "label_endpoint_url" | "label_api_key_optional" | "label_key" | "label_value" | "btn_add" | "label_provider_prompt" | "placeholder_provider_prompt" | "hint_provider_prompt" | "title_global_prompt" | "desc_global_prompt" | "hint_prompt_vars" | "title_aggregation" | "label_aggregate_enabled" | "desc_aggregate_enabled" | "label_max_paragraphs" | "label_max_text_length" | "label_max_concurrent" | "label_request_timeout" | "title_display_settings" | "label_sampling" | "label_temperature" | "label_top_p" | "label_max_tokens" | "label_top_p_enable" | "label_stream" | "hint_stream" | "hint_extra_body_override" | "hint_content_type_auto" | "badge_stream" | "label_export_passphrase" | "hint_export_passphrase" | "hint_export_passphrase_warn" | "label_import_passphrase" | "btn_import_confirm" | "btn_import_cancel" | "toast_export_encrypted_remember" | "error_import_decrypt_failed" | "error_import_passphrase_required" | "tab_load_balance" | "title_load_balance" | "desc_load_balance" | "warn_no_lb_providers" | "label_weight" | "hint_load_balance" | "popup_load_balance" | "popup_load_balance_active" | "hint_model_order" | "btn_move_up" | "btn_move_down" | "lb_preferred_model" | "lb_model_default" | "title_request_settings" | "desc_request_settings",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;

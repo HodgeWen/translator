@@ -2,52 +2,58 @@ import { isTranslatableBlock, BLOCK_SELECTOR } from '@/lib/block-detect';
 import { state, wrapperToOriginal, applySettingsToState } from './state';
 import { toggleElementDisplay } from './style-apply';
 import { translateSingleElement } from './translate';
+import {
+  eventMatchesSingleKeyShortcut,
+  isShortcutKeyEvent,
+  mouseEventHasModifierShortcut,
+} from './shortcut-utils';
 
-// ─── Ctrl+Hover Translation ─────────────────────────────────────────────
-// 设计：按住 Ctrl 悬停可翻译段落 → 段落出现高亮，停留 200ms 后触发翻译。
+// ─── Shortcut+Hover Translation ────────────────────────────────────────
+// 设计：按住配置的单键悬停可翻译段落 → 段落出现高亮，停留 200ms 后触发翻译。
 // 不要求先按快捷键启用整页翻译；首次触发时按需懒加载用户设置（母语/样式/聚合参数）。
 //
 // 触发时机覆盖两种姿势：
-// 1. 先按 Ctrl，再移动到段落 → 由 `mouseover`（带 ctrlKey=true）触发；
-// 2. 先悬停在段落，再按下 Ctrl → 由 `keydown('Control')` 配合 mousemove
-//    记录的最近坐标 + `document.elementFromPoint` 触发。
+// 1. 先按快捷键，再移动到段落 → 由 `mouseover` 触发；
+// 2. 先悬停在段落，再按下快捷键 → 由 `keydown` 配合最近 hover 目标触发。
 // 仅靠 `mouseover` 会漏掉姿势 2，因为按键不会重发 mouseover。
 
 const HOVER_HIGHLIGHT_ATTR = 'data-translator-hover-target';
 const HOVER_DEBOUNCE_MS = 200;
 // 高亮命中段落到清除的最小总时长。即使翻译瞬间完成，也保证用户至少看到
-// 0.25s 的视觉反馈，避免「按 Ctrl 后高亮一闪而过」的体验割裂。
+// 0.25s 的视觉反馈，避免按键后高亮一闪而过的体验割裂。
 const HOVER_MIN_VISIBLE_MS = 250;
 
 let ctrlHoverSettingsLoaded = false;
+let hoverShortcutKey = 'Control';
 let hoverTarget: HTMLElement | null = null;
 let hoverTimer: number | null = null;
-// 最近一次 mouseover 命中的 DOM 节点。用于「先悬停再按 Ctrl」姿势：
-// 按 Ctrl 时直接用此节点替代昂贵的 elementFromPoint(x, y)，并彻底
+// 最近一次 mouseover 命中的 DOM 节点。用于「先悬停再按快捷键」姿势：
+// 按快捷键时直接用此节点替代昂贵的 elementFromPoint(x, y)，并彻底
 // 消除全局 mousemove 监听（每秒数百次回调）的能耗成本。
 //
 // 取舍说明：mouseover 只在跨元素时触发（远低于 mousemove 频率）；如果用户
-// 进入页面后从未移动鼠标即按 Ctrl，lastHoverTarget 为 null，那一次手势失效——
+// 进入页面后从未移动鼠标即按快捷键，lastHoverTarget 为 null，那一次手势失效——
 // 这是可接受的极小代价，换取持续运行的能耗节省。
 let lastHoverTarget: HTMLElement | null = null;
 // 屏蔽 keydown 在按住期间的 auto-repeat：仅在「松开后再次按下」时
-// 视作一次新的"按 Ctrl"事件，避免按住期间不停 toggle。
-let ctrlPressed = false;
+// 视作一次新的快捷键事件，避免按住期间不停 toggle。
+let shortcutPressed = false;
 
-// 「本轮按 Ctrl 已 toggle 过的段落」——按住 Ctrl 期间，鼠标在同一段落内子元素
+// 「本轮按快捷键已 toggle 过的段落」——按住快捷键期间，鼠标在同一段落内子元素
 // 之间移动会持续触发 mouseover（每个子元素一次），若不去重就会反复 toggle，
 // 用户感受是「按下没切换 / 切了又切回去」。
 //
-// 切换段落（移到段落 B）应允许新段落 toggle；松开 Ctrl 重置（下一次按 Ctrl
+// 切换段落（移到段落 B）应允许新段落 toggle；松开快捷键重置（下一次按快捷键
 // 视作新一轮，可再次 toggle 同一段落）。
-let lastCtrlToggledEl: HTMLElement | null = null;
+let lastShortcutToggledEl: HTMLElement | null = null;
 
 async function ensureCtrlHoverSettings(): Promise<void> {
-  if (ctrlHoverSettingsLoaded || state.isActive) return;
+  if (ctrlHoverSettingsLoaded) return;
   try {
     const { getSettings } = await import('@/lib/storage');
     const s = await getSettings();
-    applySettingsToState(s);
+    if (!state.isActive) applySettingsToState(s);
+    hoverShortcutKey = s.hoverShortcutKey;
     ctrlHoverSettingsLoaded = true;
   } catch (err) {
     console.warn('[Translator] Ctrl+Hover settings loading failed:', err);
@@ -83,13 +89,13 @@ function findToggleTarget(target: HTMLElement | null): HTMLElement | null {
 // 命中已翻译目标时切换原文/译文显示，返回是否已「认定为命中」（无论是否真正切换）。
 //
 // 返回 true 即认为「这次 mouseover/keydown 命中了已翻译段落」，调用方据此跳过
-// 后续 tryStartHoverFor。只有「跨段落」或「Ctrl 重新按下」时才真正执行 toggle，
+// 后续 tryStartHoverFor。只有「跨段落」或「快捷键重新按下」时才真正执行 toggle，
 // 同段落内的连续 mouseover 静默吞掉、不重复切换。
 function tryToggleDisplay(target: HTMLElement | null): boolean {
   const toggleEl = findToggleTarget(target);
   if (!toggleEl || !state.elementMap.has(toggleEl)) return false;
 
-  if (lastCtrlToggledEl === toggleEl) {
+  if (lastShortcutToggledEl === toggleEl) {
     return true;
   }
 
@@ -98,14 +104,14 @@ function tryToggleDisplay(target: HTMLElement | null): boolean {
   const cloneEl = state.elementMap.get(toggleEl)?.cloneEl;
   cloneEl?.removeAttribute(HOVER_HIGHLIGHT_ATTR);
   toggleElementDisplay(toggleEl);
-  lastCtrlToggledEl = toggleEl;
+  lastShortcutToggledEl = toggleEl;
   return true;
 }
 
 // 仅取消「防抖阶段」的高亮和计时器（hoverTimer != null 时）。
 // 一旦计时器回调已 fire 进入翻译阶段（hoverTimer == null），不再做任何清理：
 // 高亮与 hoverTarget 的清除完全交由翻译完成回调的 finally 分支接管，确保
-// 「Ctrl 短按即松开」也能完成翻译，且翻译期间高亮不会被 keyup / mouseout 中断。
+// 快捷键短按即松开也能完成翻译，且翻译期间高亮不会被 keyup / mouseout 中断。
 function cancelHoverDebounce(): void {
   if (hoverTimer === null) return;
   if (hoverTarget) {
@@ -171,26 +177,36 @@ function tryStartHoverFor(target: HTMLElement | null): void {
 }
 
 export function setupCtrlHover(): void {
+  void ensureCtrlHoverSettings();
+
+  if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
+    chrome.storage.onChanged.addListener((_changes, area) => {
+      if (area !== 'sync') return;
+      ctrlHoverSettingsLoaded = false;
+      void ensureCtrlHoverSettings();
+    });
+  }
+
   // mouseover 同时承担两个职责：
   //   1. 跟踪最近 hover 目标（lastHoverTarget），供 keydown 时使用；
-  //   2. 用户先按 Ctrl 再移动到段落时，由本回调直接触发翻译。
+  //   2. 用户先按快捷键再移动到段落时，由本回调直接触发翻译。
   document.addEventListener('mouseover', (e) => {
     const target = e.target as HTMLElement;
     lastHoverTarget = target;
-    if (!e.ctrlKey) return;
+    if (!shortcutPressed && !mouseEventHasModifierShortcut(e, hoverShortcutKey)) return;
     if (tryToggleDisplay(target)) return;
     tryStartHoverFor(target);
   }, { passive: true });
 
-  // 用户先悬停后按 Ctrl 的姿势：mouseover 不会再次触发，需要 keydown 兜底。
-  // 同时承担「再按 Ctrl 恢复原文」的 toggle 入口：
-  //   1. 用 `ctrlPressed` 屏蔽 auto-repeat，确保「松开后再次按下」才视作一次按键；
+  // 用户先悬停后按快捷键的姿势：mouseover 不会再次触发，需要 keydown 兜底。
+  // 同时承担「再按快捷键恢复原文」的 toggle 入口：
+  //   1. 用 `shortcutPressed` 屏蔽 auto-repeat，确保「松开后再次按下」才视作一次按键；
   //   2. 命中已翻译段落（wrapper 或原 el）→ 同步恢复原文，不进入翻译路径；
   //   3. 否则走原有翻译路径（lastHoverTarget + tryStartHoverFor）。
   document.addEventListener('keydown', (e) => {
-    if (e.key !== 'Control') return;
-    if (ctrlPressed || e.repeat) return;
-    ctrlPressed = true;
+    if (!eventMatchesSingleKeyShortcut(e, hoverShortcutKey)) return;
+    if (shortcutPressed || e.repeat) return;
+    shortcutPressed = true;
     if (!lastHoverTarget) return;
     if (tryToggleDisplay(lastHoverTarget)) return;
     tryStartHoverFor(lastHoverTarget);
@@ -206,17 +222,17 @@ export function setupCtrlHover(): void {
   });
 
   // 仅复位按键状态机；不取消防抖也不清高亮。
-  // 这样「Ctrl 短按即松开」也能完成 200ms 防抖触发的翻译，且翻译期间
-  // 高亮不会被松键中断，与「再按 Ctrl 恢复」的 toggle 语义协调。
+  // 这样快捷键短按即松开也能完成 200ms 防抖触发的翻译，且翻译期间
+  // 高亮不会被松键中断，与「再按快捷键恢复」的 toggle 语义协调。
   document.addEventListener('keyup', (e) => {
-    if (e.key !== 'Control') return;
-    ctrlPressed = false;
-    lastCtrlToggledEl = null;
+    if (!isShortcutKeyEvent(e, hoverShortcutKey)) return;
+    shortcutPressed = false;
+    lastShortcutToggledEl = null;
   });
 
   window.addEventListener('blur', () => {
-    ctrlPressed = false;
-    lastCtrlToggledEl = null;
+    shortcutPressed = false;
+    lastShortcutToggledEl = null;
     cancelHoverDebounce();
   });
 }

@@ -6,15 +6,17 @@ import { OptionsProviderSettings } from '@/components/options/provider-settings'
 import { OptionsLoadBalanceSettings } from '@/components/options/load-balance-settings';
 import { OptionsLanguageSettings } from '@/components/options/language-settings';
 import { OptionsGeneralSettings } from '@/components/options/general-settings';
+import { OptionsDisplaySettings } from '@/components/options/display-settings';
+import { OptionsBackupRestoreSettings } from '@/components/options/backup-restore-settings';
 import type { GlobalSettings } from '@/types';
 import { cn } from '@/lib/utils';
 import { useDarkMode } from '@/hooks/use-dark-mode';
 import { getSettings, saveSettings, DEFAULT_SETTINGS } from '@/lib/storage';
 import { t, setUILanguage } from '@/lib/i18n';
 import { useToast } from '@/hooks/use-toast';
-import { Languages, Server, Globe, Scale } from 'lucide-react';
+import { Languages, Server, Globe, Scale, Palette, Database } from 'lucide-react';
 
-type Tab = 'providers' | 'loadbalance' | 'language' | 'general';
+type Tab = 'providers' | 'loadbalance' | 'language' | 'display' | 'general' | 'backup';
 
 function App() {
   const { toast, showSuccess, showError, dismiss } = useToast();
@@ -44,7 +46,6 @@ function App() {
     try {
       await saveSettings(newSettings);
       setSettings(newSettings);
-      showSuccess(t('options_saved'));
     } catch (err) {
       showError(err instanceof Error ? err.message : t('error_save_failed'));
     }
@@ -65,7 +66,9 @@ function App() {
     { id: 'providers', label: t('tab_providers'), icon: <Server className="h-4 w-4" /> },
     { id: 'loadbalance', label: t('tab_load_balance'), icon: <Scale className="h-4 w-4" /> },
     { id: 'language', label: t('tab_language'), icon: <Languages className="h-4 w-4" /> },
+    { id: 'display', label: t('tab_display'), icon: <Palette className="h-4 w-4" /> },
     { id: 'general', label: t('tab_general'), icon: <Globe className="h-4 w-4" /> },
+    { id: 'backup', label: t('tab_backup_restore'), icon: <Database className="h-4 w-4" /> },
   ];
 
   const i18nKey = langVersion;
@@ -127,10 +130,20 @@ function App() {
           />
         )}
 
+        {activeTab === 'display' && (
+          <OptionsDisplaySettings settings={settings} onSave={handleSave} />
+        )}
+
         {activeTab === 'general' && (
           <OptionsGeneralSettings
             settings={settings}
             onSave={handleSave}
+          />
+        )}
+
+        {activeTab === 'backup' && (
+          <OptionsBackupRestoreSettings
+            settings={settings}
             onError={showError}
             onSuccess={showSuccess}
             onImportSuccess={handleImportSuccess}

@@ -80,8 +80,14 @@
   "tab_language": {
     "message": "语言"
   },
+  "tab_display": {
+    "message": "显示"
+  },
   "tab_general": {
     "message": "通用"
+  },
+  "tab_backup_restore": {
+    "message": "备份与恢复"
   },
   "btn_add_provider": {
     "message": "添加服务商"
@@ -102,7 +108,7 @@
     "message": "名称"
   },
   "label_base_url": {
-    "message": "基础地址"
+    "message": "接口地址"
   },
   "label_api_key": {
     "message": "API Key"
@@ -170,6 +176,15 @@
   "hint_default_source_language": {
     "message": "当输入语言为母语时，翻译为该语言"
   },
+  "label_input_default_source_language": {
+    "message": "输入框默认源语言"
+  },
+  "hint_input_default_source_language": {
+    "message": "输入框内容为母语时优先翻译为该语言；留空则跟随默认源语言"
+  },
+  "option_follow_default_source_language": {
+    "message": "跟随默认源语言"
+  },
   "title_lang_detect_providers": {
     "message": "语言检测服务商"
   },
@@ -224,6 +239,93 @@
   "shortcut_unbound": {
     "message": "未设置"
   },
+  "title_shortcut_settings": {
+    "message": "快捷键设置"
+  },
+  "label_hover_shortcut_key": {
+    "message": "悬浮翻译快捷键"
+  },
+  "label_input_shortcut_key": {
+    "message": "输入框三连按快捷键"
+  },
+  "hint_single_key_shortcut": {
+    "message": "只支持单键；默认 Ctrl"
+  },
+  "hint_input_shortcut_key": {
+    "message": "连按三下翻译，再连按三下还原；默认空格键"
+  },
+  "shortcut_key_control": {
+    "message": "Ctrl"
+  },
+  "shortcut_key_alt": {
+    "message": "Alt"
+  },
+  "shortcut_key_option": {
+    "message": "Option"
+  },
+  "shortcut_key_shift": {
+    "message": "Shift"
+  },
+  "shortcut_key_command": {
+    "message": "Command"
+  },
+  "shortcut_key_win": {
+    "message": "Win"
+  },
+  "shortcut_key_space": {
+    "message": "空格"
+  },
+  "shortcut_key_escape": {
+    "message": "Esc"
+  },
+  "label_input_loading_pulse_color": {
+    "message": "输入框 loading 脉冲颜色"
+  },
+  "title_display_style_settings": {
+    "message": "翻译样式"
+  },
+  "title_input_loading_settings": {
+    "message": "输入框 loading"
+  },
+  "label_input_loading_keyframe_0": {
+    "message": "0% 颜色"
+  },
+  "label_input_loading_keyframe_1": {
+    "message": "50% 颜色"
+  },
+  "label_input_loading_keyframe_2": {
+    "message": "100% 颜色"
+  },
+  "error_invalid_hex_color": {
+    "message": "请输入 #RGB、#RGBA、#RRGGBB 或 #RRGGBBAA 格式"
+  },
+  "label_input_loading_pulse_duration": {
+    "message": "输入框 loading 脉冲时长 (毫秒)"
+  },
+  "hint_input_loading_pulse_duration": {
+    "message": "单个动画循环时长，建议 800-1600"
+  },
+  "label_input_loading_pulse_easing": {
+    "message": "输入框 loading 动画方案"
+  },
+  "hint_input_loading_pulse_easing": {
+    "message": "控制关键帧之间的过渡节奏"
+  },
+  "label_input_loading_preview": {
+    "message": "动画预览"
+  },
+  "input_loading_preview_text": {
+    "message": "输入框翻译中..."
+  },
+  "pulse_easing_linear": {
+    "message": "线性"
+  },
+  "pulse_easing_ease_out": {
+    "message": "先快后慢"
+  },
+  "pulse_easing_spring": {
+    "message": "弹簧"
+  },
   "title_backup_restore": {
     "message": "备份与恢复"
   },
@@ -249,7 +351,7 @@
     "message": "导入失败"
   },
   "error_required_fields": {
-    "message": "名称和基础地址为必填项"
+    "message": "名称和接口地址为必填项"
   },
   "error_translation_failed": {
     "message": "翻译失败"

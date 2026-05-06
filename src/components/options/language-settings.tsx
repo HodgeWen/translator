@@ -74,7 +74,7 @@ export function OptionsLanguageSettings({ settings, onSave, onUILanguageChange }
           />
           <p className="text-xs text-muted-foreground">{t('hint_ui_language')}</p>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-2">
             <label className="text-sm font-medium flex items-center gap-2">
               <Type className="h-4 w-4 text-violet-500" />
@@ -98,6 +98,21 @@ export function OptionsLanguageSettings({ settings, onSave, onUILanguageChange }
               onChange={(value) => onSave({ ...settings, defaultSourceLanguage: value })}
             />
             <p className="text-xs text-muted-foreground">{t('hint_default_source_language')}</p>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium flex items-center gap-2">
+              <Type className="h-4 w-4 text-amber-500" />
+              {t('label_input_default_source_language')}
+            </label>
+            <Select
+              value={settings.inputDefaultSourceLanguage}
+              options={[
+                { value: '', label: t('option_follow_default_source_language') },
+                ...LANGUAGE_OPTIONS,
+              ]}
+              onChange={(value) => onSave({ ...settings, inputDefaultSourceLanguage: value })}
+            />
+            <p className="text-xs text-muted-foreground">{t('hint_input_default_source_language')}</p>
           </div>
         </div>
       </div>

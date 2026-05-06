@@ -43,6 +43,10 @@ const langDetectProviderSchema = z.object({
   timeout: z.number().int().min(1000).max(60000).optional(),
 });
 
+const hexColorSchema = z.string().regex(/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/);
+const inputLoadingPulseKeyframesDefault: [string, string, string] = ['#4b5563', '#2563eb', '#0f172a'];
+const hoverShortcutKeySchema = z.enum(['Control', 'Alt', 'Shift', 'Meta']).catch('Control').default('Control');
+
 export const globalSettingsSchema = z.object({
   providers: z.array(providerConfigSchema).min(1, 'At least one provider is required'),
   selectedProviderId: z.string().default(''),
@@ -55,6 +59,14 @@ export const globalSettingsSchema = z.object({
   globalPrompt: z.string().min(1).default(DEFAULT_GLOBAL_PROMPT),
   detectLangProviders: z.array(langDetectProviderSchema).default([{ id: 'franc', name: 'franc-min', type: 'franc' }]),
   shortcutKey: z.string().default('Alt+W'),
+  hoverShortcutKey: hoverShortcutKeySchema,
+  inputShortcutKey: z.string().default('Space'),
+  inputDefaultSourceLanguage: z.string().default(''),
+  inputLoadingPulseKeyframes: z.tuple([hexColorSchema, hexColorSchema, hexColorSchema])
+    .catch(inputLoadingPulseKeyframesDefault)
+    .default(inputLoadingPulseKeyframesDefault),
+  inputLoadingPulseDurationMs: z.number().int().min(400).max(5000).default(1200),
+  inputLoadingPulseEasing: z.enum(['linear', 'ease-out', 'spring']).default('ease-out'),
   aggregateEnabled: z.boolean().default(true),
   maxParagraphsPerRequest: z.number().int().min(1).max(20).default(5),
   maxTextLengthPerRequest: z.number().int().min(100).max(10000).default(2000),

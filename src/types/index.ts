@@ -3,6 +3,7 @@ export type LangCode = string;
 
 // Translation display styles
 export type TranslationStyle = 'original' | 'bilingual' | 'underline' | 'clean';
+export type InputLoadingPulseEasing = 'linear' | 'ease-out' | 'spring';
 
 // OpenAI-compatible provider configuration
 export interface ProviderConfig {
@@ -63,6 +64,12 @@ export interface GlobalSettings {
   globalPrompt: string;
   detectLangProviders: LangDetectProvider[];
   shortcutKey: string;
+  hoverShortcutKey: string;
+  inputShortcutKey: string;
+  inputDefaultSourceLanguage: LangCode;
+  inputLoadingPulseKeyframes: [string, string, string];
+  inputLoadingPulseDurationMs: number;
+  inputLoadingPulseEasing: InputLoadingPulseEasing;
   aggregateEnabled: boolean;
   maxParagraphsPerRequest: number;
   maxTextLengthPerRequest: number;

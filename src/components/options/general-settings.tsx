@@ -1,12 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import type { GlobalSettings, TranslationStyle } from '@/types';
+import { Select } from '@/components/ui/select';
+import type { GlobalSettings } from '@/types';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
-import { importSettings, isEncryptedExport } from '@/lib/storage';
 import { DEFAULT_GLOBAL_PROMPT } from '@/lib/prompts';
+import { getHoverShortcutOptions, getPlatformShortcutOptions } from '@/entrypoints/content/shortcut-utils';
 import {
-  Download, Upload, FileText, Zap, Clock, Layers, RotateCcw, Eye, EyeOff, Lock,
+  FileText, Clock, Layers, RotateCcw, Keyboard, ExternalLink,
 } from 'lucide-react';
 
 const IS_MAC = typeof navigator !== 'undefined' && navigator.platform.toLowerCase().includes('mac');
@@ -33,18 +34,10 @@ function formatShortcutTokens(raw: string, isMac: boolean): string[] {
 interface OptionsGeneralSettingsProps {
   settings: GlobalSettings;
   onSave: (settings: GlobalSettings) => void;
-  onError: (message: string) => void;
-  onSuccess?: (message: string) => void;
-  onImportSuccess: () => void;
 }
 
-export function OptionsGeneralSettings({ settings, onSave, onError, onSuccess, onImportSuccess }: OptionsGeneralSettingsProps) {
+export function OptionsGeneralSettings({ settings, onSave }: OptionsGeneralSettingsProps) {
   const [actualShortcut, setActualShortcut] = useState<string>(settings.shortcutKey);
-  const [exportPassphrase, setExportPassphrase] = useState('');
-  const [showExportPassphrase, setShowExportPassphrase] = useState(false);
-  const [pendingImportText, setPendingImportText] = useState<string | null>(null);
-  const [pendingImportPassphrase, setPendingImportPassphrase] = useState('');
-  const [showImportPassphrase, setShowImportPassphrase] = useState(false);
 
   // Local draft state for text/number inputs to avoid hitting chrome.storage.sync rate limits
   const [draftPrompt, setDraftPrompt] = useState(settings.globalPrompt);
@@ -68,11 +61,6 @@ export function OptionsGeneralSettings({ settings, onSave, onError, onSuccess, o
   }, [settings, onSave]);
   useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
 
-  const hasApiKey = useMemo(
-    () => settings.providers.some((p) => p.apiKey?.trim()),
-    [settings.providers]
-  );
-
   useEffect(() => {
     let cancelled = false;
     chrome.commands.getAll((commands) => {
@@ -88,91 +76,14 @@ export function OptionsGeneralSettings({ settings, onSave, onError, onSuccess, o
     () => formatShortcutTokens(actualShortcut, IS_MAC),
     [actualShortcut]
   );
-
-  const handleExport = async () => {
-    try {
-      const { exportSettings } = await import('@/lib/storage');
-      const passphrase = exportPassphrase.trim();
-      const usePassphrase = passphrase.length > 0;
-      const json = await exportSettings(usePassphrase ? passphrase : undefined);
-      const blob = new Blob([json], {
-        type: usePassphrase ? 'application/octet-stream' : 'application/json',
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      const date = new Date().toISOString().slice(0, 10);
-      a.download = usePassphrase
-        ? `translator-settings-${date}.enc.json`
-        : `translator-settings-${date}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      if (usePassphrase) {
-        onSuccess?.(t('toast_export_encrypted_remember'));
-        setExportPassphrase('');
-        setShowExportPassphrase(false);
-      }
-    } catch (err) {
-      onError(err instanceof Error ? err.message : t('error_export_failed'));
-    }
-  };
-
-  const runImport = async (text: string, passphrase?: string) => {
-    try {
-      await importSettings(text, passphrase);
-      setPendingImportText(null);
-      setPendingImportPassphrase('');
-      setShowImportPassphrase(false);
-      onImportSuccess();
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : '';
-      if (msg === 'PASSPHRASE_REQUIRED') {
-        onError(t('error_import_passphrase_required'));
-      } else if (msg === 'DECRYPT_FAILED' || msg === 'UNSUPPORTED_ENCRYPTED_FORMAT') {
-        onError(t('error_import_decrypt_failed'));
-      } else {
-        onError(msg || t('error_import_failed'));
-      }
-    }
-  };
-
-  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
-
-    let text: string;
-    try {
-      text = await file.text();
-    } catch (err) {
-      onError(err instanceof Error ? err.message : t('error_import_failed'));
-      return;
-    }
-
-    if (isEncryptedExport(text)) {
-      setPendingImportText(text);
-      setPendingImportPassphrase('');
-      setShowImportPassphrase(false);
-      return;
-    }
-    await runImport(text);
-  };
-
-  const handleConfirmImport = async () => {
-    if (!pendingImportText) return;
-    const pass = pendingImportPassphrase.trim();
-    if (!pass) {
-      onError(t('error_import_passphrase_required'));
-      return;
-    }
-    await runImport(pendingImportText, pass);
-  };
-
-  const handleCancelImport = () => {
-    setPendingImportText(null);
-    setPendingImportPassphrase('');
-    setShowImportPassphrase(false);
-  };
+  const singleKeyOptions = getPlatformShortcutOptions(IS_MAC).map((option) => ({
+    value: option.value,
+    label: t(option.labelKey),
+  }));
+  const hoverShortcutOptions = getHoverShortcutOptions(IS_MAC).map((option) => ({
+    value: option.value,
+    label: t(option.labelKey),
+  }));
 
   return (
     <div className="space-y-6">
@@ -293,37 +204,11 @@ export function OptionsGeneralSettings({ settings, onSave, onError, onSuccess, o
         </div>
       </div>
 
-      {/* Default Style */}
+      {/* Shortcut Settings */}
       <div className="rounded-lg border border-border p-6 space-y-6">
         <div className="flex items-center gap-2">
-          <Zap className="h-5 w-5 text-amber-500" />
-          <h3 className="text-lg font-semibold">{t('title_display_settings')}</h3>
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium">{t('label_default_style')}</label>
-          <div className="grid grid-cols-2 gap-3">
-            {(['original', 'bilingual', 'underline', 'clean'] as TranslationStyle[]).map((style) => (
-              <button
-                key={style}
-                onClick={() => onSave({ ...settings, defaultStyle: style })}
-                className={cn(
-                  'rounded-md border px-4 py-3 text-left text-sm transition-colors',
-                  settings.defaultStyle === style
-                    ? 'border-indigo-500 bg-indigo-50/50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-300'
-                    : 'border-border hover:bg-accent/50'
-                )}
-              >
-                <div className="font-medium">{t(`style_${style}`)}</div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {style === 'original' && t('style_original_desc')}
-                  {style === 'bilingual' && t('style_bilingual_desc')}
-                  {style === 'underline' && t('style_underline_desc')}
-                  {style === 'clean' && t('style_clean_desc')}
-                </div>
-              </button>
-            ))}
-          </div>
+          <Keyboard className="h-5 w-5 text-sky-500" />
+          <h3 className="text-lg font-semibold">{t('title_shortcut_settings')}</h3>
         </div>
 
         <div className="space-y-2">
@@ -356,105 +241,42 @@ export function OptionsGeneralSettings({ settings, onSave, onError, onSuccess, o
                 ))}
               </span>
             )}
-            <span className="text-xs text-muted-foreground">{t('shortcut_hint')}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Backup / Restore */}
-      <div className="rounded-lg border border-border p-6 space-y-5">
-        <h3 className="text-lg font-semibold">{t('title_backup_restore')}</h3>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium flex items-center gap-1.5">
-            <Lock className="h-3.5 w-3.5 text-muted-foreground" />
-            {t('label_export_passphrase')}
-          </label>
-          <div className="flex gap-2">
-            <input
-              type={showExportPassphrase ? 'text' : 'password'}
-              value={exportPassphrase}
-              onChange={(e) => setExportPassphrase(e.target.value)}
-              className="flex-1 h-9 rounded-md border border-input bg-transparent px-3 text-sm"
-              autoComplete="new-password"
-            />
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-9 w-9 shrink-0"
-              onClick={() => setShowExportPassphrase((v) => !v)}
-              title={showExportPassphrase ? t('btn_hide') : t('btn_show')}
+            <button
+              onClick={() => chrome.tabs.create({ url: 'chrome://extensions/shortcuts' })}
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors cursor-pointer"
             >
-              {showExportPassphrase ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </Button>
+              {t('shortcut_hint')}
+              <ExternalLink className="h-3 w-3" />
+            </button>
           </div>
-          <p className={cn(
-            'text-xs',
-            hasApiKey ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'
-          )}>
-            {hasApiKey ? t('hint_export_passphrase_warn') : t('hint_export_passphrase')}
-          </p>
         </div>
 
-        <div className="flex gap-3 flex-wrap">
-          <Button onClick={handleExport} variant="outline">
-            <Download className="mr-1.5 h-4 w-4" />
-            {t('btn_export_settings')}
-          </Button>
-          <label className="cursor-pointer inline-flex">
-            <input type="file" accept=".json,.enc.json,application/json" className="hidden" onChange={handleImport} />
-            <span className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2">
-              <Upload className="h-4 w-4" />
-              {t('btn_import_settings')}
-            </span>
-          </label>
-        </div>
-
-        {pendingImportText && (
-          <div className="rounded-md border border-amber-300 bg-amber-50/60 dark:border-amber-700 dark:bg-amber-900/20 p-4 space-y-3">
-            <label className="text-sm font-medium flex items-center gap-1.5">
-              <Lock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-              {t('label_import_passphrase')}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium flex items-center gap-2">
+              <Keyboard className="h-4 w-4 text-sky-500" />
+              {t('label_hover_shortcut_key')}
             </label>
-            <div className="flex gap-2">
-              <input
-                type={showImportPassphrase ? 'text' : 'password'}
-                value={pendingImportPassphrase}
-                onChange={(e) => setPendingImportPassphrase(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleConfirmImport();
-                  }
-                }}
-                className="flex-1 h-9 rounded-md border border-input bg-background px-3 text-sm"
-                autoFocus
-                autoComplete="off"
-              />
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-9 w-9 shrink-0"
-                onClick={() => setShowImportPassphrase((v) => !v)}
-                title={showImportPassphrase ? t('btn_hide') : t('btn_show')}
-              >
-                {showImportPassphrase ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </Button>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                onClick={handleConfirmImport}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white"
-              >
-                {t('btn_import_confirm')}
-              </Button>
-              <Button size="sm" variant="outline" onClick={handleCancelImport}>
-                {t('btn_import_cancel')}
-              </Button>
-            </div>
+            <Select
+              value={settings.hoverShortcutKey}
+              options={hoverShortcutOptions}
+              onChange={(value) => onSave({ ...settings, hoverShortcutKey: value })}
+            />
+            <p className="text-xs text-muted-foreground">{t('hint_single_key_shortcut')}</p>
           </div>
-        )}
+          <div className="space-y-2">
+            <label className="text-sm font-medium flex items-center gap-2">
+              <Keyboard className="h-4 w-4 text-rose-500" />
+              {t('label_input_shortcut_key')}
+            </label>
+            <Select
+              value={settings.inputShortcutKey}
+              options={singleKeyOptions}
+              onChange={(value) => onSave({ ...settings, inputShortcutKey: value })}
+            />
+            <p className="text-xs text-muted-foreground">{t('hint_input_shortcut_key')}</p>
+          </div>
+        </div>
       </div>
     </div>
   );

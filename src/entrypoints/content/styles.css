@@ -116,6 +116,27 @@
   }
 }
 
+/* ─── Input 翻译中等待效果 ─────────────── */
+@keyframes translator-input-loading {
+  0% {
+    color: var(--translator-input-loading-color-0);
+    caret-color: var(--translator-input-loading-color-0);
+  }
+  50% {
+    color: var(--translator-input-loading-color-50);
+    caret-color: var(--translator-input-loading-color-50);
+  }
+  100% {
+    color: var(--translator-input-loading-color-100);
+    caret-color: var(--translator-input-loading-color-100);
+  }
+}
+
+input[data-translator-input-loading='true'],
+textarea[data-translator-input-loading='true'] {
+  animation: translator-input-loading var(--translator-input-loading-duration, 1200ms) var(--translator-input-loading-easing, cubic-bezier(0.16, 1, 0.3, 1)) infinite alternate !important;
+}
+
 /* ─── Error 翻译失败视觉提示 ─────────────── */
 [data-translator-error] {
   border-left: 2px solid rgba(239, 68, 68, 0.45) !important;
