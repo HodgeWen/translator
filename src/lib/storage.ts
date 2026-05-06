@@ -48,7 +48,7 @@ export const DEFAULT_SETTINGS: GlobalSettings = {
   ],
   shortcutKey: 'Alt+W',
   hoverShortcutKey: 'Control',
-  inputShortcutKey: 'Space',
+  inputShortcutKey: 'Control',
   inputDefaultSourceLanguage: '',
   inputLoadingPulseKeyframes: ['#4b5563', '#2563eb', '#0f172a'],
   inputLoadingPulseDurationMs: 1200,

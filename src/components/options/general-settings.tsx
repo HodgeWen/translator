@@ -5,7 +5,7 @@ import type { GlobalSettings } from '@/types';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import { DEFAULT_GLOBAL_PROMPT } from '@/lib/prompts';
-import { getHoverShortcutOptions, getPlatformShortcutOptions } from '@/entrypoints/content/shortcut-utils';
+import { getHoverShortcutOptions, getInputShortcutOptions } from '@/entrypoints/content/shortcut-utils';
 import {
   FileText, Clock, Layers, RotateCcw, Keyboard, ExternalLink,
 } from 'lucide-react';
@@ -76,7 +76,7 @@ export function OptionsGeneralSettings({ settings, onSave }: OptionsGeneralSetti
     () => formatShortcutTokens(actualShortcut, IS_MAC),
     [actualShortcut]
   );
-  const singleKeyOptions = getPlatformShortcutOptions(IS_MAC).map((option) => ({
+  const inputShortcutOptions = getInputShortcutOptions(IS_MAC).map((option) => ({
     value: option.value,
     label: t(option.labelKey),
   }));
@@ -271,7 +271,7 @@ export function OptionsGeneralSettings({ settings, onSave }: OptionsGeneralSetti
             </label>
             <Select
               value={settings.inputShortcutKey}
-              options={singleKeyOptions}
+              options={inputShortcutOptions}
               onChange={(value) => onSave({ ...settings, inputShortcutKey: value })}
             />
             <p className="text-xs text-muted-foreground">{t('hint_input_shortcut_key')}</p>

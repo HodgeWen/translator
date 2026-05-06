@@ -4,10 +4,34 @@ import { shouldSkipTranslation } from "@/lib/lang-detect";
 import { state } from "./state";
 import {
   eventMatchesSingleKeyShortcut,
-  normalizeShortcutKey,
   recordSequentialShortcutPress,
 } from "./shortcut-utils";
 import { resolveInputTargetLanguage, setInputTranslationLoading } from "./input-translate-utils";
+
+// ─── Native setter helper ───────────────────────────────────────────────
+// Direct `el.value = x` bypasses React / Vue controlled‑component state,
+// causing the framework to revert the value on the next re‑render.
+// Using the native HTMLInputElement/HTMLTextAreaElement prototype setter +
+// dispatching synthetic events forces frameworks to acknowledge the change.
+
+const nativeInputSetter = Object.getOwnPropertyDescriptor(
+  HTMLInputElement.prototype,
+  "value",
+)!.set!;
+const nativeTextareaSetter = Object.getOwnPropertyDescriptor(
+  HTMLTextAreaElement.prototype,
+  "value",
+)!.set!;
+
+function setNativeInputValue(
+  el: HTMLInputElement | HTMLTextAreaElement,
+  value: string,
+): void {
+  const setter = el instanceof HTMLTextAreaElement ? nativeTextareaSetter : nativeInputSetter;
+  setter.call(el, value);
+  el.dispatchEvent(new Event("input", { bubbles: true }));
+  el.dispatchEvent(new Event("change", { bubbles: true }));
+}
 
 // ─── Input Box Translation ──────────────────────────────────────────────
 
@@ -23,7 +47,7 @@ interface InputState {
 
 const inputStateMap = new WeakMap<HTMLInputElement | HTMLTextAreaElement, InputState>();
 let inputSettingsLoaded = false;
-let inputShortcutKey = "Space";
+let inputShortcutKey = "Control";
 let inputDefaultSourceLanguage = "";
 let defaultSourceLanguage = "en";
 let inputLoadingPulseKeyframes: [string, string, string] = ["#4b5563", "#2563eb", "#0f172a"];
@@ -111,7 +135,7 @@ async function translateInput(el: HTMLInputElement | HTMLTextAreaElement): Promi
 
     st.originalValue = text;
     st.translatedValue = result.text;
-    el.value = result.text;
+    setNativeInputValue(el, result.text);
   } catch (err) {
     console.warn("[Translator] translateInput failed:", err);
   } finally {
@@ -121,16 +145,13 @@ async function translateInput(el: HTMLInputElement | HTMLTextAreaElement): Promi
 
 function isShowingTranslated(el: HTMLInputElement | HTMLTextAreaElement, st: InputState): boolean {
   if (!st.translatedValue) return false;
-  if (el.value === st.translatedValue) return true;
-  return (
-    normalizeShortcutKey(inputShortcutKey) === " " && el.value.trim() === st.translatedValue.trim()
-  );
+  return el.value === st.translatedValue;
 }
 
 function restoreInput(el: HTMLInputElement | HTMLTextAreaElement, st: InputState): void {
   if (st.originalValue === null) return;
   setInputTranslationLoading(el, false);
-  el.value = st.originalValue;
+  setNativeInputValue(el, st.originalValue);
   st.originalValue = null;
   st.translatedValue = null;
 }
@@ -169,7 +190,6 @@ export function setupInputListeners(): void {
         if (st.debounceTimer) window.clearTimeout(st.debounceTimer);
 
         if (isShowingTranslated(target, st)) {
-          e.preventDefault();
           restoreInput(target, st);
           return;
         }

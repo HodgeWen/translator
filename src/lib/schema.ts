@@ -60,7 +60,7 @@ export const globalSettingsSchema = z.object({
   detectLangProviders: z.array(langDetectProviderSchema).default([{ id: 'franc', name: 'franc-min', type: 'franc' }]),
   shortcutKey: z.string().default('Alt+W'),
   hoverShortcutKey: hoverShortcutKeySchema,
-  inputShortcutKey: z.string().default('Space'),
+  inputShortcutKey: z.enum(['Control', 'Alt', 'Shift', 'Meta', 'Escape']).catch('Control').default('Control'),
   inputDefaultSourceLanguage: z.string().default(''),
   inputLoadingPulseKeyframes: z.tuple([hexColorSchema, hexColorSchema, hexColorSchema])
     .catch(inputLoadingPulseKeyframesDefault)

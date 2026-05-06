@@ -90,3 +90,10 @@ export function getPlatformShortcutOptions(isMac: boolean): ShortcutOption[] {
 export function getHoverShortcutOptions(isMac: boolean): ShortcutOption[] {
   return getPlatformShortcutOptions(isMac).filter((option) => MODIFIER_KEYS.has(option.value));
 }
+
+/** 输入框翻译快捷键：仅允许不会插入字符的按键（modifier + Escape） */
+export function getInputShortcutOptions(isMac: boolean): ShortcutOption[] {
+  const NON_CHAR_KEYS = new Set([...MODIFIER_KEYS, 'Escape']);
+  return getPlatformShortcutOptions(isMac).filter((option) => NON_CHAR_KEYS.has(option.value));
+}
+
