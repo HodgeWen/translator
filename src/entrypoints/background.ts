@@ -1,7 +1,7 @@
 import { defineBackground } from 'wxt/utils/define-background';
 import { translate } from '@/lib/api';
 import { detectLanguage } from '@/lib/lang-detect';
-import { clearExpiredCache, clearAllCache } from '@/lib/cache';
+import { clearExpiredCache } from '@/lib/cache';
 import type { BgMessage } from '@/types';
 
 const ALARM_NAME = 'cache-cleanup';
@@ -20,8 +20,8 @@ export default defineBackground(() => {
     if (alarm.name === ALARM_NAME) {
       try {
         await clearExpiredCache();
-      } catch {
-        // ignore
+      } catch (err) {
+        console.warn('[Translator] cache cleanup alarm failed:', err);
       }
     }
   });
@@ -51,6 +51,7 @@ export default defineBackground(() => {
               sourceLang: message.payload.sourceLang,
               targetLang: message.payload.targetLang,
               isAggregate: message.payload.isAggregate,
+              hasPlaceholders: message.payload.hasPlaceholders,
             });
             sendResponse({ success: true, data: result });
             break;
@@ -59,12 +60,6 @@ export default defineBackground(() => {
           case 'DETECT_LANG': {
             const lang = await detectLanguage(message.payload.text);
             sendResponse({ success: true, data: { lang } });
-            break;
-          }
-
-          case 'CLEAR_CACHE': {
-            const cleared = await clearAllCache();
-            sendResponse({ success: true, data: { cleared } });
             break;
           }
 

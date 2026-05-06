@@ -37,8 +37,11 @@ async function ensureDb(): Promise<CacheDatabase> {
 
 // SHA-256 哈希：碰撞概率 ~2^-128（birthday bound），消除 djb2 32-bit 碰撞风险。
 // Service Worker 和 content script 均可访问 crypto.subtle。
-async function hashKey(text: string, sourceLang: string, targetLang: string): Promise<string> {
-  const str = `${text}:${sourceLang}:${targetLang}`;
+//
+// extraSalt：可选盐值（如 globalPrompt 的摘要）。同 salt 共享缓存；
+// 调用方修改 prompt 后传入新 salt 即可让旧缓存自然失效，TTL 兜底回收。
+async function hashKey(text: string, sourceLang: string, targetLang: string, extraSalt = ''): Promise<string> {
+  const str = `${text}:${sourceLang}:${targetLang}:${extraSalt}`;
   const data = new TextEncoder().encode(str);
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   return Array.from(new Uint8Array(hashBuffer))
@@ -49,10 +52,11 @@ async function hashKey(text: string, sourceLang: string, targetLang: string): Pr
 export async function getCachedTranslation(
   text: string,
   sourceLang: string,
-  targetLang: string
+  targetLang: string,
+  extraSalt = ''
 ): Promise<{ text: string; hash: string } | null> {
   const dbInstance = await ensureDb();
-  const hash = await hashKey(text, sourceLang, targetLang);
+  const hash = await hashKey(text, sourceLang, targetLang, extraSalt);
   const entry = await dbInstance.translations.get(hash);
 
   if (!entry) return null;
@@ -63,6 +67,9 @@ export async function getCachedTranslation(
   }
 
   if (entry.sourceText !== text) {
+    // SHA-256 碰撞极其罕见，但若发生需主动删除占位 entry，避免下次同样的
+    // sourceText 永远 cache miss（会落到同一 hash 槽继续命中失效路径）。
+    await dbInstance.translations.delete(hash).catch(() => {});
     return null;
   }
 
@@ -74,10 +81,11 @@ export async function setCachedTranslation(
   sourceLang: string,
   targetLang: string,
   translatedText: string,
-  precomputedHash?: string
+  precomputedHash?: string,
+  extraSalt = ''
 ): Promise<void> {
   const dbInstance = await ensureDb();
-  const hash = precomputedHash ?? await hashKey(text, sourceLang, targetLang);
+  const hash = precomputedHash ?? await hashKey(text, sourceLang, targetLang, extraSalt);
   await dbInstance.translations.put({
     hash,
     sourceText: text,
@@ -98,11 +106,4 @@ export async function clearExpiredCache(): Promise<number> {
 
   await dbInstance.translations.bulkDelete(expired.map(e => e.hash));
   return expired.length;
-}
-
-export async function clearAllCache(): Promise<number> {
-  const dbInstance = await ensureDb();
-  const count = await dbInstance.translations.count();
-  await dbInstance.translations.clear();
-  return count;
 }

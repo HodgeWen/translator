@@ -1,6 +1,6 @@
 import type { TranslationResponse } from '@/types';
-import { shouldSkipTranslation } from '@/lib/lang-detect';
 import { sendBgMessage } from '@/lib/messaging';
+import { detectAndCheckSkip } from '@/lib/translate-via-bg';
 import { state } from './state';
 
 // ─── Input Box Translation ──────────────────────────────────────────────
@@ -39,15 +39,8 @@ async function translateInput(el: HTMLInputElement | HTMLTextAreaElement): Promi
   try {
     await ensureInputSettings();
 
-    const detectResult = await sendBgMessage<{ lang: string | null }>({
-      type: 'DETECT_LANG',
-      payload: { text },
-    });
-    const detectedLang = detectResult.lang;
-
-    if (detectedLang && shouldSkipTranslation(detectedLang, state.nativeLanguage)) {
-      return;
-    }
+    const { skip, detectedLang } = await detectAndCheckSkip(text, state.nativeLanguage);
+    if (skip) return;
 
     const result = await sendBgMessage<TranslationResponse>({
       type: 'TRANSLATE',
@@ -55,6 +48,8 @@ async function translateInput(el: HTMLInputElement | HTMLTextAreaElement): Promi
         text,
         sourceLang: detectedLang || undefined,
         targetLang: state.targetLang,
+        // 输入框纯文本，无内嵌 HTML 片段，跳过 placeholder 规则节省 token。
+        hasPlaceholders: false,
       },
     });
 

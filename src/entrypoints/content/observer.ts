@@ -42,7 +42,9 @@ function cleanupDisconnectedEntries(): void {
 // ─── Intersection Observer ──────────────────────────────────────────────
 
 function createObserver(): IntersectionObserver {
-  const pending = new Set<HTMLElement>();
+  // pending: 元素 → 200ms 防抖定时器 ID。元素离开视口或被移除时主动 clearTimeout，
+  // 避免快速滚动下对已离屏元素仍发起翻译请求（浪费配额、加重 LLM 限流压力）。
+  const pending = new Map<HTMLElement, number>();
   // Global concurrency limit for single-element mode to prevent request storms on rapid scroll.
   let inflightCount = 0;
   const queued: HTMLElement[] = [];
@@ -80,7 +82,11 @@ function createObserver(): IntersectionObserver {
     entries.forEach((entry) => {
       const el = entry.target as HTMLElement;
       if (!entry.isIntersecting) {
-        pending.delete(el);
+        const timerId = pending.get(el);
+        if (timerId !== undefined) {
+          window.clearTimeout(timerId);
+          pending.delete(el);
+        }
         return;
       }
       if (pending.has(el)) return;
@@ -90,12 +96,12 @@ function createObserver(): IntersectionObserver {
         state.pendingAggregateElements.add(el);
         scheduleAggregateFlush();
       } else {
-        pending.add(el);
-        window.setTimeout(() => {
+        const timerId = window.setTimeout(() => {
           pending.delete(el);
           if (state.elementMap.has(el)) return;
           scheduleSingle(el);
         }, 200);
+        pending.set(el, timerId);
       }
     });
   }, { threshold: 0, rootMargin: '100px' });

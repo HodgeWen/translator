@@ -86,6 +86,9 @@ export interface TranslationRequest {
   sourceLang?: LangCode;
   targetLang: LangCode;
   isAggregate?: boolean;
+  // 调用方告知文本内是否含 #N# 行内占位符。仅在 true 时才向 prompt 附加占位符规则，
+  // 避免短句翻译（popup / input 场景）每次都浪费 ~250 字符 token。
+  hasPlaceholders?: boolean;
 }
 
 // Translation response
@@ -102,6 +105,7 @@ interface BgTranslatePayload {
   sourceLang?: LangCode;
   targetLang: LangCode;
   isAggregate?: boolean;
+  hasPlaceholders?: boolean;
 }
 
 interface BgDetectLangPayload {
@@ -111,5 +115,4 @@ interface BgDetectLangPayload {
 export type BgMessage =
   | { type: 'TRANSLATE'; payload: BgTranslatePayload }
   | { type: 'DETECT_LANG'; payload: BgDetectLangPayload }
-  | { type: 'CLEAR_CACHE' }
   | { type: 'PING' };

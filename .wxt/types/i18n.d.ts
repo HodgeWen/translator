@@ -831,7 +831,7 @@ declare module "wxt/browser" {
       options?: GetMessageOptions,
     ): string;
     /**
-     * "自定义提示词，支持 {{sourceLang}}、{{targetLang}}、{{text}} 变量。"
+     * "自定义提示词，支持 {{sourceLang}}、{{targetLang}} 变量。原文通过 user 消息单独传递，无需在提示词中插入。"
      */
     getMessage(
       messageName: "hint_provider_prompt",

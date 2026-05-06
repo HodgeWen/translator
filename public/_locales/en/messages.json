@@ -285,7 +285,7 @@
     "message": "Leave empty to use global prompt..."
   },
   "hint_provider_prompt": {
-    "message": "Custom prompt for this provider. Supports {{sourceLang}}, {{targetLang}}, {{text}} variables."
+    "message": "Custom prompt for this provider. Supports {{sourceLang}}, {{targetLang}} variables. The source text is passed separately as the user message; do not embed it in the prompt."
   },
   "title_global_prompt": {
     "message": "Global Translation Prompt"

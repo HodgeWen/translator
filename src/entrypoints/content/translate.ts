@@ -1,8 +1,8 @@
 import type { TranslationResponse } from '@/types';
-import { shouldSkipTranslation } from '@/lib/lang-detect';
 import { encodeInline } from '@/lib/inline-placeholder';
 import { encodeBatch, decodeBatch } from '@/lib/batch-protocol';
 import { sendBgMessage } from '@/lib/messaging';
+import { detectAndCheckSkip } from '@/lib/translate-via-bg';
 import { state } from './state';
 import { applyTranslation } from './style-apply';
 
@@ -27,18 +27,8 @@ export async function translateSingleElement(el: HTMLElement, force = false, ski
   el.setAttribute('data-translator-pending', 'true');
 
   try {
-    let detectedLang: string | null = null;
-    try {
-      const detectResult = await sendBgMessage<{ lang: string | null }>({
-        type: 'DETECT_LANG',
-        payload: { text: rawText },
-      });
-      detectedLang = detectResult.lang;
-    } catch {
-      // 语言检测失败时继续翻译，避免检测提供商故障阻断正文翻译。
-    }
-
-    if (detectedLang && shouldSkipTranslation(detectedLang, state.nativeLanguage)) {
+    const { skip, detectedLang } = await detectAndCheckSkip(rawText, state.nativeLanguage);
+    if (skip) {
       el.removeAttribute('data-translator-pending');
       markElementIdle(el);
       return;
@@ -57,6 +47,7 @@ export async function translateSingleElement(el: HTMLElement, force = false, ski
         text: placeholderText,
         sourceLang: detectedLang || undefined,
         targetLang: state.targetLang,
+        hasPlaceholders: fragments.length > 0,
       },
     });
 
@@ -146,20 +137,15 @@ async function translateBatchWithFallback(batch: HTMLElement[]): Promise<void> {
   let batchDetectedLang: string | null = null;
   const sampleEl = batch.find(el => (el.textContent?.trim()?.length ?? 0) >= 5);
   if (sampleEl) {
-    try {
-      const detectResult = await sendBgMessage<{ lang: string | null }>({
-        type: 'DETECT_LANG',
-        payload: { text: sampleEl.textContent!.trim() },
-      });
-      batchDetectedLang = detectResult.lang;
-    } catch {
-      // 语言检测失败时不跳过，继续翻译
+    const { skip, detectedLang } = await detectAndCheckSkip(
+      sampleEl.textContent!.trim(),
+      state.nativeLanguage
+    );
+    if (skip) {
+      for (const el of batch) markElementIdle(el);
+      return;
     }
-  }
-
-  if (batchDetectedLang && shouldSkipTranslation(batchDetectedLang, state.nativeLanguage)) {
-    for (const el of batch) markElementIdle(el);
-    return;
+    batchDetectedLang = detectedLang;
   }
 
   for (const el of batch) {
@@ -197,8 +183,10 @@ async function translateBatchWithFallback(batch: HTMLElement[]): Promise<void> {
       type: 'TRANSLATE',
       payload: {
         text: combinedText,
+        sourceLang: batchDetectedLang || undefined,
         targetLang: state.targetLang,
         isAggregate: true,
+        hasPlaceholders: fragmentsList.some(f => f.length > 0),
       },
     });
 

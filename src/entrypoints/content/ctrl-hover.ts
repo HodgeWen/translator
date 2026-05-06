@@ -22,8 +22,14 @@ const HOVER_MIN_VISIBLE_MS = 250;
 let ctrlHoverSettingsLoaded = false;
 let hoverTarget: HTMLElement | null = null;
 let hoverTimer: number | null = null;
-let lastMouseX = -1;
-let lastMouseY = -1;
+// 最近一次 mouseover 命中的 DOM 节点。用于「先悬停再按 Ctrl」姿势：
+// 按 Ctrl 时直接用此节点替代昂贵的 elementFromPoint(x, y)，并彻底
+// 消除全局 mousemove 监听（每秒数百次回调）的能耗成本。
+//
+// 取舍说明：mouseover 只在跨元素时触发（远低于 mousemove 频率）；如果用户
+// 进入页面后从未移动鼠标即按 Ctrl，lastHoverTarget 为 null，那一次手势失效——
+// 这是可接受的极小代价，换取持续运行的能耗节省。
+let lastHoverTarget: HTMLElement | null = null;
 // 屏蔽 keydown 在按住期间的 auto-repeat：仅在「松开后再次按下」时
 // 视作一次新的"按 Ctrl"事件，避免按住期间不停 toggle。
 let ctrlPressed = false;
@@ -165,31 +171,29 @@ function tryStartHoverFor(target: HTMLElement | null): void {
 }
 
 export function setupCtrlHover(): void {
-  document.addEventListener('mousemove', (e) => {
-    lastMouseX = e.clientX;
-    lastMouseY = e.clientY;
-  }, { passive: true });
-
+  // mouseover 同时承担两个职责：
+  //   1. 跟踪最近 hover 目标（lastHoverTarget），供 keydown 时使用；
+  //   2. 用户先按 Ctrl 再移动到段落时，由本回调直接触发翻译。
   document.addEventListener('mouseover', (e) => {
-    if (!e.ctrlKey) return;
     const target = e.target as HTMLElement;
+    lastHoverTarget = target;
+    if (!e.ctrlKey) return;
     if (tryToggleDisplay(target)) return;
     tryStartHoverFor(target);
-  });
+  }, { passive: true });
 
   // 用户先悬停后按 Ctrl 的姿势：mouseover 不会再次触发，需要 keydown 兜底。
   // 同时承担「再按 Ctrl 恢复原文」的 toggle 入口：
   //   1. 用 `ctrlPressed` 屏蔽 auto-repeat，确保「松开后再次按下」才视作一次按键；
   //   2. 命中已翻译段落（wrapper 或原 el）→ 同步恢复原文，不进入翻译路径；
-  //   3. 否则走原有翻译路径（elementFromPoint + tryStartHoverFor）。
+  //   3. 否则走原有翻译路径（lastHoverTarget + tryStartHoverFor）。
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Control') return;
     if (ctrlPressed || e.repeat) return;
     ctrlPressed = true;
-    if (lastMouseX < 0 || lastMouseY < 0) return;
-    const el = document.elementFromPoint(lastMouseX, lastMouseY) as HTMLElement | null;
-    if (tryToggleDisplay(el)) return;
-    tryStartHoverFor(el);
+    if (!lastHoverTarget) return;
+    if (tryToggleDisplay(lastHoverTarget)) return;
+    tryStartHoverFor(lastHoverTarget);
   });
 
   // mouseout 仅在防抖阶段（hoverTimer != null）取消高亮 + 计时；翻译已 fire

@@ -8,6 +8,29 @@ function inflightKey(text: string, sourceLang: string | undefined, targetLang: s
   return `${text}::${sourceLang ?? 'auto'}::${targetLang}`;
 }
 
+// 8 字节 prompt 摘要：用作缓存盐值。同 prompt 共享缓存；
+// 用户改 globalPrompt 后旧缓存自然失效（key 不再命中），TTL 兜底回收。
+async function shortPromptHash(prompt: string): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(prompt));
+  return Array.from(new Uint8Array(buf, 0, 4))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+// 鉴权类错误（401/403）应短路当前 provider 的所有剩余 model；429 限流亦同。
+// 其它错误（timeout / 5xx / 网络抖动）保持原降级行为继续 fallback。
+class HttpError extends Error {
+  constructor(public status: number, message: string) {
+    super(message);
+    this.name = 'HttpError';
+  }
+}
+
+function isProviderFatal(err: unknown): boolean {
+  if (!(err instanceof HttpError)) return false;
+  return err.status === 401 || err.status === 403 || err.status === 429;
+}
+
 interface ProviderModel {
   provider: ProviderConfig;
   model: { id: string; name: string };
@@ -53,24 +76,32 @@ function renderPrompt(
   template: string,
   targetLang: string,
   sourceLang: string | undefined,
-  isAggregate: boolean
+  isAggregate: boolean,
+  hasPlaceholders: boolean
 ): string {
   const sourceLangLabel = sourceLang || 'auto-detected language';
   let prompt = template
     .replace(/\{\{sourceLang\}\}/g, sourceLangLabel)
-    .replace(/\{\{targetLang\}\}/g, targetLang)
-    .replace(/\{\{text\}\}/g, '');
+    .replace(/\{\{targetLang\}\}/g, targetLang);
 
-  prompt += PLACEHOLDER_RULE;
+  if (hasPlaceholders) {
+    prompt += PLACEHOLDER_RULE;
+  }
 
   if (isAggregate) {
+    // 聚合分隔符规则。条目 5 仅在批次内确实存在 #N# 占位符时才追加，
+    // 避免在所有段落都是纯文本时让模型困惑于一条不存在的"占位符"约束。
     prompt += `\n\nThe input contains multiple paragraphs. Each paragraph is preceded by a marker of the form "<<<N>>>" on its own line, where N is a positive integer (1, 2, 3, ...). You MUST follow this protocol exactly:
 1. Translate the content of each paragraph into ${targetLang}.
 2. Output every translated paragraph preceded by the SAME "<<<N>>>" marker on its own line, in the SAME order as the input.
 3. Do not merge paragraphs, do not skip paragraphs, and do not introduce extra paragraphs or markers that were not in the input.
-4. Treat "<<<N>>>" as opaque tokens: never translate, localize, reformat, or alter the digits/symbols inside them.
-5. Preserve every "#N#" inline placeholder inside paragraphs verbatim, exactly as instructed above.
+4. Treat "<<<N>>>" as opaque tokens: never translate, localize, reformat, or alter the digits/symbols inside them.`;
+    if (hasPlaceholders) {
+      prompt += `\n5. Preserve every "#N#" inline placeholder inside paragraphs verbatim, exactly as instructed above.
 6. Do not add any commentary, headings, or text outside the marker/paragraph structure.`;
+    } else {
+      prompt += `\n5. Do not add any commentary, headings, or text outside the marker/paragraph structure.`;
+    }
   }
 
   return prompt;
@@ -84,9 +115,10 @@ function buildBody(
   extraBody: Record<string, unknown>,
   promptTemplate: string,
   isAggregate: boolean,
+  hasPlaceholders: boolean,
   provider: ProviderConfig
 ): Record<string, unknown> {
-  const systemPrompt = renderPrompt(promptTemplate, targetLang, sourceLang, isAggregate);
+  const systemPrompt = renderPrompt(promptTemplate, targetLang, sourceLang, isAggregate, hasPlaceholders);
 
   // 装配顺序：基础字段 → extraBody → 独立采样字段（独立字段后置覆盖 extraBody 中的同名键）
   const body: Record<string, unknown> = {
@@ -98,7 +130,9 @@ function buildBody(
     ...extraBody,
   };
 
-  body.temperature = provider.temperature ?? 0.3;
+  // temperature 仅在用户显式配置时下发：reasoning 模型（OpenAI o1/o3、DeepSeek-R1 等）
+  // 不接受 temperature 参数，强制写入会导致整个 fallback 队列同样失败。
+  if (provider.temperature !== undefined) body.temperature = provider.temperature;
   if (provider.topP !== undefined) body.top_p = provider.topP;
   if (provider.maxTokens !== undefined) body.max_tokens = provider.maxTokens;
   if (provider.stream === true) body.stream = true;
@@ -223,12 +257,13 @@ async function callProvider(
   sourceLang: string | undefined,
   promptTemplate: string,
   timeout: number,
-  isAggregate: boolean
+  isAggregate: boolean,
+  hasPlaceholders: boolean
 ): Promise<{ text: string; detectedLang?: string }> {
   const { provider, model } = providerModel;
 
   const url = buildUrl(provider.baseURL, provider.query);
-  const body = buildBody(model.id, text, targetLang, sourceLang, provider.body, promptTemplate, isAggregate, provider);
+  const body = buildBody(model.id, text, targetLang, sourceLang, provider.body, promptTemplate, isAggregate, hasPlaceholders, provider);
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -243,7 +278,7 @@ async function callProvider(
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Unknown error');
-      throw new Error(`HTTP ${response.status}: ${errorText}`);
+      throw new HttpError(response.status, `HTTP ${response.status}: ${errorText}`);
     }
 
     if (provider.stream === true) {
@@ -314,6 +349,12 @@ function pickLoadBalanceQueue(settings: GlobalSettings): ProviderModel[] {
   });
 
   if (activeEntries.length === 0) return [];
+
+  // 清理已删除 provider 残留在 lbCounter 的计数，防止 SW 长期存活时缓慢泄漏。
+  const activeIds = new Set(activeEntries.map(e => e.providerId));
+  for (const id of lbCounter.keys()) {
+    if (!activeIds.has(id)) lbCounter.delete(id);
+  }
 
   // 加权轮询：选 counter/weight 最小的 provider
   let minRatio = Infinity;
@@ -394,7 +435,7 @@ function getPromptTemplate(settings: GlobalSettings, provider: ProviderConfig): 
 }
 
 export async function translate(request: TranslationRequest): Promise<TranslationResponse> {
-  const { text, sourceLang, targetLang, isAggregate } = request;
+  const { text, sourceLang, targetLang, isAggregate, hasPlaceholders } = request;
 
   const cacheKeySourceLang = sourceLang || 'auto';
   const cacheKey = inflightKey(text, cacheKeySourceLang, targetLang);
@@ -404,7 +445,14 @@ export async function translate(request: TranslationRequest): Promise<Translatio
 
   const promise = (async () => {
     try {
-      const cached = await getCachedTranslation(text, cacheKeySourceLang, targetLang);
+      const settings = await getSettings();
+
+      // 缓存盐值：以 globalPrompt 摘要作为分桶维度。用户改 prompt → 旧缓存自动失效；
+      // provider/model 不进入缓存键，让"同 prompt 共享缓存"以最大化命中率（实测翻译质量
+      // 在主流模型间差异远小于网络/费用差异）。
+      const promptSalt = await shortPromptHash(settings.globalPrompt);
+
+      const cached = await getCachedTranslation(text, cacheKeySourceLang, targetLang, promptSalt);
       if (cached) {
         return {
           text: cached.text,
@@ -412,8 +460,6 @@ export async function translate(request: TranslationRequest): Promise<Translatio
           modelId: 'cache',
         };
       }
-
-      const settings = await getSettings();
 
       const models = settings.loadBalance.enabled
         ? pickLoadBalanceQueue(settings)
@@ -426,7 +472,8 @@ export async function translate(request: TranslationRequest): Promise<Translatio
       const timeout = settings.requestTimeout;
       const errors: string[] = [];
 
-      for (const providerModel of models) {
+      for (let i = 0; i < models.length; i++) {
+        const providerModel = models[i];
         try {
           const promptTemplate = getPromptTemplate(settings, providerModel.provider);
           const result = await callProvider(
@@ -436,10 +483,11 @@ export async function translate(request: TranslationRequest): Promise<Translatio
             sourceLang,
             promptTemplate,
             timeout,
-            isAggregate || false
+            isAggregate || false,
+            hasPlaceholders || false
           );
 
-          await setCachedTranslation(text, cacheKeySourceLang, targetLang, result.text);
+          await setCachedTranslation(text, cacheKeySourceLang, targetLang, result.text, undefined, promptSalt);
 
           return {
             text: result.text,
@@ -450,6 +498,16 @@ export async function translate(request: TranslationRequest): Promise<Translatio
         } catch (error) {
           const errorMsg = error instanceof Error ? error.message : String(error);
           errors.push(`${providerModel.provider.name}/${providerModel.model.name}: ${errorMsg}`);
+
+          // 鉴权 / 限流类错误：跳过该 provider 的其余 model，避免被同一 apiKey 反复触发限流。
+          if (isProviderFatal(error)) {
+            const failedProviderId = providerModel.provider.id;
+            while (i + 1 < models.length && models[i + 1].provider.id === failedProviderId) {
+              i++;
+              const skipped = models[i];
+              errors.push(`${skipped.provider.name}/${skipped.model.name}: skipped (provider-level fatal error)`);
+            }
+          }
         }
       }
 
