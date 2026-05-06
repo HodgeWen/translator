@@ -1,12 +1,16 @@
 name: Release
 
-# 手动发版工作流：
-#   - 自动 bump package.json#version（patch / minor / major / 自定义）
-#   - 构建 Chrome + Firefox zip 包
-#   - 基于 commit history 生成分类 release notes
-#   - 创建 GitHub Release 并附带 zip 产物
+# 自动发版工作流，两种触发方式：
 #
-# 触发：在 GitHub Actions 页面手动 Run workflow，选择 bump 类型即可。
+# 1) 推送 tag（推荐日常使用）：
+#      git tag v1.2.3 && git push origin v1.2.3
+#    工作流会基于 tag 构建 zip + 生成 release notes + 创建 GitHub Release。
+#    包含 "-" 的 tag（如 v1.2.3-rc.1）会自动标记为 pre-release。
+#
+# 2) Actions 页面手动 Run workflow：
+#    在 release_type 选 patch / minor / major（或填 custom_version），
+#    工作流会自动 bump package.json#version、commit、push tag、构建并发布。
+#    可勾选 dry_run 仅预览不发布。
 
 on:
   workflow_dispatch:
@@ -21,12 +25,12 @@ on:
           - minor
           - major
       custom_version:
-        description: '自定义版本号（可选，留空则按上面的类型 bump；如 1.2.3，不要带 v 前缀）'
+        description: '自定义版本号（可选；如 1.2.3，不要带 v 前缀）'
         required: false
         type: string
         default: ''
       prerelease:
-        description: '标记为 pre-release'
+        description: '标记为 pre-release（仅手动触发生效；tag 模式自动按 -<suffix> 识别）'
         required: false
         type: boolean
         default: false
@@ -35,25 +39,32 @@ on:
         required: false
         type: boolean
         default: false
+  push:
+    tags:
+      - 'v*'
 
 permissions:
   contents: write
 
+# 同一 ref / 同一事件类型不并发；不同 tag 之间允许并发，避免互相阻塞。
 concurrency:
-  group: release
+  group: release-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   release:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      IS_DISPATCH: ${{ github.event_name == 'workflow_dispatch' }}
+      IS_TAG_PUSH: ${{ github.event_name == 'push' }}
+      DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run == 'true' }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          # 使用默认 GITHUB_TOKEN 推送 commit + tag
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Bun
@@ -62,6 +73,7 @@ jobs:
           bun-version: latest
 
       - name: Configure git identity
+        if: ${{ env.IS_DISPATCH == 'true' && env.DRY_RUN != 'true' }}
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
@@ -69,59 +81,90 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Compute next version
+      - name: Compute version
         id: version
+        env:
+          INPUT_TYPE: ${{ inputs.release_type }}
+          INPUT_CUSTOM: ${{ inputs.custom_version }}
+          INPUT_PRERELEASE: ${{ inputs.prerelease }}
         run: |
           set -euo pipefail
           OLD_VERSION=$(node -p "require('./package.json').version")
-          CUSTOM='${{ inputs.custom_version }}'
-          TYPE='${{ inputs.release_type }}'
 
-          if [ -n "$CUSTOM" ]; then
-            if ! echo "$CUSTOM" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+([-.+][0-9A-Za-z.-]+)?$'; then
-              echo "::error::custom_version 不是合法 semver: $CUSTOM"
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            TAG="$GITHUB_REF_NAME"
+            case "$TAG" in
+              v[0-9]*) NEW_VERSION="${TAG#v}" ;;
+              *)
+                echo "::error::tag $TAG 不符合 v<semver> 格式"
+                exit 1
+                ;;
+            esac
+            if echo "$NEW_VERSION" | grep -q '-'; then
+              PRERELEASE='true'
+            else
+              PRERELEASE='false'
+            fi
+          else
+            if [ -n "$INPUT_CUSTOM" ]; then
+              if ! echo "$INPUT_CUSTOM" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+([-.+][0-9A-Za-z.-]+)?$'; then
+                echo "::error::custom_version 不是合法 semver: $INPUT_CUSTOM"
+                exit 1
+              fi
+              NEW_VERSION="$INPUT_CUSTOM"
+            else
+              NEW_VERSION=$(node -e "
+                const v = '$OLD_VERSION'.split('.').map(Number);
+                const t = '$INPUT_TYPE';
+                if (t === 'major') { v[0]++; v[1] = 0; v[2] = 0; }
+                else if (t === 'minor') { v[1]++; v[2] = 0; }
+                else { v[2]++; }
+                console.log(v.join('.'));
+              ")
+            fi
+            TAG="v$NEW_VERSION"
+            if git rev-parse "refs/tags/$TAG" >/dev/null 2>&1; then
+              echo "::error::tag $TAG 已存在"
               exit 1
             fi
-            NEW_VERSION="$CUSTOM"
-          else
-            NEW_VERSION=$(node -e "
-              const v = '$OLD_VERSION'.split('.').map(Number);
-              const t = '$TYPE';
-              if (t === 'major') { v[0]++; v[1] = 0; v[2] = 0; }
-              else if (t === 'minor') { v[1]++; v[2] = 0; }
-              else { v[2]++; }
-              console.log(v.join('.'));
-            ")
-          fi
-
-          TAG="v$NEW_VERSION"
-          if git rev-parse "refs/tags/$TAG" >/dev/null 2>&1; then
-            echo "::error::tag $TAG 已存在"
-            exit 1
+            PRERELEASE="$INPUT_PRERELEASE"
           fi
 
           echo "old_version=$OLD_VERSION" >> "$GITHUB_OUTPUT"
           echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG"                 >> "$GITHUB_OUTPUT"
-          echo "Bump: $OLD_VERSION → $NEW_VERSION (tag $TAG)"
+          echo "prerelease=$PRERELEASE"   >> "$GITHUB_OUTPUT"
+          echo "Event=$GITHUB_EVENT_NAME, Old=$OLD_VERSION, New=$NEW_VERSION, Tag=$TAG, Prerelease=$PRERELEASE"
 
       - name: Generate release notes
         id: notes
         env:
           NEW_VERSION: ${{ steps.version.outputs.new_version }}
+          NEW_TAG: ${{ steps.version.outputs.tag }}
         run: |
           set -euo pipefail
-          PREV_TAG=$(git tag --list 'v*' --sort=-v:refname | head -n 1 || true)
-          if [ -n "$PREV_TAG" ]; then
-            RANGE="$PREV_TAG..HEAD"
-            COMPARE="https://github.com/${{ github.repository }}/compare/$PREV_TAG...v$NEW_VERSION"
+
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            PREV_TAG=$(git tag --list 'v*' --sort=-v:refname | grep -v "^${NEW_TAG}$" | head -n 1 || true)
+            if [ -n "$PREV_TAG" ]; then
+              RANGE="$PREV_TAG..$NEW_TAG"
+              COMPARE="https://github.com/${{ github.repository }}/compare/$PREV_TAG...$NEW_TAG"
+            else
+              RANGE="$NEW_TAG"
+              COMPARE=""
+            fi
           else
-            RANGE="HEAD"
-            COMPARE=""
+            PREV_TAG=$(git tag --list 'v*' --sort=-v:refname | head -n 1 || true)
+            if [ -n "$PREV_TAG" ]; then
+              RANGE="$PREV_TAG..HEAD"
+              COMPARE="https://github.com/${{ github.repository }}/compare/$PREV_TAG...$NEW_TAG"
+            else
+              RANGE="HEAD"
+              COMPARE=""
+            fi
           fi
           echo "上一个 tag: ${PREV_TAG:-<none>}, range=$RANGE"
 
-          # 按 conventional commit 前缀分类（兼容中英文描述）
           group() {
             local pattern="$1"
             git log --pretty='- %s (%h)' "$RANGE" \
@@ -141,13 +184,21 @@ jobs:
             DOCS=$(group 'docs')
             CHORES=$(group 'chore|build|ci|style|test|revert')
 
-            [ -n "$FEATS" ]  && { echo "### Features";       echo "$FEATS";  echo; }
-            [ -n "$FIXES" ]  && { echo "### Bug Fixes";      echo "$FIXES";  echo; }
-            [ -n "$PERFS" ]  && { echo "### Performance";    echo "$PERFS";  echo; }
-            [ -n "$REFACS" ] && { echo "### Refactors";      echo "$REFACS"; echo; }
-            [ -n "$DOCS" ]   && { echo "### Docs";           echo "$DOCS";   echo; }
-            [ -n "$OTHER" ]  && { echo "### Other";          echo "$OTHER";  echo; }
-            [ -n "$CHORES" ] && { echo "### Chore / CI";     echo "$CHORES"; echo; }
+            [ -n "$FEATS" ]  && { echo "### Features";    echo "$FEATS";  echo; }
+            [ -n "$FIXES" ]  && { echo "### Bug Fixes";   echo "$FIXES";  echo; }
+            [ -n "$PERFS" ]  && { echo "### Performance"; echo "$PERFS";  echo; }
+            [ -n "$REFACS" ] && { echo "### Refactors";   echo "$REFACS"; echo; }
+            [ -n "$DOCS" ]   && { echo "### Docs";        echo "$DOCS";   echo; }
+            [ -n "$OTHER" ]  && { echo "### Other";       echo "$OTHER";  echo; }
+            [ -n "$CHORES" ] && { echo "### Chore / CI";  echo "$CHORES"; echo; }
+
+            echo "### 下载"
+            echo
+            echo "本次 Release 资源（点击 tag 下方的 Assets 获取）："
+            echo "- Chrome 包：\`translator-extension-${NEW_VERSION}-chrome.zip\`"
+            echo "- Firefox 包：\`translator-extension-${NEW_VERSION}-firefox.zip\`"
+            echo "- Firefox 源码包（AMO 审核用）：\`translator-extension-${NEW_VERSION}-sources.zip\`"
+            echo
 
             if [ -n "$COMPARE" ]; then
               echo "**Full changelog**: $COMPARE"
@@ -158,15 +209,21 @@ jobs:
           cat RELEASE_NOTES.md
           echo "----------------------------"
 
-      - name: Bump package.json version
+      - name: Sync package.json version
+        env:
+          NEW_VERSION: ${{ steps.version.outputs.new_version }}
         run: |
           set -euo pipefail
-          node -e "
-            const fs = require('fs');
-            const p = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-            p.version = '${{ steps.version.outputs.new_version }}';
-            fs.writeFileSync('package.json', JSON.stringify(p, null, 2) + '\n');
-          "
+          CURRENT=$(node -p "require('./package.json').version")
+          if [ "$CURRENT" != "$NEW_VERSION" ]; then
+            echo "Sync package.json: $CURRENT -> $NEW_VERSION"
+            node -e "
+              const fs = require('fs');
+              const p = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+              p.version = '$NEW_VERSION';
+              fs.writeFileSync('package.json', JSON.stringify(p, null, 2) + '\n');
+            "
+          fi
           echo '--- package.json#version ---'
           node -p "require('./package.json').version"
 
@@ -203,23 +260,27 @@ jobs:
           retention-days: 30
 
       - name: Commit version bump & push tag
-        if: ${{ inputs.dry_run != 'true' }}
+        if: ${{ env.IS_DISPATCH == 'true' && env.DRY_RUN != 'true' }}
         run: |
           set -euo pipefail
-          git add package.json
-          git commit -m "chore(release): ${{ steps.version.outputs.tag }}"
+          if ! git diff --quiet package.json; then
+            git add package.json
+            git commit -m "chore(release): ${{ steps.version.outputs.tag }}"
+          else
+            echo "package.json 无改动（版本已是目标值），跳过 commit"
+          fi
           git tag -a "${{ steps.version.outputs.tag }}" \
             -m "Release ${{ steps.version.outputs.tag }}"
           git push origin HEAD --follow-tags
 
       - name: Create GitHub Release
-        if: ${{ inputs.dry_run != 'true' }}
+        if: ${{ env.DRY_RUN != 'true' }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           name: ${{ steps.version.outputs.tag }}
           body_path: RELEASE_NOTES.md
-          prerelease: ${{ inputs.prerelease == 'true' }}
+          prerelease: ${{ steps.version.outputs.prerelease == 'true' }}
           fail_on_unmatched_files: false
           files: |
             .output/*-chrome.zip
@@ -231,12 +292,13 @@ jobs:
           {
             echo "## Release ${{ steps.version.outputs.tag }}"
             echo
+            echo "- trigger: \`${{ github.event_name }}\`"
             echo "- previous version: \`${{ steps.version.outputs.old_version }}\`"
             echo "- new version: \`${{ steps.version.outputs.new_version }}\`"
-            echo "- dry-run: \`${{ inputs.dry_run }}\`"
-            echo "- prerelease: \`${{ inputs.prerelease }}\`"
+            echo "- prerelease: \`${{ steps.version.outputs.prerelease }}\`"
+            echo "- dry-run: \`${{ env.DRY_RUN }}\`"
             echo
-            echo "### Release notes preview"
+            echo "### Release notes"
             echo
             cat RELEASE_NOTES.md
           } >> "$GITHUB_STEP_SUMMARY"
