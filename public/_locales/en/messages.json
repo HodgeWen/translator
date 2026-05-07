@@ -523,5 +523,20 @@
   },
   "desc_request_settings": {
     "message": "Applies to all translation requests (both aggregate and non-aggregate)."
+  },
+  "label_test_provider": {
+    "message": "Connectivity Test"
+  },
+  "hint_test_provider": {
+    "message": "Test the current provider by sending a random-language greeting. Result will be translated into your native language."
+  },
+  "btn_test": {
+    "message": "Test"
+  },
+  "test_success": {
+    "message": "Test succeeded"
+  },
+  "test_failed": {
+    "message": "Test failed"
   }
 }

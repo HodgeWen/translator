@@ -523,5 +523,20 @@
   },
   "desc_request_settings": {
     "message": "适用于所有翻译请求（包括聚合和非聚合翻译）。"
+  },
+  "label_test_provider": {
+    "message": "连通性测试"
+  },
+  "hint_test_provider": {
+    "message": "使用随机语言的「你好」测试当前接口是否可用，结果将翻译成你的母语。"
+  },
+  "btn_test": {
+    "message": "测试"
+  },
+  "test_success": {
+    "message": "测试成功"
+  },
+  "test_failed": {
+    "message": "测试失败"
   }
 }

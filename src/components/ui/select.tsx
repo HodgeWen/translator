@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, type ReactNode } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { ChevronDown, ChevronUp, Check } from 'lucide-react';
 
@@ -25,7 +25,9 @@ export function Select({
   className,
 }: SelectProps) {
   const [open, setOpen] = useState(false);
+  const [placement, setPlacement] = useState<'top' | 'bottom'>('bottom');
   const containerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const selected = options.find((o) => o.value === value);
 
   useEffect(() => {
@@ -39,6 +41,19 @@ export function Select({
       return () => document.removeEventListener('mousedown', handleClick);
     }
   }, [open]);
+
+  useLayoutEffect(() => {
+    if (!open || !containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const menuHeight = menuRef.current?.offsetHeight ?? 240;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
+      setPlacement('top');
+    } else {
+      setPlacement('bottom');
+    }
+  }, [open, options.length]);
 
   return (
     <div ref={containerRef} className={cn('relative', className)}>
@@ -63,7 +78,13 @@ export function Select({
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-popover shadow-lg overflow-hidden animate-in fade-in-0 zoom-in-95">
+        <div
+          ref={menuRef}
+          className={cn(
+            'absolute z-50 w-full rounded-md border border-border bg-popover shadow-lg overflow-hidden animate-in fade-in-0 zoom-in-95',
+            placement === 'bottom' ? 'mt-1 top-full' : 'mb-1 bottom-full'
+          )}
+        >
           <div className="max-h-60 overflow-auto py-1">
             {options.map((option) => (
               <button

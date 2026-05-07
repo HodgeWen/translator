@@ -21,6 +21,17 @@ import { Send, Loader2, Settings, Languages, Scale } from 'lucide-react';
 const TARGET_AUTO = 'auto' as const;
 type TargetSelection = typeof TARGET_AUTO | LangCode;
 
+function isLikelyWordOrPhrase(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed || trimmed.length > 40) return false;
+  const withoutPunctuation = trimmed.replace(/[.,;:!?。，；：！？\-\/\\]/g, '');
+  return withoutPunctuation.length > 0 && !withoutPunctuation.includes(' ');
+}
+
+function buildPolysemyPrompt(targetLang: string): string {
+  return `Additional instruction: The user input may be a polysemous word or short phrase. If it has multiple distinct common meanings, provide the primary translations for each sense in ${targetLang}, prefixed with a bullet point (•). Include a brief part-of-speech or context hint in parentheses. If there is only one dominant meaning, output the translation directly without bullets.`;
+}
+
 // 预览路径只走本地检测，避免输入过程中向远端发请求泄露内容；
 // 实际翻译时再走完整 detectLanguage（含用户配置的远端备用）。
 async function resolveTargetLang(
@@ -47,6 +58,11 @@ function App() {
   const [loadBalanceEnabled, setLoadBalanceEnabled] = useState(false);
   const [inputText, setInputText] = useState('');
   const [result, setResult] = useState('');
+  const [resultMeta, setResultMeta] = useState<{
+    providerName?: string;
+    modelName?: string;
+    usage?: { promptTokens: number; completionTokens: number; totalTokens: number };
+  } | null>(null);
   const [loading, setLoading] = useState(false);
   const [langVersion, setLangVersion] = useState(0);
   const [targetLangPreview, setTargetLangPreview] = useState<LangCode>('zh-CN');
@@ -148,20 +164,30 @@ function App() {
     if (!settings) return;
     setLoading(true);
     setResult('');
+    setResultMeta(null);
 
     try {
       const trimmed = text.trim();
       const targetLang =
         manualTarget !== TARGET_AUTO ? manualTarget : await resolveTargetLang(trimmed, settings);
       setTargetLangPreview(targetLang);
+      const extraPrompt = isLikelyWordOrPhrase(trimmed) ? buildPolysemyPrompt(targetLang) : undefined;
       const response = await sendBgMessage<TranslationResponse>({
         type: 'TRANSLATE',
         payload: {
           text: trimmed,
           targetLang,
+          extraPrompt,
         },
       });
 
+      const provider = settings.providers.find((p) => p.id === response.providerId);
+      const model = provider?.models.find((m) => m.id === response.modelId);
+      setResultMeta({
+        providerName: provider?.name ?? response.providerId,
+        modelName: model?.name ?? response.modelId,
+        usage: response.usage,
+      });
       setResult(response.text);
     } catch (err) {
       showError(err instanceof Error ? err.message : t('error_translation_failed'));
@@ -328,7 +354,13 @@ function App() {
           )}
         </Button>
 
-        <PopupTranslationResult result={result} onCopy={handleCopy} />
+        <PopupTranslationResult
+          result={result}
+          onCopy={handleCopy}
+          providerName={resultMeta?.providerName}
+          modelName={resultMeta?.modelName}
+          usage={resultMeta?.usage}
+        />
       </div>
     </div>
   );

@@ -52,6 +52,7 @@ export default defineBackground(() => {
               targetLang: message.payload.targetLang,
               isAggregate: message.payload.isAggregate,
               hasPlaceholders: message.payload.hasPlaceholders,
+              extraPrompt: message.payload.extraPrompt,
             });
             sendResponse({ success: true, data: result });
             break;

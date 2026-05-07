@@ -96,6 +96,14 @@ export interface TranslationRequest {
   // 调用方告知文本内是否含 #N# 行内占位符。仅在 true 时才向 prompt 附加占位符规则，
   // 避免短句翻译（popup / input 场景）每次都浪费 ~250 字符 token。
   hasPlaceholders?: boolean;
+  // 额外提示词片段，追加到 system prompt 末尾。用于 popup 等场景注入特定规则。
+  extraPrompt?: string;
+}
+
+export interface TokenUsage {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
 }
 
 // Translation response
@@ -104,6 +112,7 @@ export interface TranslationResponse {
   providerId: string;
   modelId: string;
   detectedLang?: LangCode;
+  usage?: TokenUsage;
 }
 
 // Background message types
@@ -113,6 +122,7 @@ interface BgTranslatePayload {
   targetLang: LangCode;
   isAggregate?: boolean;
   hasPlaceholders?: boolean;
+  extraPrompt?: string;
 }
 
 interface BgDetectLangPayload {

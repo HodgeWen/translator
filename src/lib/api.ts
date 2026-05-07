@@ -1,11 +1,17 @@
 import type { ProviderConfig, TranslationRequest, TranslationResponse, LangCode, GlobalSettings } from '@/types';
 import { getSettings } from './storage';
 import { getCachedTranslation, setCachedTranslation } from './cache';
+import { DEFAULT_GLOBAL_PROMPT } from './prompts';
 
 const inflightRequests = new Map<string, Promise<TranslationResponse>>();
 
-function inflightKey(text: string, sourceLang: string | undefined, targetLang: string): string {
-  return `${text}::${sourceLang ?? 'auto'}::${targetLang}`;
+function inflightKey(
+  text: string,
+  sourceLang: string | undefined,
+  targetLang: string,
+  extraPrompt: string | undefined
+): string {
+  return `${text}::${sourceLang ?? 'auto'}::${targetLang}::${extraPrompt ?? ''}`;
 }
 
 // 8 字节 prompt 摘要：用作缓存盐值。同 prompt 共享缓存；
@@ -15,6 +21,11 @@ async function shortPromptHash(prompt: string): Promise<string> {
   return Array.from(new Uint8Array(buf, 0, 4))
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
+}
+
+export async function buildTranslationCachePartition(globalPrompt: string, extraPrompt?: string): Promise<string> {
+  if (!extraPrompt) return shortPromptHash(globalPrompt);
+  return shortPromptHash(JSON.stringify([globalPrompt, extraPrompt]));
 }
 
 // 鉴权类错误（401/403）应短路当前 provider 的所有剩余 model；429 限流亦同。
@@ -36,6 +47,12 @@ interface ProviderModel {
   model: { id: string; name: string };
 }
 
+interface OpenAIUsage {
+  prompt_tokens?: number;
+  completion_tokens?: number;
+  total_tokens?: number;
+}
+
 interface OpenAIChatResponse {
   choices?: Array<{
     message?: { content?: string };
@@ -47,6 +64,7 @@ interface OpenAIChatResponse {
   result?: string;
   detected_language?: string;
   source_language?: string;
+  usage?: OpenAIUsage;
 }
 
 // 现有兜底语义：单个 fallback 字段为空字符串时短路到下一个；全部为空时返回 null，
@@ -77,7 +95,8 @@ function renderPrompt(
   targetLang: string,
   sourceLang: string | undefined,
   isAggregate: boolean,
-  hasPlaceholders: boolean
+  hasPlaceholders: boolean,
+  extraPrompt?: string
 ): string {
   const sourceLangLabel = sourceLang || 'auto-detected language';
   let prompt = template
@@ -104,6 +123,10 @@ function renderPrompt(
     }
   }
 
+  if (extraPrompt) {
+    prompt += `\n\n${extraPrompt}`;
+  }
+
   return prompt;
 }
 
@@ -116,9 +139,10 @@ function buildBody(
   promptTemplate: string,
   isAggregate: boolean,
   hasPlaceholders: boolean,
-  provider: ProviderConfig
+  provider: ProviderConfig,
+  extraPrompt?: string
 ): Record<string, unknown> {
-  const systemPrompt = renderPrompt(promptTemplate, targetLang, sourceLang, isAggregate, hasPlaceholders);
+  const systemPrompt = renderPrompt(promptTemplate, targetLang, sourceLang, isAggregate, hasPlaceholders, extraPrompt);
 
   // 装配顺序：基础字段 → extraBody → 独立采样字段（独立字段后置覆盖 extraBody 中的同名键）
   const body: Record<string, unknown> = {
@@ -258,12 +282,13 @@ async function callProvider(
   promptTemplate: string,
   timeout: number,
   isAggregate: boolean,
-  hasPlaceholders: boolean
-): Promise<{ text: string; detectedLang?: string }> {
+  hasPlaceholders: boolean,
+  extraPrompt?: string
+): Promise<{ text: string; detectedLang?: string; usage?: { promptTokens: number; completionTokens: number; totalTokens: number } }> {
   const { provider, model } = providerModel;
 
   const url = buildUrl(provider.baseURL, provider.query);
-  const body = buildBody(model.id, text, targetLang, sourceLang, provider.body, promptTemplate, isAggregate, hasPlaceholders, provider);
+  const body = buildBody(model.id, text, targetLang, sourceLang, provider.body, promptTemplate, isAggregate, hasPlaceholders, provider, extraPrompt);
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -291,8 +316,15 @@ async function callProvider(
       throw new Error('Empty translation response');
     }
     const detectedLang = data.detected_language ?? data.source_language;
+    const usage = data.usage
+      ? {
+          promptTokens: data.usage.prompt_tokens ?? 0,
+          completionTokens: data.usage.completion_tokens ?? 0,
+          totalTokens: data.usage.total_tokens ?? 0,
+        }
+      : undefined;
 
-    return { text: translatedText, detectedLang };
+    return { text: translatedText, detectedLang, usage };
   } finally {
     clearTimeout(timeoutId);
   }
@@ -435,10 +467,10 @@ function getPromptTemplate(settings: GlobalSettings, provider: ProviderConfig): 
 }
 
 export async function translate(request: TranslationRequest): Promise<TranslationResponse> {
-  const { text, sourceLang, targetLang, isAggregate, hasPlaceholders } = request;
+  const { text, sourceLang, targetLang, isAggregate, hasPlaceholders, extraPrompt } = request;
 
   const cacheKeySourceLang = sourceLang || 'auto';
-  const cacheKey = inflightKey(text, cacheKeySourceLang, targetLang);
+  const cacheKey = inflightKey(text, cacheKeySourceLang, targetLang, extraPrompt);
 
   const existing = inflightRequests.get(cacheKey);
   if (existing) return existing;
@@ -450,7 +482,7 @@ export async function translate(request: TranslationRequest): Promise<Translatio
       // 缓存盐值：以 globalPrompt 摘要作为分桶维度。用户改 prompt → 旧缓存自动失效；
       // provider/model 不进入缓存键，让"同 prompt 共享缓存"以最大化命中率（实测翻译质量
       // 在主流模型间差异远小于网络/费用差异）。
-      const promptSalt = await shortPromptHash(settings.globalPrompt);
+      const promptSalt = await buildTranslationCachePartition(settings.globalPrompt, extraPrompt);
 
       const cached = await getCachedTranslation(text, cacheKeySourceLang, targetLang, promptSalt);
       if (cached) {
@@ -484,7 +516,8 @@ export async function translate(request: TranslationRequest): Promise<Translatio
             promptTemplate,
             timeout,
             isAggregate || false,
-            hasPlaceholders || false
+            hasPlaceholders || false,
+            extraPrompt
           );
 
           await setCachedTranslation(text, cacheKeySourceLang, targetLang, result.text, undefined, promptSalt);
@@ -494,6 +527,7 @@ export async function translate(request: TranslationRequest): Promise<Translatio
             providerId: providerModel.provider.id,
             modelId: providerModel.model.id,
             detectedLang: result.detectedLang as LangCode | undefined,
+            usage: result.usage,
           };
         } catch (error) {
           const errorMsg = error instanceof Error ? error.message : String(error);
@@ -519,4 +553,56 @@ export async function translate(request: TranslationRequest): Promise<Translatio
 
   inflightRequests.set(cacheKey, promise);
   return promise;
+}
+
+// ─── Provider Connectivity Test ──────────────────────────────────────────
+
+export async function testProvider(
+  provider: ProviderConfig,
+  text: string,
+  targetLang: string
+): Promise<{ text: string; modelName: string; usage?: { promptTokens: number; completionTokens: number; totalTokens: number } }> {
+  const model = provider.models[0];
+  if (!model) throw new Error('No models configured');
+
+  const promptTemplate = provider.prompt?.trim() || DEFAULT_GLOBAL_PROMPT;
+  const url = buildUrl(provider.baseURL, provider.query);
+  const body = buildBody(model.id, text, targetLang, undefined, provider.body, promptTemplate, false, false, provider);
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: buildHeaders(provider),
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => 'Unknown error');
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+
+    const data = (await response.json()) as OpenAIChatResponse;
+    const translatedText = extractTranslatedText(data);
+    if (!translatedText) {
+      throw new Error('Empty translation response');
+    }
+
+    return {
+      text: translatedText,
+      modelName: model.name,
+      usage: data.usage
+        ? {
+            promptTokens: data.usage.prompt_tokens ?? 0,
+            completionTokens: data.usage.completion_tokens ?? 0,
+            totalTokens: data.usage.total_tokens ?? 0,
+          }
+        : undefined,
+    };
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }

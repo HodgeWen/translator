@@ -10,6 +10,32 @@ import {
   FileText, Clock, Layers, RotateCcw, Keyboard, ExternalLink,
 } from 'lucide-react';
 
+const KEY_ICON_MAP: Record<string, string> = {
+  Control: '⌃',
+  Alt: '⌥',
+  Shift: '⇧',
+  Meta: '⌘',
+  Escape: '⎋',
+  Space: '␣',
+};
+
+function renderShortcutOption(label: string, value: string) {
+  const icon = KEY_ICON_MAP[value];
+  return (
+    <span className="inline-flex items-center gap-2">
+      {icon && (
+        <kbd className={cn(
+          'inline-flex items-center justify-center min-w-[1.5rem] h-5 px-1 rounded border border-border bg-muted',
+          'text-[11px] font-sans font-medium text-foreground/80 shadow-[inset_0_-1px_0_0_rgba(0,0,0,0.06)]'
+        )}>
+          {icon}
+        </kbd>
+      )}
+      <span>{label}</span>
+    </span>
+  );
+}
+
 const IS_MAC = typeof navigator !== 'undefined' && navigator.platform.toLowerCase().includes('mac');
 
 const MAC_SYMBOL_MAP: Record<string, string> = {
@@ -78,11 +104,11 @@ export function OptionsGeneralSettings({ settings, onSave }: OptionsGeneralSetti
   );
   const inputShortcutOptions = getInputShortcutOptions(IS_MAC).map((option) => ({
     value: option.value,
-    label: t(option.labelKey),
+    label: renderShortcutOption(t(option.labelKey), option.value),
   }));
   const hoverShortcutOptions = getHoverShortcutOptions(IS_MAC).map((option) => ({
     value: option.value,
-    label: t(option.labelKey),
+    label: renderShortcutOption(t(option.labelKey), option.value),
   }));
 
   return (
