@@ -252,7 +252,7 @@
     "message": "只支持单键；默认 Ctrl"
   },
   "hint_input_shortcut_key": {
-    "message": "连按三下翻译，再连按三下还原；默认空格键"
+    "message": "连按三下翻译，再连按三下还原"
   },
   "shortcut_key_control": {
     "message": "Ctrl"
