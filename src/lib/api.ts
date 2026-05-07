@@ -1,7 +1,7 @@
 import type { ProviderConfig, TranslationRequest, TranslationResponse, LangCode, GlobalSettings } from '@/types';
 import { getSettings } from './storage';
 import { getCachedTranslation, setCachedTranslation } from './cache';
-import { DEFAULT_GLOBAL_PROMPT } from './prompts';
+import { DEFAULT_GLOBAL_PROMPT, TONE_INSTRUCTIONS } from './prompts';
 
 const inflightRequests = new Map<string, Promise<TranslationResponse>>();
 
@@ -23,9 +23,10 @@ async function shortPromptHash(prompt: string): Promise<string> {
     .join('');
 }
 
-export async function buildTranslationCachePartition(globalPrompt: string, extraPrompt?: string): Promise<string> {
-  if (!extraPrompt) return shortPromptHash(globalPrompt);
-  return shortPromptHash(JSON.stringify([globalPrompt, extraPrompt]));
+export async function buildTranslationCachePartition(globalPrompt: string, extraPrompt?: string, tone?: string): Promise<string> {
+  const effectiveTone = tone && tone !== 'normal' ? tone : undefined;
+  if (!extraPrompt && !effectiveTone) return shortPromptHash(globalPrompt);
+  return shortPromptHash(JSON.stringify([globalPrompt, extraPrompt ?? '', effectiveTone ?? '']));
 }
 
 // 鉴权类错误（401/403）应短路当前 provider 的所有剩余 model；429 限流亦同。
@@ -482,7 +483,7 @@ export async function translate(request: TranslationRequest): Promise<Translatio
       // 缓存盐值：以 globalPrompt 摘要作为分桶维度。用户改 prompt → 旧缓存自动失效；
       // provider/model 不进入缓存键，让"同 prompt 共享缓存"以最大化命中率（实测翻译质量
       // 在主流模型间差异远小于网络/费用差异）。
-      const promptSalt = await buildTranslationCachePartition(settings.globalPrompt, extraPrompt);
+      const promptSalt = await buildTranslationCachePartition(settings.globalPrompt, extraPrompt, settings.translationTone);
 
       const cached = await getCachedTranslation(text, cacheKeySourceLang, targetLang, promptSalt);
       if (cached) {
@@ -508,12 +509,14 @@ export async function translate(request: TranslationRequest): Promise<Translatio
         const providerModel = models[i];
         try {
           const promptTemplate = getPromptTemplate(settings, providerModel.provider);
+          const toneInstr = TONE_INSTRUCTIONS[settings.translationTone];
+          const finalPromptTemplate = toneInstr ? `${promptTemplate}\n\n${toneInstr}` : promptTemplate;
           const result = await callProvider(
             providerModel,
             text,
             targetLang,
             sourceLang,
-            promptTemplate,
+            finalPromptTemplate,
             timeout,
             isAggregate || false,
             hasPlaceholders || false,

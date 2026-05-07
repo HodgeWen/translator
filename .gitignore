@@ -83,6 +83,9 @@ typings/
 .env
 .env.test
 
+# Dev settings (imported automatically in dev mode)
+dev-settings.json
+
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 

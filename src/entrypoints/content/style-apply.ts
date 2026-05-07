@@ -99,7 +99,7 @@ function applyUnderlineStyle(el: HTMLElement, translatedText: string, fragments:
 export function applyTranslation(el: HTMLElement, translatedText: string, fragments: DocumentFragment[]): void {
   if (state.elementMap.has(el)) return;
 
-  switch (state.style) {
+  switch (state.displayStyle) {
     case 'original':
     case 'clean':
       applyReplaceStyle(el, translatedText, fragments);
@@ -123,7 +123,7 @@ function restoreElement(el: HTMLElement): void {
   const elState = state.elementMap.get(el);
   if (!elState) return;
 
-  switch (state.style) {
+  switch (state.displayStyle) {
     case 'original':
     case 'clean': {
       const wrapper = elState.cloneEl;
@@ -154,7 +154,7 @@ export function toggleElementDisplay(el: HTMLElement): void {
 
   const show = elState.showingOriginal;
 
-  switch (state.style) {
+  switch (state.displayStyle) {
     case 'original':
     case 'clean': {
       const wrapper = elState.cloneEl;

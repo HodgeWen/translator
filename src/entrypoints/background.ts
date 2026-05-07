@@ -2,11 +2,19 @@ import { defineBackground } from 'wxt/utils/define-background';
 import { translate } from '@/lib/api';
 import { detectLanguage } from '@/lib/lang-detect';
 import { clearExpiredCache } from '@/lib/cache';
+import { importSettings } from '@/lib/storage';
 import type { BgMessage } from '@/types';
 
 const ALARM_NAME = 'cache-cleanup';
 
 export default defineBackground(() => {
+  // 开发模式下自动导入 dev-settings.json
+  if (import.meta.env.DEV && __DEV_SETTINGS__) {
+    importSettings(__DEV_SETTINGS__).catch((err) => {
+      console.warn('[Translator] Failed to import dev settings:', err);
+    });
+  }
+
   // Set up daily cache cleanup alarm
   chrome.alarms.get(ALARM_NAME, (alarm) => {
     if (!alarm) {

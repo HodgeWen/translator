@@ -230,6 +230,57 @@
   "style_clean_desc": {
     "message": "Clean replacement without any markers"
   },
+  "title_display_mode_settings": {
+    "message": "Display Mode"
+  },
+  "title_translation_tone": {
+    "message": "Translation Tone"
+  },
+  "label_translation_tone": {
+    "message": "Default Tone"
+  },
+  "tone_normal": {
+    "message": "Normal"
+  },
+  "tone_normal_desc": {
+    "message": "Natural and neutral translation style"
+  },
+  "tone_technical": {
+    "message": "Technical"
+  },
+  "tone_technical_desc": {
+    "message": "Precise terminology, concise sentences, professional"
+  },
+  "tone_tech_forward": {
+    "message": "Tech-forward"
+  },
+  "tone_tech_forward_desc": {
+    "message": "Cutting-edge vocabulary, geek energy, engaging"
+  },
+  "tone_humorous": {
+    "message": "Humorous"
+  },
+  "tone_humorous_desc": {
+    "message": "Lighthearted, witty, playful while accurate"
+  },
+  "tone_literary": {
+    "message": "Literary"
+  },
+  "tone_literary_desc": {
+    "message": "Elegant language, rich vocabulary, preserves rhetoric"
+  },
+  "tone_formal": {
+    "message": "Formal"
+  },
+  "tone_formal_desc": {
+    "message": "Dignified, precise, suitable for formal contexts"
+  },
+  "tone_colloquial": {
+    "message": "Colloquial"
+  },
+  "tone_colloquial_desc": {
+    "message": "Everyday conversational, natural and casual"
+  },
   "label_keyboard_shortcut": {
     "message": "Keyboard Shortcut"
   },
@@ -446,6 +497,18 @@
   "hint_extra_body_override": {
     "message": "Standalone fields above take precedence over keys of the same name in this JSON."
   },
+  "hint_extra_body_examples": {
+    "message": "Common fields:\n• reasoning_effort (OpenAI): \"none\" / \"low\" / \"medium\" / \"high\" — set to \"none\" to disable reasoning\n• enable_thinking (Anthropic Claude): false — disable extended thinking"
+  },
+  "hint_temperature": {
+    "message": "Controls randomness. Lower values make translations more precise and consistent (recommended 0~0.3); higher values produce more creative output."
+  },
+  "hint_top_p": {
+    "message": "Nucleus sampling that controls word diversity. 1.0 considers all candidates; lower values are more conservative. Temperature alone is usually sufficient — no need to tweak both."
+  },
+  "hint_max_tokens": {
+    "message": "Maximum tokens per response (1 token ≈ 0.75 English words or 1~2 Chinese characters). Increase if translations are being cut off."
+  },
   "hint_content_type_auto": {
     "message": "Content-Type is injected automatically by the request layer; no need to set it here."
   },
@@ -538,5 +601,11 @@
   },
   "test_failed": {
     "message": "Test failed"
+  },
+  "popup_meta_show": {
+    "message": "Show details"
+  },
+  "popup_meta_hide": {
+    "message": "Hide details"
   }
 }

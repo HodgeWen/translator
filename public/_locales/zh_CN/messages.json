@@ -230,6 +230,57 @@
   "style_clean_desc": {
     "message": "无任何标记的纯净替换"
   },
+  "title_display_mode_settings": {
+    "message": "展示方式"
+  },
+  "title_translation_tone": {
+    "message": "翻译风格"
+  },
+  "label_translation_tone": {
+    "message": "默认翻译风格"
+  },
+  "tone_normal": {
+    "message": "正常"
+  },
+  "tone_normal_desc": {
+    "message": "自然中立的翻译风格"
+  },
+  "tone_technical": {
+    "message": "技术向"
+  },
+  "tone_technical_desc": {
+    "message": "术语精确，句式紧凑，专业严谨"
+  },
+  "tone_tech_forward": {
+    "message": "科技前沿"
+  },
+  "tone_tech_forward_desc": {
+    "message": "新潮用语，极客感，充满活力"
+  },
+  "tone_humorous": {
+    "message": "幽默"
+  },
+  "tone_humorous_desc": {
+    "message": "轻松活泼，适当玩梗，保持原意"
+  },
+  "tone_literary": {
+    "message": "文学"
+  },
+  "tone_literary_desc": {
+    "message": "辞藻优美，保留修辞与情感色彩"
+  },
+  "tone_formal": {
+    "message": "正式"
+  },
+  "tone_formal_desc": {
+    "message": "庄重严谨，适合文档与正式场合"
+  },
+  "tone_colloquial": {
+    "message": "口语"
+  },
+  "tone_colloquial_desc": {
+    "message": "日常口语化表达，地道自然"
+  },
   "label_keyboard_shortcut": {
     "message": "快捷键"
   },
@@ -446,6 +497,18 @@
   "hint_extra_body_override": {
     "message": "与上方独立字段同名时以独立字段为准。"
   },
+  "hint_extra_body_examples": {
+    "message": "常用字段：\n• reasoning_effort (OpenAI): \"none\" / \"low\" / \"medium\" / \"high\"，设为 \"none\" 关闭推理\n• enable_thinking (Anthropic Claude): false，关闭扩展思考"
+  },
+  "hint_temperature": {
+    "message": "控制输出的随机性。值越低翻译越精准一致（推荐 0~0.3），值越高回答越有创造性。"
+  },
+  "hint_top_p": {
+    "message": "核采样，控制候选词的多样性。1.0 考虑所有可能，较低值更保守。通常调 Temperature 就够了，无需同时修改此项。"
+  },
+  "hint_max_tokens": {
+    "message": "每次翻译最多生成的 token 数量（1 token ≈ 0.75 个英文词或 1~2 个汉字）。翻译结果被截断时可适当调大。"
+  },
   "hint_content_type_auto": {
     "message": "Content-Type 由请求层自动注入，无需手动设置。"
   },
@@ -538,5 +601,11 @@
   },
   "test_failed": {
     "message": "测试失败"
+  },
+  "popup_meta_show": {
+    "message": "查看详情"
+  },
+  "popup_meta_hide": {
+    "message": "收起详情"
   }
 }

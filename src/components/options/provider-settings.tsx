@@ -222,6 +222,7 @@ export function OptionsProviderSettings({ settings, onSave, onError }: OptionsPr
               onChange={(e) => updateEditingProvider({ temperature: parseFloat(e.target.value) })}
               className="w-full accent-indigo-500"
             />
+            <p className="text-xs text-muted-foreground">{t('hint_temperature')}</p>
           </div>
 
           <div className="space-y-2">
@@ -264,6 +265,7 @@ export function OptionsProviderSettings({ settings, onSave, onError }: OptionsPr
               onChange={(e) => updateEditingProvider({ topP: parseFloat(e.target.value) })}
               className="w-full accent-indigo-500 disabled:opacity-40"
             />
+            <p className="text-xs text-muted-foreground">{t('hint_top_p')}</p>
           </div>
 
           <div className="space-y-2">
@@ -286,6 +288,7 @@ export function OptionsProviderSettings({ settings, onSave, onError }: OptionsPr
               }}
               className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm"
             />
+            <p className="text-xs text-muted-foreground">{t('hint_max_tokens')}</p>
           </div>
         </div>
 
@@ -317,6 +320,7 @@ export function OptionsProviderSettings({ settings, onSave, onError }: OptionsPr
         <div className="space-y-2">
           <label className="text-sm font-medium">{t('label_extra_body')}</label>
           <p className="text-xs text-muted-foreground">{t('hint_extra_body_override')}</p>
+          <p className="text-xs text-muted-foreground whitespace-pre-wrap">{t('hint_extra_body_examples')}</p>
           <CodeEditor
             value={JSON.stringify(editingProvider.body, null, 2)}
             onChange={(value) => {

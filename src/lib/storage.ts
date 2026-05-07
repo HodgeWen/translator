@@ -1,6 +1,7 @@
 import type { GlobalSettings } from '@/types';
 import { globalSettingsSchema, type ValidatedSettings } from './schema';
 
+
 type ValidatedProvider = ValidatedSettings['providers'][number];
 import { DEFAULT_GLOBAL_PROMPT } from './prompts';
 import { encryptJSON, decryptJSON, isEncryptedPayload, ENCRYPTED_FORMAT } from './crypto';
@@ -41,7 +42,8 @@ export const DEFAULT_SETTINGS: GlobalSettings = {
   nativeLanguage: 'zh-CN',
   defaultSourceLanguage: 'en',
   uiLanguage: 'zh-CN',
-  defaultStyle: 'original',
+  displayStyle: 'original',
+  translationTone: 'normal',
   globalPrompt: DEFAULT_GLOBAL_PROMPT,
   detectLangProviders: [
     { id: 'franc', name: 'franc-min', type: 'franc' },
@@ -138,7 +140,7 @@ export async function exportSettings(passphrase?: string): Promise<string> {
   const settings = await getSettings();
   const exportData = {
     version: 1,
-    exportedAt: new Date().toISOString(),
+    exportedAt: new Date().toLocaleString('sv-SE').replace(' ', 'T'),
     settings,
   };
   const plaintext = JSON.stringify(exportData, null, 2);

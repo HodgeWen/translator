@@ -1,4 +1,4 @@
-import type { LangCode, TranslationStyle, GlobalSettings } from '@/types';
+import type { LangCode, DisplayStyle, GlobalSettings } from '@/types';
 
 // ─── Types ──────────────────────────────────────────────────────────────
 
@@ -21,7 +21,7 @@ export interface AggregateSettings {
 
 export interface GlobalState {
   isActive: boolean;
-  style: TranslationStyle;
+  displayStyle: DisplayStyle;
   nativeLanguage: LangCode;
   targetLang: LangCode;
   observer: IntersectionObserver | null;
@@ -51,7 +51,7 @@ export const mutationIgnoredNodes = new WeakSet<HTMLElement>();
 
 export const state: GlobalState = {
   isActive: false,
-  style: 'original',
+  displayStyle: 'original',
   nativeLanguage: 'zh-CN',
   targetLang: 'zh-CN',
   observer: null,
@@ -69,7 +69,7 @@ export const state: GlobalState = {
 };
 
 export function applySettingsToState(s: GlobalSettings): void {
-  state.style = s.defaultStyle;
+  state.displayStyle = s.displayStyle;
   state.nativeLanguage = s.nativeLanguage;
   state.targetLang = s.nativeLanguage;
   state.aggregate = {

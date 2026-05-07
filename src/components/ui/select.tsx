@@ -14,6 +14,7 @@ interface SelectProps {
   disabled?: boolean;
   placeholder?: string;
   className?: string;
+  compact?: boolean;
 }
 
 export function Select({
@@ -23,6 +24,7 @@ export function Select({
   disabled = false,
   placeholder = 'Select...',
   className,
+  compact = false,
 }: SelectProps) {
   const [open, setOpen] = useState(false);
   const [placement, setPlacement] = useState<'top' | 'bottom'>('bottom');
@@ -62,18 +64,19 @@ export function Select({
         disabled={disabled}
         onClick={() => setOpen(!open)}
         className={cn(
-          'flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors',
+          'flex w-full items-center justify-between rounded-md border border-input bg-transparent shadow-sm transition-colors',
           'focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
-          'hover:bg-accent/50'
+          'hover:bg-accent/50',
+          compact ? 'h-7 px-2 py-1 text-xs' : 'h-9 px-3 py-2 text-sm'
         )}
       >
         <span className={cn('truncate', !selected && 'text-muted-foreground')}>
           {selected ? selected.label : placeholder}
         </span>
         {open ? (
-          <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <ChevronUp className={cn('shrink-0 text-muted-foreground', compact ? 'h-3 w-3' : 'h-4 w-4')} />
         ) : (
-          <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <ChevronDown className={cn('shrink-0 text-muted-foreground', compact ? 'h-3 w-3' : 'h-4 w-4')} />
         )}
       </button>
 
@@ -95,14 +98,15 @@ export function Select({
                   setOpen(false);
                 }}
                 className={cn(
-                  'flex w-full items-center justify-between px-3 py-2 text-sm transition-colors',
+                  'flex w-full items-center justify-between transition-colors',
                   'hover:bg-accent hover:text-accent-foreground',
-                  value === option.value && 'bg-accent text-accent-foreground'
+                  value === option.value && 'bg-accent text-accent-foreground',
+                  compact ? 'px-2 py-1.5 text-xs' : 'px-3 py-2 text-sm'
                 )}
               >
                 <span className="truncate">{option.label}</span>
                 {value === option.value && (
-                  <Check className="ml-2 h-4 w-4 shrink-0" />
+                  <Check className={cn('shrink-0', compact ? 'ml-1 h-3 w-3' : 'ml-2 h-4 w-4')} />
                 )}
               </button>
             ))}

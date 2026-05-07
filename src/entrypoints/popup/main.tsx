@@ -8,7 +8,7 @@ import { Toast } from '@/components/ui/toast';
 import { Select } from '@/components/ui/select';
 import { PopupProviderSelector } from '@/components/popup/provider-selector';
 import { PopupTranslationResult } from '@/components/popup/translation-result';
-import type { ProviderConfig, GlobalSettings, TranslationResponse, LangCode } from '@/types';
+import type { ProviderConfig, GlobalSettings, TranslationResponse, LangCode, TranslationTone } from '@/types';
 import { getSettings, saveSettings } from '@/lib/storage';
 import { sendBgMessage } from '@/lib/messaging';
 import { detectLanguage, detectLanguageLocal, shouldSkipTranslation } from '@/lib/lang-detect';
@@ -65,6 +65,7 @@ function App() {
   } | null>(null);
   const [loading, setLoading] = useState(false);
   const [langVersion, setLangVersion] = useState(0);
+  const [currentTone, setCurrentTone] = useState<TranslationTone>('normal');
   const [targetLangPreview, setTargetLangPreview] = useState<LangCode>('zh-CN');
   const [manualTarget, setManualTarget] = useState<TargetSelection>(TARGET_AUTO);
   const detectSeqRef = useRef(0);
@@ -103,6 +104,7 @@ function App() {
       setSettings(s);
       setTargetLangPreview(s.nativeLanguage);
       setLangVersion((v) => v + 1);
+      setCurrentTone(s.translationTone);
       setLoadBalanceEnabled(s.loadBalance.enabled);
 
       // 恢复上次选择的 provider/model
@@ -203,15 +205,12 @@ function App() {
   };
 
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
-    const pasted = e.clipboardData.getData('text');
-    if (pasted && pasted.trim()) {
-      const textarea = e.currentTarget;
-      const before = textarea.value.slice(0, textarea.selectionStart);
-      const after = textarea.value.slice(textarea.selectionEnd);
-      const finalText = before + pasted + after;
-      setInputText(finalText);
-      window.setTimeout(() => handleTranslate(finalText), 0);
-    }
+    // 不阻止默认行为，让浏览器自然处理粘贴，onChange 接管 state 更新。
+    // 若手动 setInputText 会与 onChange 冲突导致双次粘贴。
+    window.setTimeout(() => {
+      const val = e.currentTarget.value;
+      if (val.trim()) handleTranslate(val);
+    }, 0);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -219,6 +218,24 @@ function App() {
       e.preventDefault();
       handleTranslate();
     }
+  };
+
+  const toneOptions: Array<{ value: string; label: string }> = [
+    { value: 'normal', label: t('tone_normal') },
+    { value: 'technical', label: t('tone_technical') },
+    { value: 'tech_forward', label: t('tone_tech_forward') },
+    { value: 'humorous', label: t('tone_humorous') },
+    { value: 'literary', label: t('tone_literary') },
+    { value: 'formal', label: t('tone_formal') },
+    { value: 'colloquial', label: t('tone_colloquial') },
+  ];
+
+  const handleToneChange = async (tone: string) => {
+    if (!settings) return;
+    setCurrentTone(tone as TranslationTone);
+    const newSettings = { ...settings, translationTone: tone as TranslationTone };
+    setSettings(newSettings);
+    await saveSettings(newSettings);
   };
 
   const provider = getSelectedProvider();
@@ -239,7 +256,14 @@ function App() {
           </div>
           <h1 className="text-base font-semibold tracking-tight">{t('extName')}</h1>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
+          <Select
+            value={currentTone}
+            options={toneOptions}
+            onChange={handleToneChange}
+            className="w-[84px]"
+            compact
+          />
           {/* Load Balance Toggle */}
           <Button
             variant="ghost"

@@ -2,7 +2,8 @@
 export type LangCode = string;
 
 // Translation display styles
-export type TranslationStyle = 'original' | 'bilingual' | 'underline' | 'clean';
+export type DisplayStyle = 'original' | 'bilingual' | 'underline' | 'clean';
+export type TranslationTone = 'normal' | 'technical' | 'tech_forward' | 'humorous' | 'literary' | 'formal' | 'colloquial';
 export type InputLoadingPulseEasing = 'linear' | 'ease-out' | 'spring';
 
 // OpenAI-compatible provider configuration
@@ -60,7 +61,8 @@ export interface GlobalSettings {
   nativeLanguage: LangCode;
   defaultSourceLanguage: LangCode;
   uiLanguage: LangCode;
-  defaultStyle: TranslationStyle;
+  displayStyle: DisplayStyle;
+  translationTone: TranslationTone;
   globalPrompt: string;
   detectLangProviders: LangDetectProvider[];
   shortcutKey: string;

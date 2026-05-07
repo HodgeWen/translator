@@ -39,7 +39,7 @@ export function OptionsBackupRestoreSettings({ settings, onError, onSuccess, onI
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      const date = new Date().toISOString().slice(0, 19).replace(/:/g, '-').replace('T', '_');
+      const date = new Date().toLocaleString('sv-SE').replace(' ', '_').replace(/:/g, '-');
       a.download = usePassphrase
         ? `translator-settings-${date}.enc.json`
         : `translator-settings-${date}.json`;
