@@ -743,7 +743,7 @@ declare module "wxt/browser" {
       options?: GetMessageOptions,
     ): string;
     /**
-     * "连按三下翻译，再连按三下还原；默认空格键"
+     * "连按三下翻译，再连按三下还原"
      */
     getMessage(
       messageName: "hint_input_shortcut_key",
