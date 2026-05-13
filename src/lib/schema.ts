@@ -6,9 +6,9 @@ const providerConfigSchema = z.object({
   name: z.string().min(1),
   baseURL: z.string().url(),
   apiKey: z.string().default(''),
-  headers: z.record(z.string()).default({}),
-  query: z.record(z.string()).default({}),
-  body: z.record(z.unknown()).default({}),
+  headers: z.record(z.string(), z.string()).default({}),
+  query: z.record(z.string(), z.string()).default({}),
+  body: z.record(z.string(), z.unknown()).default({}),
   prompt: z.string().optional(),
   temperature: z.number().min(0).max(2).optional(),
   topP: z.number().gt(0).max(1).optional(),
@@ -39,7 +39,7 @@ const langDetectProviderSchema = z.object({
   type: z.enum(['franc', 'api', 'google_free']),
   endpoint: z.string().url().optional(),
   apiKey: z.string().optional(),
-  headers: z.record(z.string()).optional(),
+  headers: z.record(z.string(), z.string()).optional(),
   timeout: z.number().int().min(1000).max(60000).optional(),
 });
 

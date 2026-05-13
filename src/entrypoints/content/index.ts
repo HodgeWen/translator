@@ -1,17 +1,22 @@
-import { defineContentScript } from 'wxt/utils/define-content-script';
-import { sendBgMessage } from '@/lib/messaging';
-import { state, applySettingsToState } from './state';
-import { toggleAllDisplay } from './style-apply';
-import { startTranslation, setupSPADetection } from './observer';
-import { setupInputListeners } from './input-translate';
-import { setupCtrlHover } from './ctrl-hover';
-import './styles.css';
+import { defineContentScript } from 'wxt/utils/define-content-script'
+import type { ContentScriptDefinition } from 'wxt'
+import { sendBgMessage } from '@/lib/messaging'
+import { state, applySettingsToState } from './state'
+import { toggleAllDisplay } from './style-apply'
+import { startTranslation, setupSPADetection } from './observer'
+import { setupInputListeners } from './input-translate'
+import { setupCtrlHover } from './ctrl-hover'
+import './styles.css'
 
 // ─── Utilities ──────────────────────────────────────────────────────────
 
 function isValidPage(): boolean {
-  const url = location.href;
-  return !url.startsWith('chrome://') && !url.startsWith('chrome-extension://') && !url.startsWith('devtools://');
+  const url = location.href
+  return (
+    !url.startsWith('chrome://') &&
+    !url.startsWith('chrome-extension://') &&
+    !url.startsWith('devtools://')
+  )
 }
 
 // ─── Toggle Handler ─────────────────────────────────────────────────────
@@ -22,38 +27,38 @@ function isValidPage(): boolean {
 //   active + original                 → press → active + translation（全页 toggle 回译文）
 // 目的：避免每次按 Alt+W 都重新请求 API；翻译结果保留在 elementMap，纯切换 DOM 显示。
 
-let isToggling = false;
+let isToggling = false
 
 async function toggleTranslation(): Promise<void> {
-  if (isToggling) return;
+  if (isToggling) return
 
   if (state.isActive) {
     if (state.displayMode === 'translation') {
-      state.displayMode = 'original';
-      toggleAllDisplay(true);
+      state.displayMode = 'original'
+      toggleAllDisplay(true)
     } else {
-      state.displayMode = 'translation';
-      toggleAllDisplay(false);
+      state.displayMode = 'translation'
+      toggleAllDisplay(false)
     }
-    return;
+    return
   }
 
-  isToggling = true;
+  isToggling = true
   try {
-    await sendBgMessage({ type: 'PING' }).catch(() => null);
+    await sendBgMessage({ type: 'PING' }).catch(() => null)
 
-    const { getSettings } = await import('@/lib/storage');
-    const s = await getSettings();
+    const { getSettings } = await import('@/lib/storage')
+    const s = await getSettings()
 
-    applySettingsToState(s);
-    state.isActive = true;
-    state.displayMode = 'translation';
+    applySettingsToState(s)
+    state.isActive = true
+    state.displayMode = 'translation'
 
-    startTranslation();
+    startTranslation()
   } catch (err) {
-    console.warn('[Translator] toggleTranslation failed:', err);
+    console.warn('[Translator] toggleTranslation failed:', err)
   } finally {
-    isToggling = false;
+    isToggling = false
   }
 }
 
@@ -63,22 +68,22 @@ export default defineContentScript({
   matches: ['<all_urls>'],
   runAt: 'document_idle',
   main() {
-    if (!isValidPage()) return;
+    if (!isValidPage()) return
 
     // Guard against double-injection (extension reload/update)
     if ((window as unknown as Record<string, unknown>).__translatorContentScriptLoaded) {
-      return;
+      return
     }
-    (window as unknown as Record<string, unknown>).__translatorContentScriptLoaded = true;
+    ;(window as unknown as Record<string, unknown>).__translatorContentScriptLoaded = true
 
     chrome.runtime.onMessage.addListener((message) => {
       if (message.type === 'TOGGLE_TRANSLATION') {
-        toggleTranslation();
+        toggleTranslation()
       }
-    });
+    })
 
-    setupInputListeners();
-    setupCtrlHover();
-    setupSPADetection();
-  },
-});
+    setupInputListeners()
+    setupCtrlHover()
+    setupSPADetection()
+  }
+}) as ContentScriptDefinition

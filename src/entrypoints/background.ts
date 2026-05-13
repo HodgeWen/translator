@@ -1,4 +1,5 @@
 import { defineBackground } from 'wxt/utils/define-background';
+import type { BackgroundDefinition } from 'wxt';
 import { translate } from '@/lib/api';
 import { detectLanguage } from '@/lib/lang-detect';
 import { clearExpiredCache } from '@/lib/cache';
@@ -89,4 +90,4 @@ export default defineBackground(() => {
     // Return true to indicate we will send a response asynchronously
     return true;
   });
-});
+}) as BackgroundDefinition;

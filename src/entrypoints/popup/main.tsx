@@ -1,35 +1,41 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { createRoot } from 'react-dom/client';
-import '@/assets/styles.css';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { useDarkMode } from '@/hooks/use-dark-mode';
-import { Toast } from '@/components/ui/toast';
-import { Select } from '@/components/ui/select';
-import { PopupProviderSelector } from '@/components/popup/provider-selector';
-import { PopupTranslationResult } from '@/components/popup/translation-result';
-import type { ProviderConfig, GlobalSettings, TranslationResponse, LangCode, TranslationTone } from '@/types';
-import { getSettings, saveSettings } from '@/lib/storage';
-import { sendBgMessage } from '@/lib/messaging';
-import { detectLanguage, detectLanguageLocal, shouldSkipTranslation } from '@/lib/lang-detect';
-import { LANGUAGE_OPTIONS } from '@/lib/languages';
-import { t, setUILanguage } from '@/lib/i18n';
-import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
-import { Send, Loader2, Settings, Languages, Scale } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react'
+import { createRoot } from 'react-dom/client'
+import '@/assets/styles.css'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import { useDarkMode } from '@/hooks/use-dark-mode'
+import { Toast } from '@/components/ui/toast'
+import { Select } from '@/components/ui/select'
+import { PopupProviderSelector } from '@/components/popup/provider-selector'
+import { PopupTranslationResult } from '@/components/popup/translation-result'
+import type {
+  ProviderConfig,
+  GlobalSettings,
+  TranslationResponse,
+  LangCode,
+  TranslationTone
+} from '@/types'
+import { getSettings, saveSettings } from '@/lib/storage'
+import { sendBgMessage } from '@/lib/messaging'
+import { detectLanguage, detectLanguageLocal, shouldSkipTranslation } from '@/lib/lang-detect'
+import { LANGUAGE_OPTIONS } from '@/lib/languages'
+import { t, setUILanguage } from '@/lib/i18n'
+import { useToast } from '@/hooks/use-toast'
+import { cn } from '@/lib/utils'
+import { Send, Loader2, Settings, Languages, Scale } from 'lucide-react'
 
-const TARGET_AUTO = 'auto' as const;
-type TargetSelection = typeof TARGET_AUTO | LangCode;
+const TARGET_AUTO = 'auto' as const
+type TargetSelection = typeof TARGET_AUTO | LangCode
 
 function isLikelyWordOrPhrase(text: string): boolean {
-  const trimmed = text.trim();
-  if (!trimmed || trimmed.length > 40) return false;
-  const withoutPunctuation = trimmed.replace(/[.,;:!?。，；：！？\-\/\\]/g, '');
-  return withoutPunctuation.length > 0 && !withoutPunctuation.includes(' ');
+  const trimmed = text.trim()
+  if (!trimmed || trimmed.length > 40) return false
+  const withoutPunctuation = trimmed.replace(/[.,;:!?。，；：！？\-\/\\]/g, '')
+  return withoutPunctuation.length > 0 && !withoutPunctuation.includes(' ')
 }
 
 function buildPolysemyPrompt(targetLang: string): string {
-  return `Additional instruction: The user input may be a polysemous word or short phrase. If it has multiple distinct common meanings, provide the primary translations for each sense in ${targetLang}, prefixed with a bullet point (•). Include a brief part-of-speech or context hint in parentheses. If there is only one dominant meaning, output the translation directly without bullets.`;
+  return `Additional instruction: The user input may be a polysemous word or short phrase. If it has multiple distinct common meanings, provide the primary translations for each sense in ${targetLang}, prefixed with a bullet point (•). Include a brief part-of-speech or context hint in parentheses. If there is only one dominant meaning, output the translation directly without bullets.`
 }
 
 // 预览路径只走本地检测，避免输入过程中向远端发请求泄露内容；
@@ -39,186 +45,198 @@ async function resolveTargetLang(
   settings: GlobalSettings,
   options: { localOnly?: boolean } = {}
 ): Promise<LangCode> {
-  const trimmed = text.trim();
-  if (!trimmed) return settings.nativeLanguage;
+  const trimmed = text.trim()
+  if (!trimmed) return settings.nativeLanguage
   const detected = options.localOnly
     ? await detectLanguageLocal(trimmed)
-    : await detectLanguage(trimmed);
+    : await detectLanguage(trimmed)
   if (detected && shouldSkipTranslation(detected, settings.nativeLanguage)) {
-    return settings.defaultSourceLanguage;
+    return settings.defaultSourceLanguage
   }
-  return settings.nativeLanguage;
+  return settings.nativeLanguage
 }
 
 function App() {
-  const { toast, showSuccess, showError, dismiss } = useToast();
-  const [settings, setSettings] = useState<GlobalSettings | null>(null);
-  const [selectedProviderId, setSelectedProviderId] = useState<string>('');
-  const [selectedModelId, setSelectedModelId] = useState<string>('');
-  const [loadBalanceEnabled, setLoadBalanceEnabled] = useState(false);
-  const [inputText, setInputText] = useState('');
-  const [result, setResult] = useState('');
+  const { toast, showSuccess, showError, dismiss } = useToast()
+  const [settings, setSettings] = useState<GlobalSettings | null>(null)
+  const [selectedProviderId, setSelectedProviderId] = useState<string>('')
+  const [selectedModelId, setSelectedModelId] = useState<string>('')
+  const [loadBalanceEnabled, setLoadBalanceEnabled] = useState(false)
+  const [inputText, setInputText] = useState('')
+  const [result, setResult] = useState('')
   const [resultMeta, setResultMeta] = useState<{
-    providerName?: string;
-    modelName?: string;
-    usage?: { promptTokens: number; completionTokens: number; totalTokens: number };
-  } | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [langVersion, setLangVersion] = useState(0);
-  const [currentTone, setCurrentTone] = useState<TranslationTone>('normal');
-  const [targetLangPreview, setTargetLangPreview] = useState<LangCode>('zh-CN');
-  const [manualTarget, setManualTarget] = useState<TargetSelection>(TARGET_AUTO);
-  const detectSeqRef = useRef(0);
+    providerName?: string
+    modelName?: string
+    usage?: { promptTokens: number; completionTokens: number; totalTokens: number }
+  } | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [langVersion, setLangVersion] = useState(0)
+  const [currentTone, setCurrentTone] = useState<TranslationTone>('normal')
+  const [targetLangPreview, setTargetLangPreview] = useState<LangCode>('zh-CN')
+  const [manualTarget, setManualTarget] = useState<TargetSelection>(TARGET_AUTO)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const detectSeqRef = useRef(0)
 
   useEffect(() => {
-    loadSettingsData();
-  }, []);
-
-  useDarkMode();
+    loadSettingsData()
+  }, [])
 
   useEffect(() => {
-    if (!settings) return;
+    // 稍微给一点点延迟（0ms），确保 Chrome 已经完成了弹出框的渲染
+    const timer = setTimeout(() => {
+      textareaRef.current?.focus()
+    }, 30)
+
+    return () => clearTimeout(timer)
+  }, [])
+
+  useDarkMode()
+
+  useEffect(() => {
+    if (!settings) return
     if (manualTarget !== TARGET_AUTO) {
-      setTargetLangPreview(manualTarget);
-      return;
+      setTargetLangPreview(manualTarget)
+      return
     }
-    const trimmed = inputText.trim();
+    const trimmed = inputText.trim()
     if (!trimmed) {
-      setTargetLangPreview(settings.nativeLanguage);
-      return;
+      setTargetLangPreview(settings.nativeLanguage)
+      return
     }
-    const seq = ++detectSeqRef.current;
+    const seq = ++detectSeqRef.current
     const timer = window.setTimeout(async () => {
-      const target = await resolveTargetLang(trimmed, settings, { localOnly: true });
+      const target = await resolveTargetLang(trimmed, settings, { localOnly: true })
       if (seq === detectSeqRef.current) {
-        setTargetLangPreview(target);
+        setTargetLangPreview(target)
       }
-    }, 200);
-    return () => window.clearTimeout(timer);
-  }, [inputText, settings, manualTarget]);
+    }, 200)
+    return () => window.clearTimeout(timer)
+  }, [inputText, settings, manualTarget])
 
   const loadSettingsData = async () => {
     try {
-      const s = await getSettings();
-      await setUILanguage(s.uiLanguage);
-      setSettings(s);
-      setTargetLangPreview(s.nativeLanguage);
-      setLangVersion((v) => v + 1);
-      setCurrentTone(s.translationTone);
-      setLoadBalanceEnabled(s.loadBalance.enabled);
+      const s = await getSettings()
+      await setUILanguage(s.uiLanguage)
+      setSettings(s)
+      setTargetLangPreview(s.nativeLanguage)
+      setLangVersion((v) => v + 1)
+      setCurrentTone(s.translationTone)
+      setLoadBalanceEnabled(s.loadBalance.enabled)
 
       // 恢复上次选择的 provider/model
       if (s.selectedProviderId) {
-        setSelectedProviderId(s.selectedProviderId);
-        setSelectedModelId(s.selectedModelId);
+        setSelectedProviderId(s.selectedProviderId)
+        setSelectedModelId(s.selectedModelId)
       } else if (s.providers.length > 0) {
-        setSelectedProviderId(s.providers[0].id);
+        setSelectedProviderId(s.providers[0].id)
         if (s.providers[0].models.length > 0) {
-          setSelectedModelId(s.providers[0].models[0].id);
+          setSelectedModelId(s.providers[0].models[0].id)
         }
       }
     } catch {
-      showError(t('error_load_settings'));
+      showError(t('error_load_settings'))
     }
-  };
+  }
 
   const getSelectedProvider = (): ProviderConfig | undefined => {
-    return settings?.providers.find((p) => p.id === selectedProviderId);
-  };
+    return settings?.providers.find((p) => p.id === selectedProviderId)
+  }
 
   const handleProviderChange = async (providerId: string) => {
-    setSelectedProviderId(providerId);
-    const provider = settings?.providers.find((p) => p.id === providerId);
-    if (!provider || !settings) return;
+    setSelectedProviderId(providerId)
+    const provider = settings?.providers.find((p) => p.id === providerId)
+    if (!provider || !settings) return
 
-    const newModelId = provider.models.length > 0 ? provider.models[0].id : '';
-    setSelectedModelId(newModelId);
+    const newModelId = provider.models.length > 0 ? provider.models[0].id : ''
+    setSelectedModelId(newModelId)
 
-    const newSettings = { ...settings, selectedProviderId: providerId, selectedModelId: newModelId };
-    setSettings(newSettings);
-    await saveSettings(newSettings);
-  };
+    const newSettings = { ...settings, selectedProviderId: providerId, selectedModelId: newModelId }
+    setSettings(newSettings)
+    await saveSettings(newSettings)
+  }
 
   const handleModelChange = async (modelId: string) => {
-    setSelectedModelId(modelId);
-    if (!settings) return;
+    setSelectedModelId(modelId)
+    if (!settings) return
 
-    const newSettings = { ...settings, selectedProviderId, selectedModelId: modelId };
-    setSettings(newSettings);
-    await saveSettings(newSettings);
-  };
+    const newSettings = { ...settings, selectedProviderId, selectedModelId: modelId }
+    setSettings(newSettings)
+    await saveSettings(newSettings)
+  }
 
   const handleLoadBalanceToggle = async () => {
-    if (!settings) return;
-    const newEnabled = !loadBalanceEnabled;
-    setLoadBalanceEnabled(newEnabled);
+    if (!settings) return
+    const newEnabled = !loadBalanceEnabled
+    setLoadBalanceEnabled(newEnabled)
     const newSettings = {
       ...settings,
-      loadBalance: { ...settings.loadBalance, enabled: newEnabled },
-    };
-    setSettings(newSettings);
-    await saveSettings(newSettings);
-  };
+      loadBalance: { ...settings.loadBalance, enabled: newEnabled }
+    }
+    setSettings(newSettings)
+    await saveSettings(newSettings)
+  }
 
   const handleTranslate = async (textOverride?: string) => {
-    const text = textOverride ?? inputText;
-    if (!text.trim()) return;
-    if (!settings) return;
-    setLoading(true);
-    setResult('');
-    setResultMeta(null);
+    const text = textOverride ?? inputText
+    if (!text.trim()) return
+    if (!settings) return
+    setLoading(true)
+    setResult('')
+    setResultMeta(null)
 
     try {
-      const trimmed = text.trim();
+      const trimmed = text.trim()
       const targetLang =
-        manualTarget !== TARGET_AUTO ? manualTarget : await resolveTargetLang(trimmed, settings);
-      setTargetLangPreview(targetLang);
-      const extraPrompt = isLikelyWordOrPhrase(trimmed) ? buildPolysemyPrompt(targetLang) : undefined;
+        manualTarget !== TARGET_AUTO ? manualTarget : await resolveTargetLang(trimmed, settings)
+      setTargetLangPreview(targetLang)
+      const extraPrompt = isLikelyWordOrPhrase(trimmed)
+        ? buildPolysemyPrompt(targetLang)
+        : undefined
       const response = await sendBgMessage<TranslationResponse>({
         type: 'TRANSLATE',
         payload: {
           text: trimmed,
           targetLang,
-          extraPrompt,
-        },
-      });
+          extraPrompt
+        }
+      })
 
-      const provider = settings.providers.find((p) => p.id === response.providerId);
-      const model = provider?.models.find((m) => m.id === response.modelId);
+      const provider = settings.providers.find((p) => p.id === response.providerId)
+      const model = provider?.models.find((m) => m.id === response.modelId)
       setResultMeta({
         providerName: provider?.name ?? response.providerId,
         modelName: model?.name ?? response.modelId,
-        usage: response.usage,
-      });
-      setResult(response.text);
+        usage: response.usage
+      })
+      setResult(response.text)
     } catch (err) {
-      showError(err instanceof Error ? err.message : t('error_translation_failed'));
+      showError(err instanceof Error ? err.message : t('error_translation_failed'))
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleCopy = async () => {
-    if (!result) return;
-    await navigator.clipboard.writeText(result);
-    showSuccess(t('popup_copied'));
-  };
+    if (!result) return
+    await navigator.clipboard.writeText(result)
+    showSuccess(t('popup_copied'))
+  }
 
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     // 不阻止默认行为，让浏览器自然处理粘贴，onChange 接管 state 更新。
     // 若手动 setInputText 会与 onChange 冲突导致双次粘贴。
     window.setTimeout(() => {
-      const val = e.currentTarget.value;
-      if (val.trim()) handleTranslate(val);
-    }, 0);
-  };
+      const val = e.currentTarget.value
+      if (val.trim()) handleTranslate(val)
+    }, 0)
+  }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleTranslate();
+      e.preventDefault()
+      handleTranslate()
     }
-  };
+  }
 
   const toneOptions: Array<{ value: string; label: string }> = [
     { value: 'normal', label: t('tone_normal') },
@@ -227,22 +245,24 @@ function App() {
     { value: 'humorous', label: t('tone_humorous') },
     { value: 'literary', label: t('tone_literary') },
     { value: 'formal', label: t('tone_formal') },
-    { value: 'colloquial', label: t('tone_colloquial') },
-  ];
+    { value: 'colloquial', label: t('tone_colloquial') }
+  ]
 
   const handleToneChange = async (tone: string) => {
-    if (!settings) return;
-    setCurrentTone(tone as TranslationTone);
-    const newSettings = { ...settings, translationTone: tone as TranslationTone };
-    setSettings(newSettings);
-    await saveSettings(newSettings);
-  };
+    if (!settings) return
+    setCurrentTone(tone as TranslationTone)
+    const newSettings = { ...settings, translationTone: tone as TranslationTone }
+    setSettings(newSettings)
+    await saveSettings(newSettings)
+  }
 
-  const provider = getSelectedProvider();
-  const modelOptions = provider?.models.map((m) => ({ value: m.id, label: m.name })) ?? [];
+  const provider = getSelectedProvider()
+  const modelOptions = provider?.models.map((m) => ({ value: m.id, label: m.name })) ?? []
+
+  if (!settings) return null
 
   // 负载均衡模式下是否有配置的 provider
-  const hasLoadBalanceProviders = (settings?.loadBalance.providers.length ?? 0) > 0;
+  const hasLoadBalanceProviders = settings.loadBalance.providers.length > 0
 
   return (
     <div className="w-[380px] bg-background text-foreground flex flex-col" key={langVersion}>
@@ -270,7 +290,8 @@ function App() {
             size="icon"
             className={cn(
               'h-7 w-7 shrink-0 transition-colors',
-              loadBalanceEnabled && 'text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30'
+              loadBalanceEnabled &&
+                'text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30'
             )}
             onClick={handleLoadBalanceToggle}
             title={t('popup_load_balance')}
@@ -304,7 +325,9 @@ function App() {
       {!loadBalanceEnabled && (
         <>
           <div className="px-4 py-2 border-b border-border">
-            <div className="text-[10px] font-medium text-muted-foreground mb-1">{t('popup_provider')}</div>
+            <div className="text-[10px] font-medium text-muted-foreground mb-1">
+              {t('popup_provider')}
+            </div>
             <PopupProviderSelector
               providers={settings?.providers ?? []}
               selectedProviderId={selectedProviderId}
@@ -313,7 +336,9 @@ function App() {
           </div>
 
           <div className="px-4 py-2 border-b border-border">
-            <div className="text-[10px] font-medium text-muted-foreground mb-1">{t('popup_model')}</div>
+            <div className="text-[10px] font-medium text-muted-foreground mb-1">
+              {t('popup_model')}
+            </div>
             <Select
               value={selectedModelId}
               options={modelOptions}
@@ -336,22 +361,23 @@ function App() {
           </div>
           <Select
             value={manualTarget}
-            options={[
-              { value: TARGET_AUTO, label: t('popup_target_auto') },
-              ...LANGUAGE_OPTIONS,
-            ]}
+            options={[{ value: TARGET_AUTO, label: t('popup_target_auto') }, ...LANGUAGE_OPTIONS]}
             onChange={(v) => setManualTarget(v as TargetSelection)}
             className="w-[150px] shrink-0"
           />
         </div>
         <div className="text-[10px] text-muted-foreground mt-0.5 ml-[18px]">
-          {manualTarget === TARGET_AUTO ? t('popup_auto_detect_hint') : t('popup_manual_override_hint')}
+          {manualTarget === TARGET_AUTO
+            ? t('popup_auto_detect_hint')
+            : t('popup_manual_override_hint')}
         </div>
       </div>
 
       {/* Input Area */}
       <div className="px-4 py-2 flex-1 flex flex-col gap-2">
         <Textarea
+          ref={textareaRef}
+          autoFocus
           placeholder={t('popup_placeholder')}
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
@@ -387,11 +413,11 @@ function App() {
         />
       </div>
     </div>
-  );
+  )
 }
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />
   </React.StrictMode>
-);
+)
