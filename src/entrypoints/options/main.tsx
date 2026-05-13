@@ -8,15 +8,16 @@ import { OptionsLanguageSettings } from '@/components/options/language-settings'
 import { OptionsGeneralSettings } from '@/components/options/general-settings';
 import { OptionsDisplaySettings } from '@/components/options/display-settings';
 import { OptionsBackupRestoreSettings } from '@/components/options/backup-restore-settings';
+import { OptionsUserManual } from '@/components/options/user-manual';
 import type { GlobalSettings } from '@/types';
 import { cn } from '@/lib/utils';
 import { useDarkMode } from '@/hooks/use-dark-mode';
 import { getSettings, saveSettings, DEFAULT_SETTINGS } from '@/lib/storage';
 import { t, setUILanguage } from '@/lib/i18n';
 import { useToast } from '@/hooks/use-toast';
-import { Languages, Server, Globe, Scale, Palette, Database } from 'lucide-react';
+import { Languages, Server, Globe, Scale, Palette, Database, BookOpen } from 'lucide-react';
 
-type Tab = 'providers' | 'loadbalance' | 'language' | 'display' | 'general' | 'backup';
+type Tab = 'providers' | 'loadbalance' | 'language' | 'display' | 'general' | 'backup' | 'manual';
 
 function App() {
   const { toast, showSuccess, showError, dismiss } = useToast();
@@ -69,6 +70,7 @@ function App() {
     { id: 'display', label: t('tab_display'), icon: <Palette className="h-4 w-4" /> },
     { id: 'general', label: t('tab_general'), icon: <Globe className="h-4 w-4" /> },
     { id: 'backup', label: t('tab_backup_restore'), icon: <Database className="h-4 w-4" /> },
+    { id: 'manual', label: t('tab_manual'), icon: <BookOpen className="h-4 w-4" /> },
   ];
 
   const i18nKey = langVersion;
@@ -92,13 +94,13 @@ function App() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 border-b border-border mb-6">
+        <div className="flex gap-1 border-b border-border mb-6 overflow-x-auto">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => { setActiveTab(tab.id); }}
               className={cn(
-                'flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors',
+                'flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap shrink-0',
                 activeTab === tab.id
                   ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
                   : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -149,6 +151,8 @@ function App() {
             onImportSuccess={handleImportSuccess}
           />
         )}
+
+        {activeTab === 'manual' && <OptionsUserManual uiLanguage={settings.uiLanguage} />}
       </div>
     </div>
   );

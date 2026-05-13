@@ -19,25 +19,9 @@ if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
 }
 
 export const DEFAULT_SETTINGS: GlobalSettings = {
-  providers: [
-    {
-      id: 'default-openai',
-      name: 'OpenAI Compatible',
-      baseURL: 'https://api.openai.com/v1/chat/completions',
-      apiKey: '',
-      headers: {},
-      query: {},
-      body: {},
-      temperature: 0.3,
-      stream: false,
-      models: [
-        { id: 'gpt-4o', name: 'GPT-4o' },
-        { id: 'gpt-4o-mini', name: 'GPT-4o Mini' },
-      ],
-    },
-  ],
-  selectedProviderId: 'default-openai',
-  selectedModelId: 'gpt-4o',
+  providers: [],
+  selectedProviderId: '',
+  selectedModelId: '',
   loadBalance: { enabled: false, providers: [] },
   nativeLanguage: 'zh-CN',
   defaultSourceLanguage: 'en',

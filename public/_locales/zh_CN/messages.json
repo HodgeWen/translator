@@ -4,15 +4,12 @@
     "description": "Extension name"
   },
   "extDescription": {
-    "message": "一款基于 OpenAI 兼容大模型的现代化浏览器翻译扩展",
+    "message": "一款基于大模型的现代化浏览器翻译扩展，兼容各种大模型服务商。",
     "description": "Extension description"
   },
   "command_toggle_desc": {
     "message": "切换页面翻译",
     "description": "Command description for toggle translation"
-  },
-  "popup_subtitle": {
-    "message": "基于 OpenAI 兼容大模型的翻译"
   },
   "popup_provider": {
     "message": "服务商"
@@ -63,7 +60,7 @@
     "message": "翻译器设置"
   },
   "options_subtitle": {
-    "message": "配置你的 OpenAI 兼容翻译服务商及偏好"
+    "message": "配置你的翻译服务商及偏好"
   },
   "options_saved": {
     "message": "设置保存成功"
@@ -88,6 +85,9 @@
   },
   "tab_backup_restore": {
     "message": "备份与恢复"
+  },
+  "tab_manual": {
+    "message": "使用手册"
   },
   "btn_add_provider": {
     "message": "添加服务商"

@@ -48,7 +48,7 @@ const inputLoadingPulseKeyframesDefault: [string, string, string] = ['#4b5563', 
 const hoverShortcutKeySchema = z.enum(['Control', 'Alt', 'Shift', 'Meta']).catch('Control').default('Control');
 
 export const globalSettingsSchema = z.object({
-  providers: z.array(providerConfigSchema).min(1, 'At least one provider is required'),
+  providers: z.array(providerConfigSchema),
   selectedProviderId: z.string().default(''),
   selectedModelId: z.string().default(''),
   loadBalance: loadBalanceConfigSchema.default({ enabled: false, providers: [] }),

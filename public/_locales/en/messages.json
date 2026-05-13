@@ -4,15 +4,12 @@
     "description": "Extension name"
   },
   "extDescription": {
-    "message": "A modern browser translation extension with OpenAI-compatible LLM support",
+    "message": "A modern browser translation extension based on large language models, compatible with various LLM service providers.",
     "description": "Extension description"
   },
   "command_toggle_desc": {
     "message": "Toggle page translation",
     "description": "Command description for toggle translation"
-  },
-  "popup_subtitle": {
-    "message": "OpenAI-compatible LLM translation"
   },
   "popup_provider": {
     "message": "Provider"
@@ -88,6 +85,9 @@
   },
   "tab_backup_restore": {
     "message": "Backup & Restore"
+  },
+  "tab_manual": {
+    "message": "User Manual"
   },
   "btn_add_provider": {
     "message": "Add Provider"
