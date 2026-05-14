@@ -18,6 +18,7 @@ declare module '#imports' {
   export { InvalidMatchPattern, MatchPattern } from 'wxt/utils/match-patterns';
   export { fakeBrowser } from 'wxt/testing';
   export { CodeEditor } from '../src/components/code-editor';
+  export { LogoIcon } from '../src/components/logo-icon';
   export { useDarkMode } from '../src/hooks/use-dark-mode';
   export { useToast, ToastItem } from '../src/hooks/use-toast';
 }

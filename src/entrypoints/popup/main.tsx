@@ -22,7 +22,8 @@ import { LANGUAGE_OPTIONS } from '@/lib/languages'
 import { t, setUILanguage } from '@/lib/i18n'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
-import { Send, Loader2, Settings, Languages, Scale } from 'lucide-react'
+import { Send, Loader2, Settings, Scale } from 'lucide-react'
+import { LogoIcon } from '@/components/logo-icon'
 
 const TARGET_AUTO = 'auto' as const
 type TargetSelection = typeof TARGET_AUTO | LangCode
@@ -272,7 +273,7 @@ function App() {
       <div className="px-4 py-2 border-b border-border flex items-center justify-between bg-gradient-to-r from-indigo-500/5 to-violet-500/5">
         <div className="flex items-center gap-2">
           <div className="h-6 w-6 rounded-md bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center">
-            <Languages className="h-3.5 w-3.5 text-white" />
+            <LogoIcon className="h-3.5 w-3.5 text-white" />
           </div>
           <h1 className="text-base font-semibold tracking-tight">{t('extName')}</h1>
         </div>
@@ -354,7 +355,7 @@ function App() {
       <div className="px-4 pt-2 pb-0">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 text-[11px] text-indigo-600 dark:text-indigo-400 min-w-0">
-            <Languages className="h-3 w-3 shrink-0" />
+            <LogoIcon className="h-3 w-3 shrink-0" />
             <span className="truncate">
               {t('popup_translate_to')}: {targetLangPreview}
             </span>

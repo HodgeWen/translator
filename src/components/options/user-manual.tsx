@@ -1,12 +1,12 @@
 interface Section {
-  title: string;
-  content: string;
+  title: string
+  content: string
 }
 
 const manualZhCN: Section[] = [
   {
     title: '简介',
-    content: `智能翻译器是一款基于大语言模型（LLM）的浏览器翻译扩展。它支持接入任意兼容 OpenAI API 的服务商或第三方网关，利用大模型对语境和语义的深度理解，提供比传统机翻更自然流畅的翻译结果。
+    content: `星禾翻译是一款基于大语言模型（LLM）的浏览器翻译扩展。它支持接入任意兼容 OpenAI API 的服务商或第三方网关，利用大模型对语境和语义的深度理解，提供比传统机翻更自然流畅的翻译结果。
 
 核心特性：
 • 页面全文翻译 — 一键将网页翻译成你的母语
@@ -15,7 +15,7 @@ const manualZhCN: Section[] = [
 • 弹窗翻译 — 打开扩展弹窗手动输入文本进行翻译
 • 多服务商支持 — 可配置多个大模型服务商，自由选择模型
 • 负载均衡 — 按权重将请求分配到多个服务商，均衡配额
-• 聚合翻译 — 将页面多个段落合并为一次请求，提升效率`,
+• 聚合翻译 — 将页面多个段落合并为一次请求，提升效率`
   },
   {
     title: '第一步：配置服务商',
@@ -35,7 +35,7 @@ const manualZhCN: Section[] = [
 • 额外请求体：合并到请求 JSON 中的额外字段，常用于设置 reasoning_effort（OpenAI）或 enable_thinking（Anthropic）
 • 翻译提示词：覆盖全局提示词，支持 {{sourceLang}} 和 {{targetLang}} 变量
 • 采样参数：Temperature（0~2，推荐 0~0.3）、Top P（0~1）、Max Tokens
-• 流式响应：开启后翻译结果以 SSE 增量推送`,
+• 流式响应：开启后翻译结果以 SSE 增量推送`
   },
   {
     title: '页面全文翻译',
@@ -52,7 +52,7 @@ const manualZhCN: Section[] = [
 • 下划线 — 译文加下划线，鼠标悬停时显示原文提示
 • 纯净替换 — 无任何标记的完全替换
 
-适用场景：阅读外文文档、新闻、博客等整篇内容。`,
+适用场景：阅读外文文档、新闻、博客等整篇内容。`
   },
   {
     title: '悬浮翻译',
@@ -65,7 +65,7 @@ const manualZhCN: Section[] = [
 
 快捷键设置：
 • 只支持单键：Control / Alt / Shift / Meta（Command/Win）
-• 设置路径：「通用」→「悬浮翻译快捷键」`,
+• 设置路径：「通用」→「悬浮翻译快捷键」`
   },
   {
     title: '输入框翻译',
@@ -78,7 +78,7 @@ const manualZhCN: Section[] = [
 
 适用场景：
 • 在社交媒体、评论区、邮件中快速翻译想发送的内容
-• 将外文回复翻译后再发送`,
+• 将外文回复翻译后再发送`
   },
   {
     title: '弹窗翻译',
@@ -93,7 +93,7 @@ const manualZhCN: Section[] = [
 • 短词/短语自动触发一词多义展示
 
 翻译详情：
-• 点击翻译结果下方的「查看详情」可看到使用的服务商、模型及 token 用量`,
+• 点击翻译结果下方的「查看详情」可看到使用的服务商、模型及 token 用量`
   },
   {
     title: '负载均衡',
@@ -108,7 +108,7 @@ const manualZhCN: Section[] = [
 工作机制：
 • 按权重比例轮询分配请求
 • 某服务商失败时自动切换到下一个
-• 在弹窗面板中可快速开关负载均衡`,
+• 在弹窗面板中可快速开关负载均衡`
   },
   {
     title: '聚合翻译',
@@ -120,7 +120,7 @@ const manualZhCN: Section[] = [
 • 每次最大文本长度 — 单次请求的文本长度上限（字符数）
 • 最大并发请求数 — 同时进行的翻译请求数
 
-注意：段落数或文本长度任一达到上限即触发发送。`,
+注意：段落数或文本长度任一达到上限即触发发送。`
   },
   {
     title: '语言检测',
@@ -132,7 +132,7 @@ const manualZhCN: Section[] = [
 
 配置方式（在「语言」标签页中）：
 • 添加 API 检测器：填写接口地址和 API Key
-• 添加 Google（免 key）：使用 Google 翻译公共端点，无需 API Key。隐私提醒：查询文本会发送至 Google 服务器`,
+• 添加 Google（免 key）：使用 Google 翻译公共端点，无需 API Key。隐私提醒：查询文本会发送至 Google 服务器`
   },
   {
     title: '备份与恢复',
@@ -149,14 +149,14 @@ const manualZhCN: Section[] = [
 • 点击「确认导入」完成
 
 还原默认：
-• 点击「还原默认」将所有设置重置为默认值`,
-  },
-];
+• 点击「还原默认」将所有设置重置为默认值`
+  }
+]
 
 const manualEn: Section[] = [
   {
     title: 'Introduction',
-    content: `Translator is a browser translation extension powered by large language models (LLMs). It supports any OpenAI-compatible API provider or third-party gateway, leveraging the deep contextual understanding of LLMs to produce more natural and fluent translations than traditional machine translation.
+    content: `XingHe Translator is a browser translation extension powered by large language models (LLMs). It supports any OpenAI-compatible API provider or third-party gateway, leveraging the deep contextual understanding of LLMs to produce more natural and fluent translations than traditional machine translation.
 
 Key Features:
 • Full-page translation — translate an entire webpage into your native language with one shortcut
@@ -165,7 +165,7 @@ Key Features:
 • Popup translation — open the extension popup to manually translate text
 • Multi-provider support — configure multiple LLM providers and switch models freely
 • Load balancing — distribute requests across providers by weight to balance quota usage
-• Aggregation — combine multiple paragraphs into a single request for better efficiency`,
+• Aggregation — combine multiple paragraphs into a single request for better efficiency`
   },
   {
     title: 'Step 1: Configure Providers',
@@ -185,7 +185,7 @@ Advanced options (optional):
 • Extra body: additional fields merged into the request JSON, useful for reasoning_effort (OpenAI) or enable_thinking (Anthropic)
 • Translation prompt: override the global prompt; supports {{sourceLang}} and {{targetLang}} variables
 • Sampling: Temperature (0–2, recommended 0–0.3), Top P (0–1), Max Tokens
-• Streaming: when enabled, results are delivered incrementally via SSE`,
+• Streaming: when enabled, results are delivered incrementally via SSE`
   },
   {
     title: 'Full-Page Translation',
@@ -202,7 +202,7 @@ Translation styles (set in the "Display" tab):
 • Underline — underlined translation with original tooltip on hover
 • Clean — clean replacement without any visual markers
 
-Best for: reading foreign documentation, news, blog posts, and other full-page content.`,
+Best for: reading foreign documentation, news, blog posts, and other full-page content.`
   },
   {
     title: 'Hover Translation',
@@ -215,7 +215,7 @@ How to use:
 
 Shortcut settings:
 • Single key only: Control / Alt / Shift / Meta (Command/Win)
-• Settings path: "General" → "Hover Translation Shortcut"`,
+• Settings path: "General" → "Hover Translation Shortcut"`
   },
   {
     title: 'Input Box Translation',
@@ -228,7 +228,7 @@ How to use:
 
 Use cases:
 • Quickly translate content you want to send in social media, comments, or emails
-• Translate foreign replies before sending`,
+• Translate foreign replies before sending`
   },
   {
     title: 'Popup Translation',
@@ -243,7 +243,7 @@ Features:
 • Short words/phrases automatically show multiple meanings
 
 Translation details:
-• Click "Show Details" below the result to see the provider, model, and token usage`,
+• Click "Show Details" below the result to see the provider, model, and token usage`
   },
   {
     title: 'Load Balancing',
@@ -258,7 +258,7 @@ Configuration:
 How it works:
 • Requests are distributed proportionally by weight (weighted round-robin)
 • If a provider fails, the next one is used automatically
-• Quickly toggle load balancing from the popup panel`,
+• Quickly toggle load balancing from the popup panel`
   },
   {
     title: 'Aggregation',
@@ -270,7 +270,7 @@ Settings (in the "General" tab):
 • Max Text Length per Request — character limit per request
 • Max Concurrent Requests — number of simultaneous translation requests
 
-Note: a request is sent once either the paragraph count or text length limit is reached.`,
+Note: a request is sent once either the paragraph count or text length limit is reached.`
   },
   {
     title: 'Language Detection',
@@ -282,7 +282,7 @@ Detection mechanism:
 
 Configuration (in the "Language" tab):
 • Add API Detector: provide endpoint URL and API key
-• Add Google (Free): uses Google Translate's public endpoint, no API key required. Privacy note: query text is sent to Google's servers`,
+• Add Google (Free): uses Google Translate's public endpoint, no API key required. Privacy note: query text is sent to Google's servers`
   },
   {
     title: 'Backup & Restore',
@@ -299,17 +299,17 @@ Import:
 • Click "Confirm Import" to apply
 
 Reset:
-• Click "Restore Default" to reset all settings to their default values`,
-  },
-];
+• Click "Restore Default" to reset all settings to their default values`
+  }
+]
 
 function getManualSections(uiLanguage: string): Section[] {
-  if (uiLanguage.startsWith('zh')) return manualZhCN;
-  return manualEn;
+  if (uiLanguage.startsWith('zh')) return manualZhCN
+  return manualEn
 }
 
 export function OptionsUserManual({ uiLanguage }: { uiLanguage: string }) {
-  const sections = getManualSections(uiLanguage);
+  const sections = getManualSections(uiLanguage)
 
   return (
     <div className="space-y-8">
@@ -324,5 +324,5 @@ export function OptionsUserManual({ uiLanguage }: { uiLanguage: string }) {
         </div>
       ))}
     </div>
-  );
+  )
 }

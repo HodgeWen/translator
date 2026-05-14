@@ -4,6 +4,7 @@ declare global {
   const CodeEditor: typeof import('/Users/whj/codes/translator/src/components/code-editor').CodeEditor
   const ContentScriptContext: typeof import('wxt/utils/content-script-context').ContentScriptContext
   const InvalidMatchPattern: typeof import('wxt/utils/match-patterns').InvalidMatchPattern
+  const LogoIcon: typeof import('/Users/whj/codes/translator/src/components/logo-icon').LogoIcon
   const MatchPattern: typeof import('wxt/utils/match-patterns').MatchPattern
   const browser: typeof import('wxt/browser').browser
   const createIframeUi: typeof import('wxt/utils/content-script-ui/iframe').createIframeUi

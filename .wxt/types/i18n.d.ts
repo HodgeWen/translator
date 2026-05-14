@@ -75,7 +75,7 @@ declare module "wxt/browser" {
     /**
      * Extension name
      *
-     * "智能翻译器"
+     * "星禾翻译"
      */
     getMessage(
       messageName: "extName",

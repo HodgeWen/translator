@@ -15,7 +15,8 @@ import { useDarkMode } from '@/hooks/use-dark-mode';
 import { getSettings, saveSettings, DEFAULT_SETTINGS } from '@/lib/storage';
 import { t, setUILanguage } from '@/lib/i18n';
 import { useToast } from '@/hooks/use-toast';
-import { Languages, Server, Globe, Scale, Palette, Database, BookOpen } from 'lucide-react';
+import { Server, Globe, Scale, Palette, Database, BookOpen } from 'lucide-react';
+import { LogoIcon } from '@/components/logo-icon';
 
 type Tab = 'providers' | 'loadbalance' | 'language' | 'display' | 'general' | 'backup' | 'manual';
 
@@ -66,7 +67,7 @@ function App() {
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'providers', label: t('tab_providers'), icon: <Server className="h-4 w-4" /> },
     { id: 'loadbalance', label: t('tab_load_balance'), icon: <Scale className="h-4 w-4" /> },
-    { id: 'language', label: t('tab_language'), icon: <Languages className="h-4 w-4" /> },
+    { id: 'language', label: t('tab_language'), icon: <LogoIcon className="h-4 w-4" /> },
     { id: 'display', label: t('tab_display'), icon: <Palette className="h-4 w-4" /> },
     { id: 'general', label: t('tab_general'), icon: <Globe className="h-4 w-4" /> },
     { id: 'backup', label: t('tab_backup_restore'), icon: <Database className="h-4 w-4" /> },
@@ -84,7 +85,7 @@ function App() {
         <div className="mb-8">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center shadow-sm">
-              <Languages className="h-5 w-5 text-white" />
+              <LogoIcon className="h-5 w-5 text-white" />
             </div>
             <div>
               <h1 className="text-3xl font-bold tracking-tight">{t('options_title')}</h1>
