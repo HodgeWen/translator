@@ -266,7 +266,7 @@ function App() {
   const hasLoadBalanceProviders = settings.loadBalance.providers.length > 0
 
   return (
-    <div className="w-[380px] bg-background text-foreground flex flex-col" key={langVersion}>
+    <div className="w-[450px] bg-background text-foreground flex flex-col" key={langVersion}>
       <Toast toast={toast} onDismiss={dismiss} />
 
       {/* Header */}
@@ -276,6 +276,7 @@ function App() {
             <LogoIcon className="h-3.5 w-3.5 text-white" />
           </div>
           <h1 className="text-base font-semibold tracking-tight">{t('extName')}</h1>
+          <span className="text-[10px] text-muted-foreground/60 font-mono">v{chrome.runtime.getManifest().version}</span>
         </div>
         <div className="flex items-center gap-1.5">
           <Select

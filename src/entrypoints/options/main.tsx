@@ -80,7 +80,7 @@ function App() {
     <div className="min-h-screen bg-background text-foreground" key={i18nKey}>
       <Toast toast={toast} onDismiss={dismiss} />
 
-      <div className="max-w-4xl mx-auto px-6 py-8">
+      <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3">
@@ -88,7 +88,10 @@ function App() {
               <LogoIcon className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">{t('options_title')}</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-3xl font-bold tracking-tight">{t('options_title')}</h1>
+                <span className="text-xs text-muted-foreground/60 font-mono mt-1.5">v{chrome.runtime.getManifest().version}</span>
+              </div>
               <p className="text-muted-foreground mt-1">{t('options_subtitle')}</p>
             </div>
           </div>
