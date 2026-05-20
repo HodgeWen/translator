@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Select } from '@/components/ui/select';
+import { NumberInput } from '@/components/ui/number-input';
 import { cn } from '@/lib/utils';
 import type { GlobalSettings } from '@/types';
 import { t } from '@/lib/i18n';
@@ -136,13 +137,13 @@ export function OptionsLoadBalanceSettings({ settings, onSave }: OptionsLoadBala
                 {isActive && (
                   <div className="flex items-center gap-2 shrink-0">
                     <label className="text-xs text-muted-foreground">{t('label_weight')}</label>
-                    <input
-                      type="number"
+                    <NumberInput
+                      size="sm"
                       min={1}
                       max={100}
                       value={weight}
-                      onChange={(e) => updateWeight(provider.id, parseInt(e.target.value) || 1)}
-                      className="w-16 h-7 rounded-md border border-input bg-transparent px-2 text-sm text-center"
+                      onChange={(v) => updateWeight(provider.id, v)}
+                      className="w-24 shrink-0"
                     />
                     <Badge variant="outline" className="text-[10px] font-mono min-w-[36px] justify-center">
                       {percentage}%

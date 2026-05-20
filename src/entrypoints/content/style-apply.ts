@@ -2,6 +2,38 @@ import type { ElementState } from './state';
 import { state, wrapperToOriginal, mutationIgnoredNodes } from './state';
 import { decodeInline } from '@/lib/inline-placeholder';
 
+// ─── DOM Update Chunking Scheduler ──────────────────────────────────────
+const domUpdateQueue: Array<() => void> = [];
+let isUpdatingDOM = false;
+const CHUNK_SIZE = 4; // 每帧最多处理的 DOM 更新数量
+
+export function scheduleDOMUpdate(updateFn: () => void): void {
+  domUpdateQueue.push(updateFn);
+  if (!isUpdatingDOM) {
+    isUpdatingDOM = true;
+    requestAnimationFrame(processDOMUpdateQueue);
+  }
+}
+
+function processDOMUpdateQueue(): void {
+  const limit = Math.min(domUpdateQueue.length, CHUNK_SIZE);
+  for (let i = 0; i < limit; i++) {
+    const update = domUpdateQueue.shift();
+    if (update) {
+      try {
+        update();
+      } catch (err) {
+        console.error('[Translator] DOM update failed:', err);
+      }
+    }
+  }
+  if (domUpdateQueue.length > 0) {
+    requestAnimationFrame(processDOMUpdateQueue);
+  } else {
+    isUpdatingDOM = false;
+  }
+}
+
 // ─── Utilities ──────────────────────────────────────────────────────────
 
 function cloneAsWrapper(el: HTMLElement): HTMLElement {
@@ -31,10 +63,10 @@ function isBlockElement(el: HTMLElement): boolean {
 // 这样 wrapper 拥有与原 el 完全一致的兄弟位置，所有 `:nth-child` /
 // `:not(:first-child)` / 相邻兄弟选择器对译文与原文的判定一致，避免站点
 // CSS（如 markdown 渲染常见的「首段无 margin-top」）在译文上失效。
-function applyReplaceStyle(el: HTMLElement, translatedText: string, fragments: DocumentFragment[]): void {
+function applyReplaceStyle(el: HTMLElement, translatedText: string, fragments: DocumentFragment[], styleTemplates: Element[]): void {
   const originalHTML = el.innerHTML;
   const wrapper = cloneAsWrapper(el);
-  wrapper.appendChild(decodeInline(translatedText, fragments));
+  wrapper.appendChild(decodeInline(translatedText, fragments, styleTemplates));
   wrapper.setAttribute('data-translator-clone', 'true');
   wrapper.setAttribute('data-translator-processed', 'true');
 
@@ -60,7 +92,7 @@ function restoreChildNodes(el: HTMLElement, elState: ElementState): void {
   }
 }
 
-function applyBilingualStyle(el: HTMLElement, translatedText: string, fragments: DocumentFragment[]): void {
+function applyBilingualStyle(el: HTMLElement, translatedText: string, fragments: DocumentFragment[], styleTemplates: Element[]): void {
   const originalHTML = el.innerHTML;
   const originalNodes = saveChildNodes(el);
   // Restore original content first, then append bilingual elements
@@ -71,7 +103,7 @@ function applyBilingualStyle(el: HTMLElement, translatedText: string, fragments:
   const span = document.createElement('span');
   span.setAttribute('data-translator-bilingual', 'true');
   span.dataset.display = isBlockElement(el) ? 'block' : 'inline';
-  span.appendChild(decodeInline(translatedText, fragments));
+  span.appendChild(decodeInline(translatedText, fragments, styleTemplates));
 
   el.appendChild(br);
   el.appendChild(span);
@@ -80,7 +112,7 @@ function applyBilingualStyle(el: HTMLElement, translatedText: string, fragments:
   state.elementMap.set(el, { originalHTML, originalNodes, translatedText, status: 'translated', showingOriginal: false });
 }
 
-function applyUnderlineStyle(el: HTMLElement, translatedText: string, fragments: DocumentFragment[]): void {
+function applyUnderlineStyle(el: HTMLElement, translatedText: string, fragments: DocumentFragment[], styleTemplates: Element[]): void {
   const originalHTML = el.innerHTML;
   const originalText = el.textContent?.trim() ?? '';
   const originalNodes = saveChildNodes(el);
@@ -88,7 +120,7 @@ function applyUnderlineStyle(el: HTMLElement, translatedText: string, fragments:
   const wrapper = document.createElement('span');
   wrapper.setAttribute('data-translator-underline', 'true');
   wrapper.title = originalText;
-  wrapper.appendChild(decodeInline(translatedText, fragments));
+  wrapper.appendChild(decodeInline(translatedText, fragments, styleTemplates));
 
   el.appendChild(wrapper);
   el.setAttribute('data-translator-processed', 'true');
@@ -96,56 +128,46 @@ function applyUnderlineStyle(el: HTMLElement, translatedText: string, fragments:
   state.elementMap.set(el, { originalHTML, originalNodes, translatedText, status: 'translated', cloneEl: wrapper, showingOriginal: false });
 }
 
-export function applyTranslation(el: HTMLElement, translatedText: string, fragments: DocumentFragment[]): void {
+export function applyTranslation(el: HTMLElement, translatedText: string, fragments: DocumentFragment[], styleTemplates: Element[]): void {
   if (state.elementMap.has(el)) return;
 
-  switch (state.displayStyle) {
-    case 'original':
-    case 'clean':
-      applyReplaceStyle(el, translatedText, fragments);
-      break;
-    case 'bilingual':
-      applyBilingualStyle(el, translatedText, fragments);
-      break;
-    case 'underline':
-      applyUnderlineStyle(el, translatedText, fragments);
-      break;
-  }
+  // 同步占位，锁定元素，防止重入
+  state.elementMap.set(el, {
+    originalHTML: el.innerHTML,
+    translatedText,
+    status: 'pending',
+    showingOriginal: false,
+  });
 
-  // 若用户处于「全页显示原文」模式（Alt+W 切换过的），新翻译完成的段落
-  // 也应立即同步切到原文显示，避免出现「滚动后部分段落是译文，整体却显示原文」的视觉错乱。
-  if (state.displayMode === 'original') {
-    toggleElementDisplay(el);
-  }
-}
-
-function restoreElement(el: HTMLElement): void {
-  const elState = state.elementMap.get(el);
-  if (!elState) return;
-
-  switch (state.displayStyle) {
-    case 'original':
-    case 'clean': {
-      const wrapper = elState.cloneEl;
-      if (wrapper && wrapper.parentNode) {
-        mutationIgnoredNodes.add(wrapper);
-        wrapper.replaceWith(el);
-        wrapperToOriginal.delete(wrapper);
-      } else if (elState.showingOriginal && !wrapper?.parentNode) {
-        // showingOriginal: el 已在 DOM，wrapper 已脱离，无需操作
-      }
-      break;
+  scheduleDOMUpdate(() => {
+    // 节点可能在异步调度的间隔中已经离开 DOM 树，这里做安全拦截
+    if (!el.isConnected) {
+      state.elementMap.delete(el);
+      return;
     }
-    case 'bilingual':
-    case 'underline': {
-      restoreChildNodes(el, elState);
-      el.removeAttribute('data-translator-processed');
-      break;
-    }
-  }
 
-  el.removeAttribute('data-translator-error');
-  state.elementMap.delete(el);
+    // 清除翻译中状态
+    el.removeAttribute('data-translator-pending');
+    el.removeAttribute('data-translator-theme');
+
+    switch (state.displayStyle) {
+      case 'original':
+      case 'clean':
+        applyReplaceStyle(el, translatedText, fragments, styleTemplates);
+        break;
+      case 'bilingual':
+        applyBilingualStyle(el, translatedText, fragments, styleTemplates);
+        break;
+      case 'underline':
+        applyUnderlineStyle(el, translatedText, fragments, styleTemplates);
+        break;
+    }
+
+    // 若用户处于「全页显示原文」模式（Alt+W 切换过的），新翻译完成的段落也应立即切到原文显示
+    if (state.displayMode === 'original') {
+      toggleElementDisplay(el);
+    }
+  });
 }
 
 export function toggleElementDisplay(el: HTMLElement): void {
@@ -206,9 +228,42 @@ export function toggleElementDisplay(el: HTMLElement): void {
 
 export function restoreAll(): void {
   const keys = Array.from(state.elementMap.keys());
-  for (const el of keys) restoreElement(el);
-  // restoreElement 已逐个 delete；最终 clear 是冗余但无副作用，作防御保留。
+  
+  // 同步收集所有要还原的状态快照并清除 elementMap，使状态立即恢复到未翻译状态，防止状态冲突
+  const snapshots = keys.map(el => ({
+    el,
+    elState: state.elementMap.get(el)
+  })).filter(item => item.elState !== undefined);
+  
   state.elementMap.clear();
+
+  // 异步帧分片进行真实的 DOM 还原动作
+  for (const item of snapshots) {
+    scheduleDOMUpdate(() => {
+      const { el, elState } = item;
+      if (!elState) return;
+
+      switch (state.displayStyle) {
+        case 'original':
+        case 'clean': {
+          const wrapper = elState.cloneEl;
+          if (wrapper && wrapper.parentNode) {
+            mutationIgnoredNodes.add(wrapper);
+            wrapper.replaceWith(el);
+            wrapperToOriginal.delete(wrapper);
+          }
+          break;
+        }
+        case 'bilingual':
+        case 'underline': {
+          restoreChildNodes(el, elState);
+          el.removeAttribute('data-translator-processed');
+          break;
+        }
+      }
+      el.removeAttribute('data-translator-error');
+    });
+  }
 }
 
 // 全页 toggle：把 elementMap 中所有「当前 showingOriginal 与目标态不一致」的段落

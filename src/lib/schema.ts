@@ -57,6 +57,7 @@ export const globalSettingsSchema = z.object({
   uiLanguage: z.string().min(2).max(10).default('zh-CN'),
   displayStyle: z.enum(['original', 'bilingual', 'underline', 'clean']).default('original'),
   translationTone: z.enum(['normal', 'technical', 'tech_forward', 'humorous', 'literary', 'formal', 'colloquial']).default('normal'),
+  translationLoadingTheme: z.enum(['indigo', 'aurora', 'monochrome', 'cosmic']).default('indigo'),
   globalPrompt: z.string().min(1).default(DEFAULT_GLOBAL_PROMPT),
   detectLangProviders: z.array(langDetectProviderSchema).default([{ id: 'franc', name: 'franc-min', type: 'franc' }]),
   shortcutKey: z.string().default('Alt+W'),

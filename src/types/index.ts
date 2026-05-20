@@ -5,6 +5,7 @@ export type LangCode = string;
 export type DisplayStyle = 'original' | 'bilingual' | 'underline' | 'clean';
 export type TranslationTone = 'normal' | 'technical' | 'tech_forward' | 'humorous' | 'literary' | 'formal' | 'colloquial';
 export type InputLoadingPulseEasing = 'linear' | 'ease-out' | 'spring';
+export type TranslationLoadingTheme = 'indigo' | 'aurora' | 'monochrome' | 'cosmic';
 
 // OpenAI-compatible provider configuration
 export interface ProviderConfig {
@@ -63,6 +64,7 @@ export interface GlobalSettings {
   uiLanguage: LangCode;
   displayStyle: DisplayStyle;
   translationTone: TranslationTone;
+  translationLoadingTheme: TranslationLoadingTheme;
   globalPrompt: string;
   detectLangProviders: LangDetectProvider[];
   shortcutKey: string;

@@ -233,6 +233,33 @@
   "title_display_mode_settings": {
     "message": "Display Mode"
   },
+  "title_translation_loading_theme": {
+    "message": "Translation Loading Theme"
+  },
+  "theme_indigo": {
+    "message": "Indigo & Purple"
+  },
+  "theme_indigo_desc": {
+    "message": "Elegant indigo to violet flow gradient, tech-forward feel"
+  },
+  "theme_aurora": {
+    "message": "Aurora Teal"
+  },
+  "theme_aurora_desc": {
+    "message": "Fresh mint green to sky blue flow gradient, crisp and modern"
+  },
+  "theme_monochrome": {
+    "message": "Minimalist Slate"
+  },
+  "theme_monochrome_desc": {
+    "message": "No-chroma slate gray flow, deeply immersive and zero distraction"
+  },
+  "theme_cosmic": {
+    "message": "Cosmic Warmth"
+  },
+  "theme_cosmic_desc": {
+    "message": "Warm rose pink to violet flow gradient, modern generative AI vibe"
+  },
   "title_translation_tone": {
     "message": "Translation Tone"
   },

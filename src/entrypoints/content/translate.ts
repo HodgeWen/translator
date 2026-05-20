@@ -25,19 +25,22 @@ export async function translateSingleElement(el: HTMLElement, force = false, ski
   if (!rawText || rawText.length < 5) return;
 
   el.setAttribute('data-translator-pending', 'true');
+  el.setAttribute('data-translator-theme', state.translationLoadingTheme);
 
   try {
     const { skip, detectedLang } = await detectAndCheckSkip(rawText, state.nativeLanguage);
     if (skip) {
       el.removeAttribute('data-translator-pending');
+      el.removeAttribute('data-translator-theme');
       markElementIdle(el);
       return;
     }
 
     // encodeInline 在语言检测之后执行，避免跳过翻译时浪费 DOM clone 开销
-    const { placeholderText, fragments } = encodeInline(el);
+    const { placeholderText, fragments, styleTemplates } = encodeInline(el);
     if (!placeholderText) {
       el.removeAttribute('data-translator-pending');
+      el.removeAttribute('data-translator-theme');
       return;
     }
 
@@ -47,11 +50,12 @@ export async function translateSingleElement(el: HTMLElement, force = false, ski
         text: placeholderText,
         sourceLang: detectedLang || undefined,
         targetLang: state.targetLang,
-        hasPlaceholders: fragments.length > 0,
+        hasPlaceholders: fragments.length > 0 || styleTemplates.length > 0,
       },
     });
 
     el.removeAttribute('data-translator-pending');
+    el.removeAttribute('data-translator-theme');
     // 如果用户已在翻译完成前按快捷键关闭翻译，则不再应用结果
     // skipActiveCheck: Ctrl+Hover 独立翻译时 state.isActive 始终为 false，需跳过此检查
     if (!skipActiveCheck && !state.isActive) {
@@ -59,10 +63,11 @@ export async function translateSingleElement(el: HTMLElement, force = false, ski
       markElementIdle(el);
       return;
     }
-    applyTranslation(el, result.text, fragments);
+    applyTranslation(el, result.text, fragments, styleTemplates);
   } catch (err) {
     console.warn('[Translator] translateSingleElement failed:', err);
     el.removeAttribute('data-translator-pending');
+    el.removeAttribute('data-translator-theme');
     el.setAttribute('data-translator-error', 'true');
     state.elementMap.set(el, {
       originalHTML: el.innerHTML,
@@ -131,6 +136,7 @@ function createBatches(elements: HTMLElement[]): HTMLElement[][] {
 async function translateBatchWithFallback(batch: HTMLElement[]): Promise<void> {
   const placeholderTexts: string[] = [];
   const fragmentsList: DocumentFragment[][] = [];
+  const styleTemplatesList: Element[][] = [];
   const validElements: HTMLElement[] = [];
 
   // Detect language once on a representative sample, apply to entire batch.
@@ -156,16 +162,23 @@ async function translateBatchWithFallback(batch: HTMLElement[]): Promise<void> {
     if (!encoded.placeholderText) continue;
     placeholderTexts.push(encoded.placeholderText);
     fragmentsList.push(encoded.fragments);
+    styleTemplatesList.push(encoded.styleTemplates);
     validElements.push(el);
   }
 
   if (validElements.length === 0) return;
 
   const expected = validElements.length;
-  validElements.forEach(el => el.setAttribute('data-translator-pending', 'true'));
+  validElements.forEach(el => {
+    el.setAttribute('data-translator-pending', 'true');
+    el.setAttribute('data-translator-theme', state.translationLoadingTheme);
+  });
 
   const clearPending = () => {
-    validElements.forEach(el => el.removeAttribute('data-translator-pending'));
+    validElements.forEach(el => {
+      el.removeAttribute('data-translator-pending');
+      el.removeAttribute('data-translator-theme');
+    });
   };
 
   const fullFallback = async () => {
@@ -186,7 +199,7 @@ async function translateBatchWithFallback(batch: HTMLElement[]): Promise<void> {
         sourceLang: batchDetectedLang || undefined,
         targetLang: state.targetLang,
         isAggregate: true,
-        hasPlaceholders: fragmentsList.some(f => f.length > 0),
+        hasPlaceholders: fragmentsList.some(f => f.length > 0) || styleTemplatesList.some(s => s.length > 0),
       },
     });
 
@@ -211,11 +224,14 @@ async function translateBatchWithFallback(batch: HTMLElement[]): Promise<void> {
 
     const retryElements: HTMLElement[] = [];
     validElements.forEach((el, index) => {
-      el.removeAttribute('data-translator-pending');
       const translated = translations.get(index + 1);
       if (translated) {
-        applyTranslation(el, translated, fragmentsList[index]);
+        // 成功翻译：让 applyTranslation 在分片更新的同一帧中应用渲染并移除 pending 属性
+        applyTranslation(el, translated, fragmentsList[index], styleTemplatesList[index]);
       } else {
+        // 未能翻译（将重试）：同步清空 pending 属性以供下一次翻译
+        el.removeAttribute('data-translator-pending');
+        el.removeAttribute('data-translator-theme');
         retryElements.push(el);
       }
     });

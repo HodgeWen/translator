@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select } from '@/components/ui/select';
+import { NumberInput } from '@/components/ui/number-input';
 import type { GlobalSettings, LangDetectProvider } from '@/types';
 import { t } from '@/lib/i18n';
 import { LANGUAGE_OPTIONS } from '@/lib/languages';
@@ -177,12 +178,14 @@ export function OptionsLanguageSettings({ settings, onSave, onUILanguageChange }
                     placeholder={t('label_api_key_optional')}
                     className="h-8 rounded-md border border-input bg-transparent px-2 text-sm"
                   />
-                  <input
-                    type="number"
+                  <NumberInput
+                    size="sm"
+                    min={100}
+                    max={60000}
+                    step={1000}
                     value={provider.timeout || 10000}
-                    onChange={(e) => updateDetectProvider(index, { timeout: parseInt(e.target.value) || 10000 })}
+                    onChange={(v) => updateDetectProvider(index, { timeout: v })}
                     placeholder={t('label_timeout')}
-                    className="h-8 rounded-md border border-input bg-transparent px-2 text-sm"
                   />
                 </div>
               )}
@@ -197,12 +200,14 @@ export function OptionsLanguageSettings({ settings, onSave, onUILanguageChange }
                       placeholder={t('label_endpoint_url')}
                       className="h-8 rounded-md border border-input bg-transparent px-2 text-sm"
                     />
-                    <input
-                      type="number"
+                    <NumberInput
+                      size="sm"
+                      min={100}
+                      max={60000}
+                      step={1000}
                       value={provider.timeout || 10000}
-                      onChange={(e) => updateDetectProvider(index, { timeout: parseInt(e.target.value) || 10000 })}
+                      onChange={(v) => updateDetectProvider(index, { timeout: v })}
                       placeholder={t('label_timeout')}
-                      className="h-8 rounded-md border border-input bg-transparent px-2 text-sm"
                     />
                   </div>
                 </div>

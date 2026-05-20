@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Select } from '@/components/ui/select';
+import { NumberInput } from '@/components/ui/number-input';
 import { ColorPaletteInput } from '@/components/options/color-palette-input';
-import type { GlobalSettings, InputLoadingPulseEasing, DisplayStyle, TranslationTone } from '@/types';
+import type { GlobalSettings, InputLoadingPulseEasing, DisplayStyle, TranslationTone, TranslationLoadingTheme } from '@/types';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import { getInputLoadingEasingValue } from '@/entrypoints/content/input-translate-utils';
@@ -91,6 +92,46 @@ export function OptionsDisplaySettings({ settings, onSave }: OptionsDisplaySetti
 
       <div className="rounded-lg border border-border p-6 space-y-6">
         <div className="flex items-center gap-2">
+          <Sparkles className="h-5 w-5 text-indigo-500 animate-pulse" />
+          <h3 className="text-lg font-semibold">{t('title_translation_loading_theme')}</h3>
+        </div>
+
+        <div className="space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {(['indigo', 'aurora', 'monochrome', 'cosmic'] as TranslationLoadingTheme[]).map((theme) => (
+              <button
+                key={theme}
+                onClick={() => savePatch({ translationLoadingTheme: theme })}
+                className={cn(
+                  'rounded-md border px-4 py-3 text-left text-sm transition-all duration-200 flex items-center justify-between gap-4 cursor-pointer',
+                  draft.translationLoadingTheme === theme
+                    ? 'border-indigo-500 bg-indigo-50/50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-300 ring-1 ring-indigo-500/20'
+                    : 'border-border hover:bg-accent/50 hover:border-accent-foreground/10'
+                )}
+              >
+                <div className="space-y-1">
+                  <div className="font-semibold">{t(`theme_${theme}`)}</div>
+                  <div className="text-xs text-muted-foreground leading-relaxed">
+                    {t(`theme_${theme}_desc`)}
+                  </div>
+                </div>
+                <div className={cn(
+                  "h-6 w-6 rounded-full shrink-0 border border-black/10 dark:border-white/10 shadow-sm relative overflow-hidden",
+                  theme === 'indigo' && "bg-gradient-to-r from-indigo-500 to-purple-500",
+                  theme === 'aurora' && "bg-gradient-to-r from-emerald-400 to-cyan-500",
+                  theme === 'monochrome' && "bg-gradient-to-r from-neutral-400 to-neutral-600 dark:from-neutral-600 dark:to-neutral-400",
+                  theme === 'cosmic' && "bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500"
+                )}>
+                  <span className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/25 to-transparent" />
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-border p-6 space-y-6">
+        <div className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-purple-500" />
           <h3 className="text-lg font-semibold">{t('title_translation_tone')}</h3>
         </div>
@@ -141,19 +182,19 @@ export function OptionsDisplaySettings({ settings, onSave }: OptionsDisplaySetti
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">{t('label_input_loading_pulse_duration')}</label>
-            <input
-              type="number"
+            <NumberInput
               min={400}
               max={5000}
               step={100}
               value={draftDuration}
-              onChange={(e) => {
-                const v = Math.max(400, Math.min(5000, parseInt(e.target.value) || 1200));
+              onChange={(v) => {
                 setDraftDuration(v);
-                setDraft({ ...draft, inputLoadingPulseDurationMs: v });
+                setDraft(prev => {
+                  const next = { ...prev, inputLoadingPulseDurationMs: v };
+                  onSave(next);
+                  return next;
+                });
               }}
-              onBlur={() => savePatch({ inputLoadingPulseDurationMs: draftDuration })}
-              className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm"
             />
             <p className="text-xs text-muted-foreground">{t('hint_input_loading_pulse_duration')}</p>
           </div>

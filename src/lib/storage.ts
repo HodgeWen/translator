@@ -28,6 +28,7 @@ export const DEFAULT_SETTINGS: GlobalSettings = {
   uiLanguage: 'zh-CN',
   displayStyle: 'original',
   translationTone: 'normal',
+  translationLoadingTheme: 'indigo',
   globalPrompt: DEFAULT_GLOBAL_PROMPT,
   detectLangProviders: [
     { id: 'franc', name: 'franc-min', type: 'franc' },

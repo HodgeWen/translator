@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
+import { NumberInput } from '@/components/ui/number-input';
 import type { GlobalSettings } from '@/types';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
@@ -153,14 +154,12 @@ export function OptionsGeneralSettings({ settings, onSave }: OptionsGeneralSetti
         <p className="text-sm text-muted-foreground">{t('desc_request_settings')}</p>
         <div className="space-y-2">
           <label className="text-sm font-medium">{t('label_request_timeout')}</label>
-          <input
-            type="number"
+          <NumberInput
             min={5000}
             max={120000}
             step={1000}
             value={draftTimeout}
-            onChange={(e) => { const v = Math.max(5000, Math.min(120000, parseInt(e.target.value) || 30000)); setDraftTimeout(v); debouncedSave({ requestTimeout: v }); }}
-            className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+            onChange={(v) => { setDraftTimeout(v); debouncedSave({ requestTimeout: v }); }}
           />
         </div>
       </div>
@@ -196,35 +195,30 @@ export function OptionsGeneralSettings({ settings, onSave }: OptionsGeneralSetti
         <div className="grid grid-cols-3 gap-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">{t('label_max_paragraphs')}</label>
-            <input
-              type="number"
+            <NumberInput
               min={1}
               max={20}
               value={draftMaxParagraphs}
-              onChange={(e) => { const v = Math.max(1, Math.min(20, parseInt(e.target.value) || 5)); setDraftMaxParagraphs(v); debouncedSave({ maxParagraphsPerRequest: v }); }}
-              className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+              onChange={(v) => { setDraftMaxParagraphs(v); debouncedSave({ maxParagraphsPerRequest: v }); }}
             />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">{t('label_max_text_length')}</label>
-            <input
-              type="number"
+            <NumberInput
               min={100}
               max={10000}
+              step={100}
               value={draftMaxTextLength}
-              onChange={(e) => { const v = Math.max(100, Math.min(10000, parseInt(e.target.value) || 2000)); setDraftMaxTextLength(v); debouncedSave({ maxTextLengthPerRequest: v }); }}
-              className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+              onChange={(v) => { setDraftMaxTextLength(v); debouncedSave({ maxTextLengthPerRequest: v }); }}
             />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">{t('label_max_concurrent')}</label>
-            <input
-              type="number"
+            <NumberInput
               min={1}
               max={10}
               value={draftMaxConcurrent}
-              onChange={(e) => { const v = Math.max(1, Math.min(10, parseInt(e.target.value) || 3)); setDraftMaxConcurrent(v); debouncedSave({ maxConcurrentRequests: v }); }}
-              className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+              onChange={(v) => { setDraftMaxConcurrent(v); debouncedSave({ maxConcurrentRequests: v }); }}
             />
           </div>
         </div>

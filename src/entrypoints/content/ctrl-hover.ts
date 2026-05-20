@@ -1,4 +1,11 @@
-import { isTranslatableBlock, BLOCK_SELECTOR } from '@/lib/block-detect';
+import {
+  isTranslatableBlock,
+  WHITELIST_TAGS,
+  GRAYLIST_TAGS,
+  HARD_EXCLUDE_TAGS,
+  getDirectTextLength,
+  isVisible
+} from '@/lib/block-detect';
 import { state, wrapperToOriginal, applySettingsToState } from './state';
 import { toggleElementDisplay } from './style-apply';
 import { translateSingleElement } from './translate';
@@ -60,12 +67,50 @@ async function ensureCtrlHoverSettings(): Promise<void> {
   }
 }
 
+function isCodeOrCodeBlock(el: HTMLElement): boolean {
+  if (el.tagName === 'PRE' || el.tagName === 'CODE') return true;
+  if (el.getAttribute?.('role') === 'code') return true;
+  if (el.classList?.contains('highlight') || el.classList?.contains('blob-code')) return true;
+  return false;
+}
+
 function findNearestTranslatableBlock(el: HTMLElement | null): HTMLElement | null {
+  if (!el) return null;
+  
   let cur: HTMLElement | null = el;
-  while (cur) {
-    if (cur.matches?.(BLOCK_SELECTOR) && isTranslatableBlock(cur, undefined, undefined, true)) return cur;
+  let fallbackTarget: HTMLElement | null = null;
+  
+  while (cur && cur.tagName !== 'BODY' && cur.tagName !== 'HTML') {
+    // 遇到代码或代码块，坚决不翻译
+    if (isCodeOrCodeBlock(cur)) {
+      return null;
+    }
+
+    // 1. 优先匹配：高优先级的标准强段落
+    if (WHITELIST_TAGS.has(cur.tagName) && isTranslatableBlock(cur, undefined, undefined, false)) {
+      return cur;
+    }
+    
+    // 2. 局部兜底匹配：若不是强段落，但它有文本且是可见的
+    if (!fallbackTarget) {
+      const text = cur.textContent?.trim() ?? '';
+      if (text.length >= 1 && isVisible(cur) && !HARD_EXCLUDE_TAGS.has(cur.tagName)) {
+        const isGray = GRAYLIST_TAGS.has(cur.tagName);
+        // 如果是 Graylist 容器（如 DIV），需含有直接文本或本身是叶子，避免把巨型布局容器当成 fallback
+        if (!isGray || getDirectTextLength(cur) > 0 || cur.children.length === 0) {
+          fallbackTarget = cur;
+        }
+      }
+    }
+    
     cur = cur.parentElement;
   }
+  
+  // 若未找到强段落，使用行内/局部元素兜底
+  if (fallbackTarget && isTranslatableBlock(fallbackTarget, undefined, undefined, true)) {
+    return fallbackTarget;
+  }
+  
   return null;
 }
 

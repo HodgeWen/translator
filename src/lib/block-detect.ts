@@ -7,7 +7,9 @@
  * - 允许含 inline code 的段落通过（后续由占位符机制处理）。
  */
 
-const WHITELIST_TAGS = new Set([
+import { getActiveRules } from './site-rules';
+
+export const WHITELIST_TAGS = new Set([
   'P', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6',
   'DT', 'DD', 'FIGCAPTION', 'SUMMARY', 'CAPTION', 'TD', 'TH',
 ]);
@@ -15,11 +17,11 @@ const WHITELIST_TAGS = new Set([
 // BLOCKQUOTE 放灰名单：常见的 reddit / github / markdown 渲染会把引文段落
 // 包成 <blockquote><p>…</p></blockquote>，此时 blockquote 自身没有直接文本，
 // 应让内部 <p> 作为翻译单元；只有当 blockquote 直接文本占比足够（裸文本引用）
-// 时才把它当作整段翻译。这样可避免把 <p> 当成 KEEP 占位符导致整段不翻译，
+// 时才把它当作整段翻译。这样可避免把 <p>当成 KEEP 占位符导致整段不翻译，
 // 同时保留 blockquote 容器自身的左边框 / 缩进等站点引用样式。
-const GRAYLIST_TAGS = new Set(['DIV', 'SECTION', 'ARTICLE', 'ASIDE', 'MAIN', 'BLOCKQUOTE']);
+export const GRAYLIST_TAGS = new Set(['DIV', 'SECTION', 'ARTICLE', 'ASIDE', 'MAIN', 'BLOCKQUOTE']);
 
-const HARD_EXCLUDE_TAGS = new Set([
+export const HARD_EXCLUDE_TAGS = new Set([
   'SCRIPT', 'STYLE', 'NOSCRIPT', 'IFRAME',
   'TEXTAREA', 'INPUT', 'BUTTON', 'SELECT',
   'SVG', 'CANVAS', 'VIDEO', 'AUDIO',
@@ -64,7 +66,7 @@ const CANDIDATE_SELECTOR = [...WHITELIST_TAGS, ...GRAYLIST_TAGS]
 /** 供外部（如 Ctrl+hover）快速判定"是不是一个段落级元素"。 */
 export const BLOCK_SELECTOR = CANDIDATE_SELECTOR;
 
-function getDirectTextLength(el: HTMLElement): number {
+export function getDirectTextLength(el: HTMLElement): number {
   let len = 0;
   for (const node of Array.from(el.childNodes)) {
     if (node.nodeType === Node.TEXT_NODE) {
@@ -80,6 +82,25 @@ function hasExcludedAncestor(
   safeCache?: WeakSet<HTMLElement>,
   relaxed?: boolean,
 ): boolean {
+  // 检查特定网站的排除规则
+  if (typeof window !== 'undefined') {
+    const activeRules = getActiveRules(window.location.href);
+    for (const rule of activeRules) {
+      if (rule.excludeSelectors) {
+        for (const selector of rule.excludeSelectors) {
+          if (el.closest(selector)) {
+            excludedCache?.add(el);
+            return true;
+          }
+        }
+      }
+      if (rule.shouldExclude?.(el)) {
+        excludedCache?.add(el);
+        return true;
+      }
+    }
+  }
+
   const walked: HTMLElement[] = [];
   let cur: HTMLElement | null = el;
   while (cur) {
@@ -116,7 +137,7 @@ function hasExcludedAncestor(
   }
 }
 
-function isVisible(el: HTMLElement): boolean {
+export function isVisible(el: HTMLElement): boolean {
   // Use native checkVisibility when available to avoid forced synchronous layout.
   if (typeof el.checkVisibility === 'function') {
     return el.checkVisibility({ checkOpacity: false, checkVisibilityCSS: true });
@@ -155,16 +176,17 @@ export function isTranslatableBlock(
 
   const isWhitelist = WHITELIST_TAGS.has(tag);
   const isGraylist = GRAYLIST_TAGS.has(tag);
-  if (!isWhitelist && !isGraylist) return false;
+  if (!relaxed && !isWhitelist && !isGraylist) return false;
 
   if (hasExcludedAncestor(el, excludedCache, safeCache, relaxed)) return false;
 
   const text = el.textContent?.trim() ?? '';
-  if (text.length < MIN_TEXT_LENGTH) return false;
+  const minLen = relaxed ? 1 : MIN_TEXT_LENGTH;
+  if (text.length < minLen) return false;
 
   if (!isVisible(el)) return false;
 
-  if (isGraylist) {
+  if (!relaxed && isGraylist) {
     const directLen = getDirectTextLength(el);
     const totalLen = text.length;
     if (totalLen === 0) return false;

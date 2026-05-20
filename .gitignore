@@ -117,3 +117,8 @@ dist
 
 # TernJS port file
 .tern-port
+
+# Agent files
+.agents/
+skills-lock.json
+
