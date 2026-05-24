@@ -19,13 +19,6 @@ const SYSTEM_PRESETS: PresetPrompt[] = [
     description: '将文本翻译成严谨、精确的学术论文或研究报告风格，优化专业术语表达。',
     content: 'You are a professional academic translator. Translate the text into clear, precise, and formal academic prose, maintaining the scholarly tone and terminology.',
     isSystem: true
-  },
-  {
-    id: 'bilingual',
-    name: '双语对照排版',
-    description: '以双语对照的方式输出译文，保持原文的行文脉络。',
-    content: 'You are a translation assistant. Output bilingual results for the text, with English and Chinese side by side or paragraph by paragraph.',
-    isSystem: true
   }
 ];
 

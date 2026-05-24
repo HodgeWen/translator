@@ -15,8 +15,7 @@ interface OptionsServicesSettingsProps {
 
 // 内置系统提示词预设，用于快捷填充
 const SYSTEM_PRESETS = [
-  { id: 'academic', name: '标准学术翻译', content: 'You are a professional academic translator. Translate the text into clear, precise, and formal academic prose, maintaining the scholarly tone and terminology.' },
-  { id: 'bilingual', name: '双语对照排版', content: 'You are a translation assistant. Output bilingual results for the text, with English and Chinese side by side or paragraph by paragraph.' }
+  { id: 'academic', name: '标准学术翻译', content: 'You are a professional academic translator. Translate the text into clear, precise, and formal academic prose, maintaining the scholarly tone and terminology.' }
 ];
 
 export function OptionsServicesSettings({ settings, onSave }: OptionsServicesSettingsProps) {

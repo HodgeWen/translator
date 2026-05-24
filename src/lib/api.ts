@@ -265,7 +265,17 @@ export async function translate(request: TranslationRequest): Promise<Translatio
       console.debug('[Translator] Using display style:', finalStyle);
 
       // 拼装提示词与风格
-      const basePrompt = activeService.prompt?.trim() || settings.globalPrompt;
+      let basePrompt = settings.globalPrompt;
+      if (activeService.prompt?.trim()) {
+        const servicePrompt = activeService.prompt.trim();
+        // 如果服务专属 Prompt 包含 {{targetLang}}，则完全覆盖全局 Prompt
+        if (servicePrompt.includes('{{targetLang}}')) {
+          basePrompt = servicePrompt;
+        } else {
+          // 否则追加到全局 Prompt 后面
+          basePrompt = `${settings.globalPrompt}\n\nAdditional translation instructions for this service:\n${servicePrompt}`;
+        }
+      }
       let toneInstruction = '';
       // 优先在自定义风格里寻找，其次在内置寻找
       const customToneObj = settings.customTones.find(t => t.id === finalTone);
