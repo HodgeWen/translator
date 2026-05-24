@@ -21,75 +21,84 @@ interface VendorDoc {
 const VENDOR_DOCS: Record<Vendor, VendorDoc> = {
   openai: {
     name: 'OpenAI (GPT-5.5 / o3-mini / o5)',
-    subTitle: '关闭或降低推理开销',
-    intro: 'OpenAI 支持通过 `reasoning_effort` 参数控制新一代推理模型在翻译前的内部思维深度。在翻译任务中，极力推荐完全关闭推理。',
+    subTitle: '关闭推理以加速翻译 (https://api.openai.com/v1)',
+    intro: 'OpenAI 支持通过 `reasoning_effort` 参数控制新一代推理模型（如 GPT-5.5、o3-mini）在生成回答前的思维链深度。在网页翻译任务中，极力推荐完全关闭推理以实现毫秒级响应。',
     jsonSample: `{
   "reasoning_effort": "none"
 }`,
     tips: [
-      '完全关闭思考 (强烈推荐)：设置 `"reasoning_effort": "none"` 可以彻底关闭模型内部思维链，直接输出最终译文，大幅减少翻译耗时与 Token 消耗。',
-      '快捷值选项："none"（极致瞬时响应）、"low"（极小推理，快）、"medium"（平衡）、"high"（长篇复杂学术任务）。'
+      '关闭推理 (强烈推荐)：在额外请求体中填入 `"reasoning_effort": "none"` 彻底禁用推理过程，跳过思维链产生，直接获得最终翻译译文，极大降低时延。',
+      '参数级别：可选 `"none"`（推荐，最快最省）、`"low"`（快速少推理）、`"medium"`（默认平衡值）、`"high"`（高深度推理，延迟极高）。',
+      '官方接口地址：`https://api.openai.com/v1`'
     ]
   },
   anthropic: {
-    name: 'Anthropic (Claude 4.7 Opus)',
-    subTitle: '关闭 Extended Thinking 思考',
-    intro: 'Anthropic 允许通过 `thinking` 参数配置新一代旗舰模型的思考预算上限。在翻译场景中，建议完全禁用该功能以实现瞬时翻译。',
+    name: 'Anthropic (Claude 4.7 Opus / 4.6 Sonnet)',
+    subTitle: '关闭 Extended Thinking 思考 (https://api.anthropic.com/v1)',
+    intro: 'Anthropic 允许通过 `thinking` 额外参数配置新一代模型（如 Claude Opus 4.7）的思考预算。在翻译场景中，建议完全禁用该功能以实现即时翻译。',
     jsonSample: `{
   "thinking": {
     "type": "disabled"
   }
 }`,
     tips: [
-      '彻底禁用思考 (强烈推荐)：在额外请求体中填入 `"type": "disabled"`，可完美规避 Extended Thinking 造成的数十秒翻译高延迟。',
-      '自适应开启：设置为 `"type": "adaptive"` 让模型自主决定，但速度可能会受复杂网页内容影响而出现明显变慢。'
+      '彻底禁用思考 (强烈推荐)：填入 `"thinking": { "type": "disabled" }` 以规避 Extended Thinking 造成的翻译高延迟。',
+      '自适应开启：设置为 `"type": "adaptive"`，Claude 4.7 等模型将根据输入自动思考，但在翻译长网页时会导致等待时间明显变长。',
+      '官方接口地址：`https://api.anthropic.com/v1`'
     ]
   },
   deepseek: {
-    name: 'DeepSeek 官方 API (DeepSeek-V4)',
-    subTitle: '合理选择非推理模型以提速',
-    intro: '在 DeepSeek 官方 API 中，其深度思考 R1 推理模型（如 `deepseek-reasoning`）的思维链是强制开启且在 API 协议上无法通过 JSON 关闭的。',
-    jsonSample: `{}`,
+    name: 'DeepSeek 官方 (DeepSeek-V4-Pro / V4-Flash)',
+    subTitle: '关闭深度思考与推理 (https://api.deepseek.com)',
+    intro: '在 DeepSeek 官方 API（包括最新的 DeepSeek-V4-Pro/Flash 推理模型）中，支持通过 `thinking` 字段控制思维链。在网页翻译场景下，建议一键关闭以实现极致速度。',
+    jsonSample: `{
+  "thinking": {
+    "type": "disabled"
+  }
+}`,
     tips: [
-      '官方提速方案：为获得毫秒级的翻译响应速度，请勿使用 `deepseek-reasoning` (R1) 推理模型。强烈建议在模型配置列表中直接选用常规无推理模型（如 `deepseek-chat` (V4)），即可瞬间恢复疾速翻译体验。'
+      '一键禁用思考 (强烈推荐)：在额外请求体中设置 `"thinking": { "type": "disabled" }` 可以关闭思维链，跳过思考输出，使 `deepseek-v4-pro` 或 `deepseek-v4-flash` 以极速状态直接返回翻译结果。',
+      '模型选择建议：若追求毫秒级极致响应，也可直接使用常规非推理模型（如 `deepseek-chat`）。当启用思考时，可使用 `"reasoning_effort": "high"` 或是 `"max"` 控制深度。',
+      '官方接口地址：`https://api.deepseek.com`'
     ]
   },
   siliconflow: {
     name: '硅基流动 (SiliconFlow)',
-    subTitle: '一键禁用 DeepSeek-R1 思考',
-    intro: '硅基流动针对支持推理输出的新一代模型（如 DeepSeek-R1 系列）提供了直观的 API 开关，能完美帮助翻译扩展跳过长耗时的思考过程。',
+    subTitle: '一键禁用 DeepSeek-V4 思维链 (https://api.siliconflow.cn/v1)',
+    intro: '硅基流动针对支持推理输出的新一代 DeepSeek-V4-Pro/Flash 等模型进行了定制化支持，提供了极为直观的 API 开关，能完美帮助翻译扩展跳过长耗时的思考过程。',
     jsonSample: `{
   "enable_thinking": false
 }`,
     tips: [
-      '一键禁用提速 (强烈推荐)：对于 DeepSeek-R1 模型，在额外请求体中设置 `"enable_thinking": false` 可以一键彻底关闭思维链输出，翻译速度立即提升 10 倍以上！',
-      'Token 省流：禁用思维链可为您节省高达 80% 的输入/输出 Token 成本。'
+      '一键禁用提速 (强烈推荐)：在额外请求体中设置 `"enable_thinking": false` 可以一键彻底关闭 DeepSeek-V4 系列的思维链，翻译响应速度立即提升 10 倍以上！',
+      'Token 省流：禁用思维链可为您节省高达 80% 的输入/输出 Token 成本。',
+      '官方接口地址：`https://api.siliconflow.cn/v1`'
     ]
   },
   openrouter: {
     name: 'OpenRouter',
-    subTitle: '统一思维链控制 (include_reasoning)',
-    intro: 'OpenRouter 针对所有推理类模型（如 DeepSeek R1/V4 系列）提供了统一的格式与推理结果过滤控制字段，能让划词翻译瞬间输出。',
+    subTitle: '过滤思维链内容 (https://openrouter.ai/api/v1)',
+    intro: 'OpenRouter 针对所有新一代推理类模型（如 DeepSeek V4 系列）提供了统一的格式与过滤控制字段，能让划词翻译瞬间输出。',
     jsonSample: `{
   "include_reasoning": false
 }`,
     tips: [
-      '隐藏思维链提速 (强烈推荐)：设置 `"include_reasoning": false` 强制 OpenRouter 网关在传输时过滤并剔除思维链内容，规避数据流积压，让翻译结果瞬间输出。',
-      '兼容模式：OpenRouter 对 OpenAI-compatible 模型同样支持 `"reasoning_effort": "none"` 作为底层控制桥接。'
+      '隐藏思维链提速 (强烈推荐)：设置 `"include_reasoning": false` 强制 OpenRouter 在传输时过滤并剔除思维链内容，让翻译结果瞬间输出。',
+      '官方接口地址：`https://openrouter.ai/api/v1`'
     ]
   },
   opencode: {
     name: 'OpenCode',
-    subTitle: '关闭 OpenCode 推理思考',
-    intro: 'OpenCode 大模型平台对 DeepSeek 提供了全面支持。为了配合翻译场景的毫秒级即时响应，OpenCode 提供了专属的思维链开关参数。',
+    subTitle: '关闭 OpenCode 推理思考 (https://api.opencode.cn/v1)',
+    intro: 'OpenCode 大模型平台对 DeepSeek-V4 系列模型提供了全面支持。为了配合翻译场景的毫秒级即时响应，OpenCode 提供了专属的思维链开关参数。',
     jsonSample: `{
   "thinking": {
     "type": "disabled"
   }
 }`,
     tips: [
-      '关闭思维链提速 (强烈推荐)：在额外请求体中填入 `"thinking": { "type": "disabled" }` 以彻底关闭思维链，避免翻译任务时产生数秒的高延迟。',
-      '常规模型方案：为了最平滑的提速体验，也推荐直接在模型选择列表切换至不带 `-R1` 后缀的常规非推理模型（如 `deepseek-chat` / `deepseek-v4`），直接瞬时响应翻译译文。'
+      '关闭思维链提速 (强烈推荐)：在额外请求体中填入 `"thinking": { "type": "disabled" }` 以彻底关闭思维链，避免翻译任务时产生高延迟。',
+      '接口地址：`https://api.opencode.cn/v1`'
     ]
   }
 };
