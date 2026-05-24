@@ -20,46 +20,46 @@ interface VendorDoc {
 
 const VENDOR_DOCS: Record<Vendor, VendorDoc> = {
   openai: {
-    name: 'OpenAI (o1/o3-mini)',
+    name: 'OpenAI (GPT-5.5 / o3-mini / o5)',
     subTitle: '控制推理开销 (Reasoning Effort)',
-    intro: 'OpenAI 支持通过 `reasoning_effort` 参数控制模型（例如 o1, o3-mini）在生成最终答案前的内部思维链深度，以此平衡速度、成本和生成质量。',
+    intro: 'OpenAI 支持通过 `reasoning_effort` 参数控制新一代推理模型（如 GPT-5.5、o3-mini、o5）在生成最终答案前的内部思维链深度，以此平衡速度、成本和生成质量。',
     jsonSample: `{
   "reasoning_effort": "low"
 }`,
     tips: [
-      '可选值包括："none"（完全关闭推理过程，仅支持 o3-mini 及以上）、"low"（低推理预算，响应速度快）、"medium"（平衡的默认值）、"high"（高推理预算，适合极其复杂的逻辑或代码任务）。',
+      '可选值包括："none"（完全关闭推理过程，仅支持部分模型）、"low"（低推理预算，响应速度快）、"medium"（平衡的默认值）、"high"（高推理预算，适合极其复杂的逻辑或代码任务）。',
       '在翻译任务中，为了低延迟和低成本，推荐将其设为 "none" 或 "low"；如果需要极高精确度的长篇学术翻译，可考虑 "medium" 或 "high"。'
     ]
   },
   anthropic: {
-    name: 'Anthropic (Claude 3.7)',
+    name: 'Anthropic (Claude 4.7 Opus)',
     subTitle: '自适应与预算思考 (Extended Thinking)',
-    intro: 'Anthropic 在 Claude 3.7 Sonnet 中引入了 `thinking` 额外请求体参数，支持开启自适应思考或强制控制思考的 Token 预算上限。',
+    intro: 'Anthropic 在新一代模型（如 Claude Opus 4.7 / Claude Sonnet 4.6）中引入了 `thinking` 额外请求体参数，支持开启自适应思考或强制控制思考的 Token 预算上限。',
     jsonSample: `{
   "thinking": {
     "type": "adaptive"
   }
 }`,
     tips: [
-      '动态自适应：推荐设置 `"type": "adaptive"`，模型将根据输入任务复杂度自动判断是否思考以及思考深度。',
+      '动态自适应：推荐设置 `"type": "adaptive"`，Claude 4.7 等模型将根据输入任务复杂度自动判断是否思考以及思考深度。',
       '完全关闭：若希望关闭深度思考，可设为 `"type": "disabled"` 或不传递 `thinking` 字段。',
       '指定上限 (旧版兼容)：可设置为 `"type": "enabled", "budget_tokens": 1024`，强制给思考过程分配指定的 Token 预算。'
     ]
   },
   deepseek: {
-    name: 'DeepSeek 官方 API',
+    name: 'DeepSeek 官方 API (DeepSeek-V4)',
     subTitle: '原生深度思考 (Reasoning Content)',
-    intro: '针对 DeepSeek 官方 API，其核心推理模型（如 DeepSeek-R1）的深度思考是原生强制开启的，当前官方 HTTP 协议中并没有提供独立的控制开关参数。',
+    intro: '针对 DeepSeek 官方 API（包括最新的 DeepSeek-V4 及新版推理模型），其核心推理模型（如 DeepSeek-R1-V4）的深度思考是原生强制开启的，当前官方 HTTP 协议中并没有提供独立的控制开关参数。',
     jsonSample: `{}`,
     tips: [
-      '官方提示：DeepSeek 官方当前的 API 机制下，`deepseek-chat` (V3) 模型不具备推理过程，而 `deepseek-reasoning` (R1) 强制输出推理。如需关闭深度思考以追求极致翻译速度，请在模型设置中将所选模型改为 `deepseek-chat`。',
-      '注意：官方 R1 模型的温度建议保持在 0.5 ~ 0.7 之间，推荐 0.6，不可设置为 0 或 1.0。'
+      '官方提示：DeepSeek 官方当前的 API 机制下，`deepseek-chat` (V4) 模型不具备推理过程，而 `deepseek-reasoning` (R1-V4) 强制输出推理。如需关闭深度思考以追求极致翻译速度，请在模型设置中将所选模型改为常规非推理模型（如 `deepseek-chat`）。',
+      '注意：官方 R1/V4 推理模型的温度建议保持在 0.5 ~ 0.7 之间，推荐 0.6，不可设置为 0 或 1.0。'
     ]
   },
   siliconflow: {
     name: '硅基流动 (SiliconFlow)',
     subTitle: '思维链开关 (enable_thinking)',
-    intro: '硅基流动针对支持推理输出的模型（例如 DeepSeek-R1 系列模型）进行了高度定制，提供了直观的开启/关闭以及 Token 预算参数。',
+    intro: '硅基流动针对支持推理输出的新一代模型（例如 DeepSeek-R1-V4 系列模型）进行了高度定制，提供了直观的开启/关闭以及 Token 预算参数。',
     jsonSample: `{
   "enable_thinking": false
 }`,
