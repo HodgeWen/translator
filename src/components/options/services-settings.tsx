@@ -527,17 +527,34 @@ export function OptionsServicesSettings({ settings, onSave }: OptionsServicesSet
                         )}
                       </div>
 
-                      <div className="text-xs text-muted-foreground truncate">
+                      <div className="text-xs text-muted-foreground">
                         {service.type === 'single' ? (
-                          <>
-                            提供商:{' '}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span>提供商:</span>
                             <span className="font-medium text-foreground/80">
                               {settings.providers.find(p => p.id === service.providerId)?.name || service.providerId}
-                            </span>{' '}
-                            | 模型:{' '}
-                            <span className="font-medium text-foreground/80">{service.modelId}</span>
-                            {service.fallbackEnabled && ' (开启自动降级)'}
-                          </>
+                            </span>
+                            <span>|</span>
+                            <span>模型:</span>
+                            <div onClick={e => e.stopPropagation()} className="inline-block">
+                              <Select
+                                value={service.modelId}
+                                options={getModelOptions(service.providerId)}
+                                onChange={val => {
+                                  const nextServices = settings.services.map(s => {
+                                    if (s.id === service.id && s.type === 'single') {
+                                      return { ...s, modelId: val };
+                                    }
+                                    return s;
+                                  });
+                                  onSave({ ...settings, services: nextServices });
+                                }}
+                                compact
+                                className="w-[180px]"
+                              />
+                            </div>
+                            {service.fallbackEnabled && <span className="text-muted-foreground">(开启自动降级)</span>}
+                          </div>
                         ) : (
                           <>
                             组合成员:{' '}

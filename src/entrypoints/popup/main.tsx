@@ -207,6 +207,20 @@ function App() {
   if (!settings) return null
 
   const activeServiceId = settings.selectedServiceId || (settings.services[0]?.id ?? '')
+  const activeService = settings.services.find((s) => s.id === activeServiceId) || settings.services[0]
+
+  const handleModelChange = async (modelId: string) => {
+    if (!settings || !activeService || activeService.type !== 'single') return
+    const updatedServices = settings.services.map((s) => {
+      if (s.id === activeService.id) {
+        return { ...s, modelId }
+      }
+      return s
+    })
+    const newSettings = { ...settings, services: updatedServices }
+    setSettings(newSettings)
+    await saveSettings(newSettings)
+  }
 
   return (
     <div className="w-[450px] bg-background text-foreground flex flex-col" key={langVersion}>
@@ -256,6 +270,24 @@ function App() {
           compact
         />
       </div>
+
+      {/* Single Service Model Selector Row */}
+      {activeService && activeService.type === 'single' && (
+        <div className="px-4 py-1.5 border-b border-border flex items-center justify-between gap-3 bg-muted/5">
+          <span className="text-xs font-semibold text-muted-foreground/80 flex items-center gap-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            翻译模型:
+          </span>
+          <Select
+            value={activeService.modelId}
+            options={settings.providers.find(p => p.id === activeService.providerId)?.models.map(m => ({ value: m.id, label: m.name })) || []}
+            onChange={handleModelChange}
+            placeholder="选择模型"
+            className="flex-1 max-w-[280px]"
+            compact
+          />
+        </div>
+      )}
 
       {/* Target Language Hint */}
       <div className="px-4 pt-2.5 pb-0">
