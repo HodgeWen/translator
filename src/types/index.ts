@@ -58,7 +58,14 @@ export interface GlobalSettings {
   providers: ProviderConfig[];
   selectedProviderId: string;
   selectedModelId: string;
-  loadBalance: LoadBalanceConfig;
+  services: TranslationService[];
+  selectedServiceId: string;
+  customPresetPrompts: PresetPrompt[];
+  customTones: CustomTone[];
+  overrideDisplayStyleEnabled: boolean;
+  customDisplayStyle: DisplayStyle;
+  overrideTranslationToneEnabled: boolean;
+  customTranslationTone: string;
   nativeLanguage: LangCode;
   defaultSourceLanguage: LangCode;
   uiLanguage: LangCode;
@@ -137,3 +144,43 @@ export type BgMessage =
   | { type: 'TRANSLATE'; payload: BgTranslatePayload }
   | { type: 'DETECT_LANG'; payload: BgDetectLangPayload }
   | { type: 'PING' };
+
+export interface PresetPrompt {
+  id: string;
+  name: string;
+  description: string;
+  content: string;
+  isSystem?: boolean;
+}
+
+export interface CustomTone {
+  id: string;
+  name: string;
+  promptInstruction: string;
+}
+
+export interface BaseService {
+  id: string;
+  name: string;
+  prompt?: string;
+  defaultDisplayStyle: DisplayStyle | 'personal_default';
+  defaultTranslationTone: string | 'personal_default';
+}
+
+export interface SingleService extends BaseService {
+  type: 'single';
+  providerId: string;
+  modelId: string;
+  fallbackEnabled: boolean;
+}
+
+export interface PoolService extends BaseService {
+  type: 'pool';
+  poolProviders: Array<{
+    providerId: string;
+    modelId?: string;
+    weight: number;
+  }>;
+}
+
+export type TranslationService = SingleService | PoolService;
