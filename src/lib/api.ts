@@ -1,9 +1,9 @@
-import type { ProviderConfig, TranslationRequest, TranslationResponse, LangCode, GlobalSettings } from '@/types';
+import type { ProviderConfig, TranslationRequest, TranslationResponse, LangCode, DisplayStyle } from '@/types';
 import { getSettings } from './storage';
 import { getCachedTranslation, setCachedTranslation } from './cache';
 import { DEFAULT_GLOBAL_PROMPT, TONE_INSTRUCTIONS } from './prompts';
 import { consumeOpenAIStream } from './api/sse-consumer';
-import { buildFallbackQueue, pickLoadBalanceQueue, type ProviderModel } from './api/queue-builder';
+import { buildServiceQueue, type ProviderModel } from './api/queue-builder';
 
 const inflightRequests = new Map<string, Promise<TranslationResponse>>();
 
@@ -11,9 +11,11 @@ function inflightKey(
   text: string,
   sourceLang: string | undefined,
   targetLang: string,
-  extraPrompt: string | undefined
+  extraPrompt: string | undefined,
+  serviceId: string,
+  tone: string
 ): string {
-  return `${text}::${sourceLang ?? 'auto'}::${targetLang}::${extraPrompt ?? ''}`;
+  return `${text}::${sourceLang ?? 'auto'}::${targetLang}::${extraPrompt ?? ''}::${serviceId}::${tone}`;
 }
 
 async function shortPromptHash(prompt: string): Promise<string> {
@@ -220,25 +222,61 @@ async function callProvider(
     clearTimeout(timeoutId);
   }
 }
-
-function getPromptTemplate(settings: GlobalSettings, provider: ProviderConfig): string {
-  return provider.prompt?.trim() || settings.globalPrompt;
-}
-
 export async function translate(request: TranslationRequest): Promise<TranslationResponse> {
   const { text, sourceLang, targetLang, isAggregate, hasPlaceholders, extraPrompt } = request;
 
   const cacheKeySourceLang = sourceLang || 'auto';
-  const cacheKey = inflightKey(text, cacheKeySourceLang, targetLang, extraPrompt);
+
+  // Resolve settings and activeService/finalTone first to generate the correct in-flight key
+  const settings = await getSettings();
+
+  const activeService = settings.services.find(s => s.id === settings.selectedServiceId) || settings.services[0];
+  if (!activeService) {
+    throw new Error('No active translation service available. Please configure services in settings.');
+  }
+
+  // 级联解析
+  let finalStyle: DisplayStyle;
+  if (settings.overrideDisplayStyleEnabled) {
+    // 个人开启自定义覆盖
+    finalStyle = settings.customDisplayStyle;
+  } else {
+    // 继承服务配置
+    const serviceStyle = activeService.defaultDisplayStyle;
+    finalStyle = serviceStyle === 'personal_default' ? settings.displayStyle : serviceStyle;
+  }
+
+  let finalTone: string;
+  if (settings.overrideTranslationToneEnabled) {
+    finalTone = settings.customTranslationTone;
+  } else {
+    const serviceTone = activeService.defaultTranslationTone;
+    finalTone = serviceTone === 'personal_default' ? settings.translationTone : serviceTone;
+  }
+
+  const cacheKey = inflightKey(text, cacheKeySourceLang, targetLang, extraPrompt, activeService.id, finalTone);
 
   const existing = inflightRequests.get(cacheKey);
   if (existing) return existing;
 
   const promise = (async () => {
     try {
-      const settings = await getSettings();
+      // For debug/future integration, log the final display style
+      console.debug('[Translator] Using display style:', finalStyle);
 
-      const promptSalt = await buildTranslationCachePartition(settings.globalPrompt, extraPrompt, settings.translationTone);
+      // 拼装提示词与风格
+      const basePrompt = activeService.prompt?.trim() || settings.globalPrompt;
+      let toneInstruction = '';
+      // 优先在自定义风格里寻找，其次在内置寻找
+      const customToneObj = settings.customTones.find(t => t.id === finalTone);
+      if (customToneObj) {
+        toneInstruction = customToneObj.promptInstruction;
+      } else {
+        toneInstruction = TONE_INSTRUCTIONS[finalTone as keyof typeof TONE_INSTRUCTIONS] || '';
+      }
+      const finalPromptTemplate = toneInstruction ? `${basePrompt}\n\n${toneInstruction}` : basePrompt;
+
+      const promptSalt = await buildTranslationCachePartition(basePrompt, extraPrompt, finalTone);
 
       const cached = await getCachedTranslation(text, cacheKeySourceLang, targetLang, promptSalt);
       if (cached) {
@@ -249,9 +287,7 @@ export async function translate(request: TranslationRequest): Promise<Translatio
         };
       }
 
-      const models = settings.loadBalance.enabled
-        ? pickLoadBalanceQueue(settings)
-        : buildFallbackQueue(settings);
+      const models = buildServiceQueue(settings, activeService);
 
       if (models.length === 0) {
         throw new Error('No translation models available. Please configure providers in settings.');
@@ -263,9 +299,6 @@ export async function translate(request: TranslationRequest): Promise<Translatio
       for (let i = 0; i < models.length; i++) {
         const providerModel = models[i];
         try {
-          const promptTemplate = getPromptTemplate(settings, providerModel.provider);
-          const toneInstr = TONE_INSTRUCTIONS[settings.translationTone];
-          const finalPromptTemplate = toneInstr ? `${promptTemplate}\n\n${toneInstr}` : promptTemplate;
           const result = await callProvider(
             providerModel,
             text,

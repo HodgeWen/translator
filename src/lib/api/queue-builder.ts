@@ -1,15 +1,28 @@
-import type { GlobalSettings, ProviderConfig } from '@/types';
+import type { GlobalSettings, TranslationService, ProviderConfig } from '@/types';
 
 export interface ProviderModel {
   provider: ProviderConfig;
   model: { id: string; name: string };
 }
 
-// ─── Fallback Queue ──────────────────────────────────────────────────────
-// 顺序：选中的模型 → 同 provider 剩余模型（按配置顺序）→ 其他 provider 所有模型（按 provider 配置顺序）
+const poolCounters = new Map<string, number>();
 
-export function buildFallbackQueue(settings: GlobalSettings): ProviderModel[] {
-  const { providers, selectedProviderId, selectedModelId } = settings;
+export function buildServiceQueue(settings: GlobalSettings, activeService: TranslationService): ProviderModel[] {
+  // Clear stale keys from deleted/modified pools
+  const activeKeys = new Set<string>();
+  for (const s of settings.services) {
+    if (s.type === 'pool') {
+      for (const p of s.poolProviders) {
+        activeKeys.add(`${s.id}:${p.providerId}`);
+      }
+    }
+  }
+  for (const key of poolCounters.keys()) {
+    if (!activeKeys.has(key)) {
+      poolCounters.delete(key);
+    }
+  }
+
   const queue: ProviderModel[] = [];
   const seen = new Set<string>();
 
@@ -20,116 +33,75 @@ export function buildFallbackQueue(settings: GlobalSettings): ProviderModel[] {
     queue.push({ provider, model });
   };
 
-  // 1. 选中的模型
-  const selectedProvider = providers.find(p => p.id === selectedProviderId);
-  if (selectedProvider) {
-    const selectedModel = selectedProvider.models.find(m => m.id === selectedModelId);
-    if (selectedModel) {
-      addModel(selectedProvider, selectedModel);
+  if (activeService.type === 'single') {
+    const provider = settings.providers.find(p => p.id === activeService.providerId);
+    if (!provider) return [];
+
+    const mainModel = provider.models.find(m => m.id === activeService.modelId);
+    if (mainModel) {
+      addModel(provider, mainModel);
     }
-    // 2. 同 provider 剩余模型
-    for (const model of selectedProvider.models) {
-      addModel(selectedProvider, model);
+
+    if (activeService.fallbackEnabled) {
+      // 在同 Provider 内部其余模型中降级
+      for (const model of provider.models) {
+        addModel(provider, model);
+      }
     }
-  }
+  } else if (activeService.type === 'pool') {
+    const activeEntries = activeService.poolProviders.filter(entry => {
+      return settings.providers.some(p => p.id === entry.providerId && p.models.length > 0);
+    });
 
-  // 3. 其他 provider 所有模型
-  for (const provider of providers) {
-    for (const model of provider.models) {
-      addModel(provider, model);
-    }
-  }
+    if (activeEntries.length === 0) return [];
 
-  return queue;
-}
-
-// ─── Load Balance (Weighted Round-Robin) ─────────────────────────────────
-// 模块级计数器：跟踪各 provider 已分配次数，实现加权轮询。
-const lbCounter = new Map<string, number>();
-
-export function pickLoadBalanceQueue(settings: GlobalSettings): ProviderModel[] {
-  const { loadBalance, providers } = settings;
-  const activeEntries = loadBalance.providers.filter(lbp => {
-    return providers.some(p => p.id === lbp.providerId && p.models.length > 0);
-  });
-
-  if (activeEntries.length === 0) return [];
-
-  // 清理已删除 provider 残留在 lbCounter 的计数，防止 SW 长期存活时缓慢泄漏。
-  const activeIds = new Set(activeEntries.map(e => e.providerId));
-  for (const id of lbCounter.keys()) {
-    if (!activeIds.has(id)) lbCounter.delete(id);
-  }
-
-  // 加权轮询：选 counter/weight 最小的 provider
-  let minRatio = Infinity;
-  let pickedIdx = 0;
-  for (let i = 0; i < activeEntries.length; i++) {
-    const entry = activeEntries[i];
-    const count = lbCounter.get(entry.providerId) ?? 0;
-    const ratio = count / entry.weight;
-    if (ratio < minRatio) {
-      minRatio = ratio;
-      pickedIdx = i;
-    }
-  }
-
-  const picked = activeEntries[pickedIdx];
-  lbCounter.set(picked.providerId, (lbCounter.get(picked.providerId) ?? 0) + 1);
-
-  // 构建单个 provider 的模型队列：选中模型优先 → 其余按配置顺序
-  const buildProviderModels = (
-    provider: ProviderConfig,
-    lbEntry: { modelId?: string }
-  ): ProviderModel[] => {
-    const result: ProviderModel[] = [];
-    const seen = new Set<string>();
-
-    // 优先使用指定模型
-    if (lbEntry.modelId) {
-      const selectedModel = provider.models.find(m => m.id === lbEntry.modelId);
-      if (selectedModel) {
-        seen.add(selectedModel.id);
-        result.push({ provider, model: selectedModel });
+    // 加权轮询挑选首选成员
+    let minRatio = Infinity;
+    let pickedIdx = 0;
+    for (let i = 0; i < activeEntries.length; i++) {
+      const entry = activeEntries[i];
+      const counterKey = `${activeService.id}:${entry.providerId}`;
+      const count = poolCounters.get(counterKey) ?? 0;
+      const ratio = count / entry.weight;
+      if (ratio < minRatio) {
+        minRatio = ratio;
+        pickedIdx = i;
       }
     }
 
-    // 剩余模型按配置顺序
-    for (const model of provider.models) {
-      if (!seen.has(model.id)) {
-        seen.add(model.id);
-        result.push({ provider, model });
+    const picked = activeEntries[pickedIdx];
+    const pickedCounterKey = `${activeService.id}:${picked.providerId}`;
+    poolCounters.set(pickedCounterKey, (poolCounters.get(pickedCounterKey) ?? 0) + 1);
+
+    // 将首选成员及其模型排在最前
+    const pickedProvider = settings.providers.find(p => p.id === picked.providerId);
+    if (pickedProvider) {
+      const prefModel = picked.modelId 
+        ? pickedProvider.models.find(m => m.id === picked.modelId)
+        : pickedProvider.models[0];
+      if (prefModel) {
+        addModel(pickedProvider, prefModel);
+      }
+      for (const m of pickedProvider.models) {
+        addModel(pickedProvider, m);
       }
     }
 
-    return result;
-  };
-
-  const queue: ProviderModel[] = [];
-  const seenKeys = new Set<string>();
-
-  const addModels = (models: ProviderModel[]) => {
-    for (const pm of models) {
-      const key = `${pm.provider.id}:${pm.model.id}`;
-      if (!seenKeys.has(key)) {
-        seenKeys.add(key);
-        queue.push(pm);
+    // 将 Pool 里的其余成员按顺序作为降级通道
+    for (const entry of activeEntries) {
+      if (entry.providerId === picked.providerId) continue;
+      const provider = settings.providers.find(p => p.id === entry.providerId);
+      if (!provider) continue;
+      const prefModel = entry.modelId 
+        ? provider.models.find(m => m.id === entry.modelId)
+        : provider.models[0];
+      if (prefModel) {
+        addModel(provider, prefModel);
+      }
+      for (const m of provider.models) {
+        addModel(provider, m);
       }
     }
-  };
-
-  // 先放选中的 provider
-  const pickedProvider = providers.find(p => p.id === picked.providerId);
-  if (pickedProvider) {
-    addModels(buildProviderModels(pickedProvider, picked));
-  }
-
-  // 再放其余参与负载的 provider
-  for (const entry of activeEntries) {
-    if (entry.providerId === picked.providerId) continue;
-    const provider = providers.find(p => p.id === entry.providerId);
-    if (!provider) continue;
-    addModels(buildProviderModels(provider, entry));
   }
 
   return queue;
