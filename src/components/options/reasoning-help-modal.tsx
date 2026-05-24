@@ -20,9 +20,9 @@ interface VendorDoc {
 
 const VENDOR_DOCS: Record<Vendor, VendorDoc> = {
   openai: {
-    name: 'OpenAI (GPT-5.5 / o3-mini / o5)',
+    name: 'OpenAI (GPT-5.5 / o3-mini)',
     subTitle: '关闭推理以加速翻译 (https://api.openai.com/v1)',
-    intro: 'OpenAI 支持通过 `reasoning_effort` 参数控制新一代推理模型（如 GPT-5.5、o3-mini）在生成回答前的思维链深度。在网页翻译任务中，极力推荐完全关闭推理以实现毫秒级响应。',
+    intro: 'OpenAI 支持通过 `reasoning_effort` 参数控制新一代推理模型（如 GPT-5.5、o3-mini）在生成回答前的思维链深度。在划词/网页翻译任务中，极力推荐完全关闭推理以实现毫秒级响应。',
     jsonSample: `{
   "reasoning_effort": "none"
 }`,
