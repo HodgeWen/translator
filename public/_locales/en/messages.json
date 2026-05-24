@@ -653,17 +653,14 @@
   "preset_urls_category_all": {
     "message": "All"
   },
-  "preset_urls_category_domestic": {
-    "message": "Domestic"
+  "preset_urls_category_open": {
+    "message": "Open Source"
   },
-  "preset_urls_category_foreign": {
-    "message": "Foreign"
+  "preset_urls_category_closed": {
+    "message": "Closed Source"
   },
   "preset_urls_category_gateway": {
-    "message": "Gateway"
-  },
-  "preset_urls_category_local": {
-    "message": "Local"
+    "message": "Aggregator"
   },
   "btn_copy_url": {
     "message": "Copy"

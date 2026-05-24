@@ -9,7 +9,7 @@ interface PresetUrlsModalProps {
   onClose: () => void;
 }
 
-type Category = 'all' | 'domestic' | 'foreign' | 'gateway' | 'local';
+type Category = 'all' | 'open' | 'closed' | 'gateway';
 
 interface PresetProvider {
   id: string;
@@ -21,11 +21,11 @@ interface PresetProvider {
 }
 
 const PRESET_PROVIDERS: PresetProvider[] = [
-  // 国内主流
+  // 开源服务商
   {
     id: 'deepseek',
     name: 'DeepSeek 官方',
-    category: 'domestic',
+    category: 'open',
     badge: '🇨🇳',
     baseURL: 'https://api.deepseek.com',
     docLink: 'https://api-docs.deepseek.com',
@@ -33,7 +33,7 @@ const PRESET_PROVIDERS: PresetProvider[] = [
   {
     id: 'dashscope',
     name: '阿里通义千问 (DashScope)',
-    category: 'domestic',
+    category: 'open',
     badge: '🇨🇳',
     baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
     docLink: 'https://help.aliyun.com/zh/dashscope/developer-reference/compatibility-of-openai-with-dashscope',
@@ -41,56 +41,32 @@ const PRESET_PROVIDERS: PresetProvider[] = [
   {
     id: 'glm',
     name: '智谱 AI (GLM)',
-    category: 'domestic',
+    category: 'open',
     badge: '🇨🇳',
     baseURL: 'https://open.bigmodel.cn/api/paas/v4',
     docLink: 'https://open.bigmodel.cn/dev/api',
   },
   {
-    id: 'moonshot',
-    name: '月之暗面 (Moonshot)',
-    category: 'domestic',
-    badge: '🇨🇳',
-    baseURL: 'https://api.moonshot.cn/v1',
-    docLink: 'https://platform.moonshot.cn/docs/guide',
-  },
-  {
     id: 'yi',
     name: '零一万物 (01.AI)',
-    category: 'domestic',
+    category: 'open',
     badge: '🇨🇳',
     baseURL: 'https://api.lingyiwanwu.com/v1',
     docLink: 'https://platform.lingyiwanwu.com/docs',
   },
   {
-    id: 'hunyuan',
-    name: '腾讯混元 (Hunyuan)',
-    category: 'domestic',
-    badge: '🇨🇳',
-    baseURL: 'https://api.hunyuan.cloud.tencent.com/v1',
-    docLink: 'https://cloud.tencent.com/document/product/1729/111007',
+    id: 'ollama',
+    name: 'Ollama (本地部署)',
+    category: 'open',
+    badge: '💻',
+    baseURL: 'http://localhost:11434/v1',
+    docLink: 'https://github.com/ollama/ollama/blob/main/docs/openai.md',
   },
-  {
-    id: 'qianfan',
-    name: '百度千帆 (Qianfan)',
-    category: 'domestic',
-    badge: '🇨🇳',
-    baseURL: 'https://qianfan.baidubce.com/v2',
-    docLink: 'https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Flz02la4s',
-  },
-  {
-    id: 'ark',
-    name: '字节火山方舟 (Ark)',
-    category: 'domestic',
-    badge: '🇨🇳',
-    baseURL: 'https://ark.cn-beijing.volces.com/api/v3',
-    docLink: 'https://www.volcengine.com/docs/82379/1298454',
-  },
-  // 国外主流
+  // 闭源服务商
   {
     id: 'openai',
     name: 'OpenAI 官方',
-    category: 'foreign',
+    category: 'closed',
     badge: '🇺🇸',
     baseURL: 'https://api.openai.com/v1',
     docLink: 'https://platform.openai.com/docs/api-reference',
@@ -98,7 +74,7 @@ const PRESET_PROVIDERS: PresetProvider[] = [
   {
     id: 'anthropic',
     name: 'Anthropic (Claude)',
-    category: 'foreign',
+    category: 'closed',
     badge: '🇺🇸',
     baseURL: 'https://api.anthropic.com/v1',
     docLink: 'https://docs.anthropic.com/en/api/getting-started',
@@ -106,18 +82,42 @@ const PRESET_PROVIDERS: PresetProvider[] = [
   {
     id: 'gemini',
     name: 'Google Gemini (兼容)',
-    category: 'foreign',
+    category: 'closed',
     badge: '🇺🇸',
     baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai',
     docLink: 'https://ai.google.dev/gemini-api/docs/openai',
   },
   {
-    id: 'groq',
-    name: 'Groq 官方',
-    category: 'foreign',
-    badge: '🇺🇸',
-    baseURL: 'https://api.groq.com/openai/v1',
-    docLink: 'https://console.groq.com/docs/quickstart',
+    id: 'moonshot',
+    name: '月之暗面 (Moonshot)',
+    category: 'closed',
+    badge: '🇨🇳',
+    baseURL: 'https://api.moonshot.cn/v1',
+    docLink: 'https://platform.moonshot.cn/docs/guide',
+  },
+  {
+    id: 'hunyuan',
+    name: '腾讯混元 (Hunyuan)',
+    category: 'closed',
+    badge: '🇨🇳',
+    baseURL: 'https://api.hunyuan.cloud.tencent.com/v1',
+    docLink: 'https://cloud.tencent.com/document/product/1729/111007',
+  },
+  {
+    id: 'qianfan',
+    name: '百度千帆 (Qianfan)',
+    category: 'closed',
+    badge: '🇨🇳',
+    baseURL: 'https://qianfan.baidubce.com/v2',
+    docLink: 'https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Flz02la4s',
+  },
+  {
+    id: 'ark',
+    name: '字节火山方舟 (Ark)',
+    category: 'closed',
+    badge: '🇨🇳',
+    baseURL: 'https://ark.cn-beijing.volces.com/api/v3',
+    docLink: 'https://www.volcengine.com/docs/82379/1298454',
   },
   // 聚合/网关
   {
@@ -144,14 +144,13 @@ const PRESET_PROVIDERS: PresetProvider[] = [
     baseURL: 'https://api.together.xyz/v1',
     docLink: 'https://docs.together.ai/docs/quickstart',
   },
-  // 本地部署
   {
-    id: 'ollama',
-    name: 'Ollama',
-    category: 'local',
-    badge: '💻',
-    baseURL: 'http://localhost:11434/v1',
-    docLink: 'https://github.com/ollama/ollama/blob/main/docs/openai.md',
+    id: 'groq',
+    name: 'Groq 官方',
+    category: 'gateway',
+    badge: '🇺🇸',
+    baseURL: 'https://api.groq.com/openai/v1',
+    docLink: 'https://console.groq.com/docs/quickstart',
   },
 ];
 
@@ -173,10 +172,9 @@ export function PresetUrlsModal({ isOpen, onClose }: PresetUrlsModalProps) {
 
   const categories: { id: Category; label: string }[] = [
     { id: 'all', label: t('preset_urls_category_all') },
-    { id: 'domestic', label: t('preset_urls_category_domestic') },
-    { id: 'foreign', label: t('preset_urls_category_foreign') },
+    { id: 'open', label: t('preset_urls_category_open') },
+    { id: 'closed', label: t('preset_urls_category_closed') },
     { id: 'gateway', label: t('preset_urls_category_gateway') },
-    { id: 'local', label: t('preset_urls_category_local') },
   ];
 
   const filteredProviders = PRESET_PROVIDERS.filter(

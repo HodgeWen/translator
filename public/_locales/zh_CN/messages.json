@@ -653,17 +653,14 @@
   "preset_urls_category_all": {
     "message": "全部"
   },
-  "preset_urls_category_domestic": {
-    "message": "国内主流"
+  "preset_urls_category_open": {
+    "message": "开源"
   },
-  "preset_urls_category_foreign": {
-    "message": "国外主流"
+  "preset_urls_category_closed": {
+    "message": "闭源"
   },
   "preset_urls_category_gateway": {
-    "message": "聚合网关"
-  },
-  "preset_urls_category_local": {
-    "message": "本地部署"
+    "message": "聚合"
   },
   "btn_copy_url": {
     "message": "复制"
