@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { CodeEditor } from '@/components/code-editor';
 import { NumberInput } from '@/components/ui/number-input';
 import { KeyValueList } from './key-value-list';
+import { ReasoningHelpModal } from './reasoning-help-modal';
 import type { ProviderConfig } from '@/types';
 import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -30,6 +31,7 @@ export function ProviderEditForm({
 }: ProviderEditFormProps) {
   const [editingProvider, setEditingProvider] = useState<ProviderConfig>({ ...initialProvider });
   const [showApiKey, setShowApiKey] = useState(false);
+  const [showReasoningHelp, setShowReasoningHelp] = useState(false);
   const testRunIdRef = useRef(0);
   const activeTestProviderIdRef = useRef<string | null>(null);
   const [testState, setTestState] = useState<
@@ -263,9 +265,18 @@ export function ProviderEditForm({
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-medium">{t('label_extra_body')}</label>
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-medium">{t('label_extra_body')}</label>
+          <button
+            type="button"
+            onClick={() => setShowReasoningHelp(true)}
+            className="text-xs text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium flex items-center gap-1.5 cursor-pointer bg-indigo-50 dark:bg-indigo-950/20 px-2 py-1 rounded border border-indigo-100 dark:border-indigo-900/50 hover:bg-indigo-100 transition-colors"
+          >
+            <FileText className="h-3.5 w-3.5" />
+            <span>配置指南: 如何控制大模型推理与思考深度</span>
+          </button>
+        </div>
         <p className="text-xs text-muted-foreground">{t('hint_extra_body_override')}</p>
-        <p className="text-xs text-muted-foreground whitespace-pre-wrap">{t('hint_extra_body_examples')}</p>
         <CodeEditor
           value={JSON.stringify(editingProvider.body, null, 2)}
           onChange={(value) => {
@@ -442,6 +453,12 @@ export function ProviderEditForm({
           </Button>
         </div>
       </div>
+
+      {/* Reasoning and thinking parameters configuration help modal */}
+      <ReasoningHelpModal
+        isOpen={showReasoningHelp}
+        onClose={() => setShowReasoningHelp(false)}
+      />
     </div>
   );
 }
