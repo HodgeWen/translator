@@ -8,7 +8,7 @@ interface ReasoningHelpModalProps {
   onClose: () => void;
 }
 
-type Vendor = 'openai' | 'anthropic' | 'deepseek' | 'siliconflow' | 'openrouter';
+type Vendor = 'openai' | 'anthropic' | 'deepseek' | 'siliconflow' | 'openrouter' | 'opencode';
 
 interface VendorDoc {
   name: string;
@@ -68,7 +68,7 @@ const VENDOR_DOCS: Record<Vendor, VendorDoc> = {
   },
   openrouter: {
     name: 'OpenRouter',
-    subTitle: '统一过滤思维链内容',
+    subTitle: '统一思维链控制 (include_reasoning)',
     intro: 'OpenRouter 针对所有推理类模型（如 DeepSeek R1/V4 系列）提供了统一的格式与推理结果过滤控制字段，能让划词翻译瞬间输出。',
     jsonSample: `{
   "include_reasoning": false
@@ -76,6 +76,20 @@ const VENDOR_DOCS: Record<Vendor, VendorDoc> = {
     tips: [
       '隐藏思维链提速 (强烈推荐)：设置 `"include_reasoning": false` 强制 OpenRouter 网关在传输时过滤并剔除思维链内容，规避数据流积压，让翻译结果瞬间输出。',
       '兼容模式：OpenRouter 对 OpenAI-compatible 模型同样支持 `"reasoning_effort": "none"` 作为底层控制桥接。'
+    ]
+  },
+  opencode: {
+    name: 'OpenCode',
+    subTitle: '关闭 OpenCode 推理思考',
+    intro: 'OpenCode 大模型平台对 DeepSeek 提供了全面支持。为了配合翻译场景的毫秒级即时响应，OpenCode 提供了专属的思维链开关参数。',
+    jsonSample: `{
+  "thinking": {
+    "type": "disabled"
+  }
+}`,
+    tips: [
+      '关闭思维链提速 (强烈推荐)：在额外请求体中填入 `"thinking": { "type": "disabled" }` 以彻底关闭思维链，避免翻译任务时产生数秒的高延迟。',
+      '常规模型方案：为了最平滑的提速体验，也推荐直接在模型选择列表切换至不带 `-R1` 后缀的常规非推理模型（如 `deepseek-chat` / `deepseek-v4`），直接瞬时响应翻译译文。'
     ]
   }
 };
@@ -103,6 +117,7 @@ export function ReasoningHelpModal({ isOpen, onClose }: ReasoningHelpModalProps)
     { id: 'anthropic', label: 'Anthropic Claude' },
     { id: 'deepseek', label: 'DeepSeek 官方' },
     { id: 'siliconflow', label: '硅基流动' },
+    { id: 'opencode', label: 'OpenCode' },
     { id: 'openrouter', label: 'OpenRouter' }
   ];
 
