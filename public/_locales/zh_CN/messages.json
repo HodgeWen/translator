@@ -640,5 +640,38 @@
   },
   "popup_meta_hide": {
     "message": "收起详情"
+  },
+  "label_preset_urls": {
+    "message": "常见服务商地址"
+  },
+  "preset_urls_modal_title": {
+    "message": "常见服务商接口地址快捷查询"
+  },
+  "preset_urls_modal_close": {
+    "message": "关闭"
+  },
+  "preset_urls_category_all": {
+    "message": "全部"
+  },
+  "preset_urls_category_domestic": {
+    "message": "国内主流"
+  },
+  "preset_urls_category_foreign": {
+    "message": "国外主流"
+  },
+  "preset_urls_category_gateway": {
+    "message": "聚合网关"
+  },
+  "preset_urls_category_local": {
+    "message": "本地部署"
+  },
+  "btn_copy_url": {
+    "message": "复制"
+  },
+  "btn_copied_url": {
+    "message": "已复制!"
+  },
+  "btn_doc": {
+    "message": "官方文档"
   }
 }
