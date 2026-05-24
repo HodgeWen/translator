@@ -2,77 +2,73 @@
 
 <div align="center">[中文](./README.md) · English</div>
 
-A browser translation extension powered by OpenAI-compatible LLMs. Supports multiple providers, four display styles for page translation, and quick popup translation.
+A browser translation extension powered by LLMs, supporting any OpenAI-compatible API provider. Four translation modes and flexible translation service configuration.
 
 ## Features
 
-### Implemented
+- **Full-page translation** — Alt+W one-click page translation, auto-detects SPA route changes
+- **Hover translation** — Hold a key (default Ctrl) and point at any paragraph to highlight and translate
+- **Input box translation** — Triple-press a shortcut key in any input field to translate, triple-press again to restore
+- **Popup translation** — Manual input translation with polysemy display and tone switching
+- **Translation services** — Single (one provider + model fallback) or Pool (multi-provider weighted load balancing)
+- **Four display styles** — Original / Bilingual / Underline (hover to see original) / Clean
+- **Cascading config** — Display style and tone: service default → personal default → global override
+- **Inline HTML preservation** — Code, links, emphasis preserved after translation
+- **Batch aggregation** — Multiple paragraphs combined into one request, auto-fallback on failure
+- **Translation cache** — Local cache, 7-day TTL, auto-invalidated on prompt changes, duplicate request merging
+- **Language detection** — Built-in local detection, optional Google or custom API detectors
+- **Custom tones & prompt presets** — User-defined translation styles and reusable prompt templates
+- **Loading animations** — 4 themes + customizable input animation
+- **Encrypted export** — Settings export as JSON with optional password encryption
+- **i18n** — Chinese / English UI
+- **Site rules** — Translation exclusions for GitHub and other sites
 
-- [x] **Multi-Provider Support** — Works with any OpenAI-compatible API. Configure multiple providers with automatic model queue fallback.
-- [x] **Four Display Styles** — Original / Bilingual / Underline (hover to see original) / Clean
-- [x] **Live Page Translation** — Viewport-based translation via IntersectionObserver, with batched aggregate requests for efficiency.
-- [x] **Popup Translation** — Quick translate via toolbar popup with auto language detection.
-- [x] **Input Box Translation** — Type three consecutive shortcut keys (Alt/Command by default) to translate the current input.
-- [x] **Hover Translation** — Hold Ctrl and hover over a paragraph to highlight and translate.
-- [x] **Language Detection** — Built-in franc-min with optional Google / custom API detectors as fallback.
-- [x] **SPA Route Awareness** — Detects pushState/replaceState navigation and retranslates new page content.
-- [x] **Translation Cache** — IndexedDB caching with daily automatic cleanup.
-- [x] **Settings Import/Export** — JSON export with optional AES-GCM encryption for API key protection.
-- [x] **Keyboard Shortcut** — `Alt+W` to toggle page translation.
-- [x] **i18n** — Chinese / English UI language switching.
+## Architecture
 
-### Planned
-
-- [ ] **Translation Service Layer** — Introduce a service layer with two types: Provider (manual model selection with fallback) and Translation Pool (multi-provider weighted load balancing). Remove global load balancing settings; providers and models no longer serve as direct translation service switches.
-- [ ] **Translation Prompt Management** — Move prompts from provider level to service level. Support prompt presets (name, description, content) with a quick-fill button in service config and global default prompt settings.
-- [ ] **Default Style & Display Config** — Configure default translation style and display mode at the service layer. Allow personal overrides (e.g., "Use service default" and "Use my default" options for translation style).
-- [ ] **Custom Translation Style** — Support user-defined custom styles in addition to built-in presets.
-
-### Translation Styles
-
-| Style | Description |
-|---|---|
-| Original | Replace text while preserving element structure |
-| Bilingual | Show original and translation side by side |
-| Underline | Underlined translation with tooltip showing original |
-| Clean | Clean replacement without markers |
+```
+src/
+├── entrypoints/
+│   ├── background.ts          # Background: message routing, cache management, shortcuts
+│   ├── content/               # Content script: paragraph detection→lang detection→encoding→request→apply
+│   ├── popup/main.tsx         # Popup translation UI
+│   └── options/main.tsx       # Settings page (8 tabs)
+├── lib/                       # Core libraries
+│   ├── api/                   # API calls, service queue, streaming
+│   ├── storage.ts, cache.ts   # Config storage & translation cache
+│   ├── schema.ts, prompts.ts  # Validation & prompt templates
+│   ├── lang-detect, block-detect, inline-placeholder, batch-protocol
+│   └── messaging, crypto, site-rules
+├── components/                # React components
+└── types/                     # Type definitions
+```
 
 ## Installation
 
-### Web Store
-
-> Coming soon
-
-### Developer Mode
-
 ```bash
-# 1. Install dependencies
-bun install
-
-# 2. Production build
-bun build
-
-# 3. Load in Chrome
-#    Open chrome://extensions → Enable "Developer mode" → "Load unpacked"
-#    Select .output/chrome-mv3 directory
+bun install && bun build
+# chrome://extensions → Developer mode → Load unpacked → select .output/chrome-mv3
 ```
+
+## Settings Overview
+
+| Tab         | Description                                      |
+| ----------- | ------------------------------------------------ |
+| Providers   | API provider management (URL, Key, models)       |
+| Services    | Single (+fallback) or Pool (weighted) config     |
+| Presets     | Custom prompt presets, translation tone styles   |
+| Language    | Native/source/UI language, language detectors    |
+| Display     | Display style, tone, loading animations          |
+| General     | Global prompt, timeout, aggregation, shortcuts   |
+| Backup      | Settings export/import (encryption supported)    |
+| Manual      | Full documentation                               |
 
 ## Permissions
 
-| Permission | Purpose |
-|---|---|
-| `storage` | Save user settings |
-| `activeTab` | Access current tab |
-| `scripting` | Inject translation scripts |
-| `alarms` | Scheduled cache cleanup |
-| `host_permissions: <all_urls>` | Translate content on any page |
+`storage` `activeTab` `scripting` `alarms` `host_permissions: <all_urls>`
 
 ## Privacy
 
-- Translation requests go directly to your configured provider's API. No intermediate servers.
-- API keys stored locally via chrome.storage.sync, with optional AES-GCM encryption for exports.
-- Local IndexedDB cache with automatic cleanup.
-- No data collection or telemetry.
+Requests go directly to your configured provider — no intermediate servers. API keys stored only in browser storage. Encryption supported for exports. No data collection.
 
 ## License
 

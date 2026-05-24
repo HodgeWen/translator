@@ -45,7 +45,7 @@ export function getInputLoadingEasingValue(easing: InputLoadingPulseEasing): str
 }
 
 export function setInputTranslationLoading(
-  el: HTMLInputElement | HTMLTextAreaElement,
+  el: HTMLElement,
   loading: boolean,
   animation?: InputLoadingAnimationOptions
 ): void {

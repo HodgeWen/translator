@@ -33,7 +33,14 @@ function isLikelyWordOrPhrase(text: string): boolean {
 }
 
 function buildPolysemyPrompt(targetLang: string): string {
-  return `Additional instruction: The user input may be a polysemous word or short phrase. If it has multiple distinct common meanings, provide the primary translations for each sense in ${targetLang}, prefixed with a bullet point (•). Include a brief part-of-speech or context hint in parentheses. If there is only one dominant meaning, output the translation directly without bullets.`
+  const isEnglishTarget = targetLang.toLowerCase().startsWith('en');
+  const phoneticPart = isEnglishTarget
+    ? ' For English translations, also include the English word\'s IPA phonetic transcription between slashes after the hint.'
+    : '';
+  const example = isEnglishTarget
+    ? '\nExample:\n• (noun) /bæŋk/ bank\n• (verb) /bæŋk/ deposit'
+    : '\nExample:\n• (名词) 银行\n• (动词) 存款';
+  return `Additional instruction: The user input may be a polysemous word or short phrase. If it has multiple distinct common meanings, provide the primary translations for each sense in ${targetLang}. Output each sense on its own line, prefixed with a bullet point (•). Include a brief part-of-speech or context hint in parentheses.${phoneticPart}${example}\n\nIf there is only one dominant meaning, output the translation directly without bullets.`;
 }
 
 async function resolveTargetLang(
@@ -255,39 +262,43 @@ function App() {
         </div>
       </div>
 
-      {/* Services Selector Row */}
+      {/* Service & Model Selector Row */}
       <div className="px-4 py-2 border-b border-border flex items-center justify-between gap-3 bg-muted/10">
-        <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+        <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1 shrink-0">
           <Layers className="h-3.5 w-3.5 text-indigo-500" />
-          当前翻译服务:
+          服务:
         </span>
         <Select
           value={activeServiceId}
           options={settings.services.map((s) => ({ value: s.id, label: s.name }))}
           onChange={handleServiceChange}
           placeholder="选择翻译服务"
-          className="flex-1 max-w-[280px]"
+          className="flex-1 min-w-0"
           compact
         />
-      </div>
-
-      {/* Single Service Model Selector Row */}
-      {activeService && activeService.type === 'single' && (
-        <div className="px-4 py-1.5 border-b border-border flex items-center justify-between gap-3 bg-muted/5">
-          <span className="text-xs font-semibold text-muted-foreground/80 flex items-center gap-1">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            翻译模型:
+        {activeService && activeService.type === 'single' && (
+          <>
+            <span className="text-xs font-semibold text-muted-foreground/80 flex items-center gap-1 shrink-0">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              模型:
+            </span>
+            <Select
+              value={activeService.modelId}
+              options={settings.providers.find(p => p.id === activeService.providerId)?.models.map(m => ({ value: m.id, label: m.name })) || []}
+              onChange={handleModelChange}
+              placeholder="选择模型"
+              className="flex-1 min-w-0"
+              compact
+            />
+          </>
+        )}
+        {activeService && activeService.type === 'pool' && (
+          <span className="text-xs font-semibold text-muted-foreground/80 flex items-center gap-1 shrink-0">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+            翻译池
           </span>
-          <Select
-            value={activeService.modelId}
-            options={settings.providers.find(p => p.id === activeService.providerId)?.models.map(m => ({ value: m.id, label: m.name })) || []}
-            onChange={handleModelChange}
-            placeholder="选择模型"
-            className="flex-1 max-w-[280px]"
-            compact
-          />
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Target Language Hint */}
       <div className="px-4 pt-2.5 pb-0">

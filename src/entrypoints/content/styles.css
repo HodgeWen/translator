@@ -229,7 +229,8 @@
 }
 
 input[data-translator-input-loading='true'],
-textarea[data-translator-input-loading='true'] {
+textarea[data-translator-input-loading='true'],
+[contenteditable='true'][data-translator-input-loading='true'] {
   animation: translator-input-loading var(--translator-input-loading-duration, 1200ms) var(--translator-input-loading-easing, cubic-bezier(0.16, 1, 0.3, 1)) infinite alternate !important;
 }
 

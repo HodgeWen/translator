@@ -33,6 +33,51 @@ function setNativeInputValue(
   el.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
+// ─── Editable element helpers ──────────────────────────────────────────
+// 支持传统 input/textarea 以及 contenteditable（Reddit、Notion、Slack 等）
+
+type EditableElement = HTMLInputElement | HTMLTextAreaElement | HTMLElement;
+
+interface EditableResult {
+  element: EditableElement;
+  isContentEditable: boolean;
+}
+
+function getEditableAncestor(el: EventTarget | null): EditableResult | null {
+  if (!(el instanceof HTMLElement)) return null;
+
+  let current: HTMLElement | null = el;
+  while (current) {
+    if (current instanceof HTMLInputElement || current instanceof HTMLTextAreaElement) {
+      return { element: current, isContentEditable: false };
+    }
+    if (current.isContentEditable) {
+      return { element: current, isContentEditable: true };
+    }
+    current = current.parentElement;
+  }
+  return null;
+}
+
+function getEditableText(el: EditableElement, isContentEditable: boolean): string {
+  if (!isContentEditable) {
+    return (el as HTMLInputElement | HTMLTextAreaElement).value;
+  }
+  // innerText 保留换行，textContent 会把 <br>/<p> 挤成一行
+  return el.innerText || '';
+}
+
+function setEditableText(el: EditableElement, isContentEditable: boolean, value: string): void {
+  if (!isContentEditable) {
+    setNativeInputValue(el as HTMLInputElement | HTMLTextAreaElement, value);
+    return;
+  }
+  // 清空后设置纯文本，分派事件通知框架
+  el.textContent = value;
+  el.dispatchEvent(new Event("input", { bubbles: true }));
+  el.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
 // ─── Input Box Translation ──────────────────────────────────────────────
 
 const INPUT_SHORTCUT_SEQUENCE_MS = 200;
@@ -45,7 +90,7 @@ interface InputState {
   translatedValue: string | null;
 }
 
-const inputStateMap = new WeakMap<HTMLInputElement | HTMLTextAreaElement, InputState>();
+const inputStateMap = new WeakMap<EditableElement, InputState>();
 let inputSettingsLoaded = false;
 let inputShortcutKey = "Control";
 let inputDefaultSourceLanguage = "";
@@ -54,7 +99,7 @@ let inputLoadingPulseKeyframes: [string, string, string] = ["#4b5563", "#2563eb"
 let inputLoadingPulseDurationMs = 1200;
 let inputLoadingPulseEasing: "linear" | "ease-out" | "spring" = "ease-out";
 
-function getInputState(el: HTMLInputElement | HTMLTextAreaElement): InputState {
+function getInputState(el: EditableElement): InputState {
   let st = inputStateMap.get(el);
   if (!st) {
     st = {
@@ -88,11 +133,11 @@ async function ensureInputSettings(): Promise<void> {
   await loadInputSettings();
 }
 
-async function translateInput(el: HTMLInputElement | HTMLTextAreaElement): Promise<void> {
+async function translateInput(el: EditableElement, isContentEditable: boolean): Promise<void> {
   if (!el.isConnected) return;
   if (el.dataset.translatorInputLoading === "true") return;
   const st = getInputState(el);
-  const text = el.value.trim();
+  const text = getEditableText(el, isContentEditable).trim();
   if (!text || text.length < 2) return;
 
   try {
@@ -128,14 +173,13 @@ async function translateInput(el: HTMLInputElement | HTMLTextAreaElement): Promi
         text,
         sourceLang: detectedLang || undefined,
         targetLang,
-        // 输入框纯文本，无内嵌 HTML 片段，跳过 placeholder 规则节省 token。
         hasPlaceholders: false,
       },
     });
 
     st.originalValue = text;
     st.translatedValue = result.text;
-    setNativeInputValue(el, result.text);
+    setEditableText(el, isContentEditable, result.text);
   } catch (err) {
     console.warn("[Translator] translateInput failed:", err);
   } finally {
@@ -143,15 +187,15 @@ async function translateInput(el: HTMLInputElement | HTMLTextAreaElement): Promi
   }
 }
 
-function isShowingTranslated(el: HTMLInputElement | HTMLTextAreaElement, st: InputState): boolean {
+function isShowingTranslated(el: EditableElement, isContentEditable: boolean, st: InputState): boolean {
   if (!st.translatedValue) return false;
-  return el.value === st.translatedValue;
+  return getEditableText(el, isContentEditable) === st.translatedValue;
 }
 
-function restoreInput(el: HTMLInputElement | HTMLTextAreaElement, st: InputState): void {
+function restoreInput(el: EditableElement, isContentEditable: boolean, st: InputState): void {
   if (st.originalValue === null) return;
   setInputTranslationLoading(el, false);
-  setNativeInputValue(el, st.originalValue);
+  setEditableText(el, isContentEditable, st.originalValue);
   st.originalValue = null;
   st.translatedValue = null;
 }
@@ -167,15 +211,20 @@ export function setupInputListeners(): void {
     });
   }
 
+  // 使用捕获阶段，确保在网站自身的事件处理器（可能 stopPropagation）之前拦截到按键
   document.addEventListener("keydown", (e) => {
-    const target = e.target;
-    if (!(target instanceof HTMLInputElement) && !(target instanceof HTMLTextAreaElement)) {
-      return;
-    }
+    // IME 输入法组合中跳过，避免干扰中文/日文等输入
+    if (e.isComposing) return;
 
-    const st = getInputState(target);
+    const editable = getEditableAncestor(e.target);
+    if (!editable) return;
+
+    const { element: el, isContentEditable } = editable;
+    const st = getInputState(el);
 
     if (eventMatchesSingleKeyShortcut(e, inputShortcutKey)) {
+      e.preventDefault();
+
       const sequence = recordSequentialShortcutPress(
         { count: st.shortcutCount, lastPressedAt: st.lastShortcutPressedAt },
         performance.now(),
@@ -189,30 +238,30 @@ export function setupInputListeners(): void {
         st.lastShortcutPressedAt = 0;
         if (st.debounceTimer) window.clearTimeout(st.debounceTimer);
 
-        if (isShowingTranslated(target, st)) {
-          restoreInput(target, st);
+        if (isShowingTranslated(el, isContentEditable, st)) {
+          restoreInput(el, isContentEditable, st);
           return;
         }
 
         st.debounceTimer = window.setTimeout(() => {
           st.debounceTimer = null;
-          translateInput(target);
+          translateInput(el, isContentEditable);
         }, 300);
       }
     } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
       st.shortcutCount = 0;
       st.lastShortcutPressedAt = 0;
     }
-  });
+  }, { capture: true, passive: false });
 
   document.addEventListener("input", (e) => {
-    const target = e.target;
-    if (!(target instanceof HTMLInputElement) && !(target instanceof HTMLTextAreaElement)) {
-      return;
-    }
-    const st = getInputState(target);
+    const editable = getEditableAncestor(e.target);
+    if (!editable) return;
+
+    const { element: el, isContentEditable } = editable;
+    const st = getInputState(el);
     if (!st.translatedValue) return;
-    if (isShowingTranslated(target, st)) return;
+    if (isShowingTranslated(el, isContentEditable, st)) return;
     st.originalValue = null;
     st.translatedValue = null;
   });

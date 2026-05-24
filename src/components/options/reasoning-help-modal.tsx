@@ -8,7 +8,11 @@ interface ReasoningHelpModalProps {
   onClose: () => void;
 }
 
-type Vendor = 'openai' | 'anthropic' | 'deepseek' | 'siliconflow' | 'openrouter' | 'opencode';
+type Vendor =
+  | 'openai' | 'anthropic' | 'deepseek' | 'dashscope' | 'glm' | 'yi' | 'ollama'
+  | 'gemini' | 'moonshot' | 'hunyuan' | 'qianfan' | 'ark'
+  | 'siliconflow' | 'openrouter' | 'together' | 'groq'
+  | 'opencode';
 
 interface VendorDoc {
   name: string;
@@ -18,87 +22,248 @@ interface VendorDoc {
   tips: string[];
 }
 
+const VENDORS: { id: Vendor; label: string }[] = [
+  { id: 'openai', label: 'OpenAI' },
+  { id: 'anthropic', label: 'Anthropic' },
+  { id: 'deepseek', label: 'DeepSeek' },
+  { id: 'dashscope', label: '阿里通义千问' },
+  { id: 'glm', label: '智谱 AI' },
+  { id: 'yi', label: '零一万物' },
+  { id: 'ollama', label: 'Ollama' },
+  { id: 'gemini', label: 'Gemini' },
+  { id: 'moonshot', label: '月之暗面' },
+  { id: 'hunyuan', label: '腾讯混元' },
+  { id: 'qianfan', label: '百度千帆' },
+  { id: 'ark', label: '火山方舟' },
+  { id: 'siliconflow', label: '硅基流动' },
+  { id: 'openrouter', label: 'OpenRouter' },
+  { id: 'together', label: 'Together AI' },
+  { id: 'groq', label: 'Groq' },
+  { id: 'opencode', label: 'OpenCode' },
+];
+
 const VENDOR_DOCS: Record<Vendor, VendorDoc> = {
-  openai: {
-    name: 'OpenAI (GPT-5.5 / o3-mini)',
-    subTitle: '关闭推理以加速翻译 (https://api.openai.com/v1)',
-    intro: 'OpenAI 支持通过 `reasoning_effort` 参数控制新一代推理模型（如 GPT-5.5、o3-mini）在生成回答前的思维链深度。在划词/网页翻译任务中，极力推荐完全关闭推理以实现毫秒级响应。',
-    jsonSample: `{
-  "reasoning_effort": "none"
-}`,
-    tips: [
-      '关闭推理 (强烈推荐)：在额外请求体中填入 `"reasoning_effort": "none"` 彻底禁用推理过程，跳过思维链产生，直接获得最终翻译译文，极大降低时延。',
-      '参数级别：可选 `"none"`（推荐，最快最省）、`"low"`（快速少推理）、`"medium"`（默认平衡值）、`"high"`（高深度推理，延迟极高）。',
-      '官方接口地址：`https://api.openai.com/v1`'
-    ]
-  },
-  anthropic: {
-    name: 'Anthropic (Claude 4.7 Opus / 4.6 Sonnet)',
-    subTitle: '关闭 Extended Thinking 思考 (https://api.anthropic.com/v1)',
-    intro: 'Anthropic 允许通过 `thinking` 额外参数配置新一代模型（如 Claude Opus 4.7）的思考预算。在翻译场景中，建议完全禁用该功能以实现即时翻译。',
-    jsonSample: `{
-  "thinking": {
-    "type": "disabled"
-  }
-}`,
-    tips: [
-      '彻底禁用思考 (强烈推荐)：填入 `"thinking": { "type": "disabled" }` 以规避 Extended Thinking 造成的翻译高延迟。',
-      '自适应开启：设置为 `"type": "adaptive"`，Claude 4.7 等模型将根据输入自动思考，但在翻译长网页时会导致等待时间明显变长。',
-      '官方接口地址：`https://api.anthropic.com/v1`'
-    ]
-  },
+  // 开源服务商
   deepseek: {
-    name: 'DeepSeek 官方 (DeepSeek-V4-Pro / V4-Flash)',
-    subTitle: '关闭深度思考与推理 (https://api.deepseek.com)',
-    intro: '在 DeepSeek 官方 API（包括最新的 DeepSeek-V4-Pro/Flash 推理模型）中，支持通过 `thinking` 字段控制思维链。在网页翻译场景下，建议一键关闭以实现极致速度。',
+    name: 'DeepSeek 官方',
+    subTitle: 'thinking 参数',
+    intro: '控制思维链开关。翻译场景建议关闭以获得极速响应，也可直接用非推理模型 `deepseek-chat`。',
     jsonSample: `{
   "thinking": {
     "type": "disabled"
   }
 }`,
     tips: [
-      '一键禁用思考 (强烈推荐)：在额外请求体中设置 `"thinking": { "type": "disabled" }` 可以关闭思维链，跳过思考输出，使 `deepseek-v4-pro` 或 `deepseek-v4-flash` 以极速状态直接返回翻译结果。',
-      '模型选择建议：若追求毫秒级极致响应，也可直接使用常规非推理模型（如 `deepseek-chat`）。当启用思考时，可使用 `"reasoning_effort": "high"` 或是 `"max"` 控制深度。',
-      '官方接口地址：`https://api.deepseek.com`'
+      '`"type": "disabled"` 关闭思维链（推荐）；启用时可用 `"reasoning_effort": "high"` 控制深度',
+      '接口：`https://api.deepseek.com`'
     ]
   },
-  siliconflow: {
-    name: '硅基流动 (SiliconFlow)',
-    subTitle: '一键禁用 DeepSeek-V4 思维链 (https://api.siliconflow.cn/v1)',
-    intro: '硅基流动针对支持推理输出的新一代 DeepSeek-V4-Pro/Flash 等模型进行了定制化支持，提供了极为直观的 API 开关，能完美帮助翻译扩展跳过长耗时的思考过程。',
+  dashscope: {
+    name: '阿里通义千问 (DashScope)',
+    subTitle: 'enable_thinking 参数',
+    intro: '在 DashScope 上使用 DeepSeek 等推理模型时，通过 `enable_thinking` 控制思维链。',
     jsonSample: `{
   "enable_thinking": false
 }`,
     tips: [
-      '一键禁用提速 (强烈推荐)：在额外请求体中设置 `"enable_thinking": false` 可以一键彻底关闭 DeepSeek-V4 系列的思维链，翻译响应速度立即提升 10 倍以上！',
-      'Token 省流：禁用思维链可为您节省高达 80% 的输入/输出 Token 成本。',
-      '官方接口地址：`https://api.siliconflow.cn/v1`'
+      '设为 `false` 关闭推理模型的思维链',
+      '接口：`https://dashscope.aliyuncs.com/compatible-mode/v1`'
     ]
   },
-  openrouter: {
-    name: 'OpenRouter',
-    subTitle: '过滤思维链内容 (https://openrouter.ai/api/v1)',
-    intro: 'OpenRouter 针对所有新一代推理类模型（如 DeepSeek V4 系列）提供了统一的格式与过滤控制字段，能让划词翻译瞬间输出。',
-    jsonSample: `{
-  "include_reasoning": false
-}`,
-    tips: [
-      '隐藏思维链提速 (强烈推荐)：设置 `"include_reasoning": false` 强制 OpenRouter 在传输时过滤并剔除思维链内容，让翻译结果瞬间输出。',
-      '官方接口地址：`https://openrouter.ai/api/v1`'
-    ]
-  },
-  opencode: {
-    name: 'OpenCode',
-    subTitle: '关闭 OpenCode 推理思考 (https://api.opencode.cn/v1)',
-    intro: 'OpenCode 大模型平台对 DeepSeek-V4 系列模型提供了全面支持。为了配合翻译场景的毫秒级即时响应，OpenCode 提供了专属的思维链开关参数。',
+  glm: {
+    name: '智谱 AI (GLM)',
+    subTitle: 'thinking 参数',
+    intro: 'GLM 推理模型支持通过 `thinking` 参数控制思维链深度。',
     jsonSample: `{
   "thinking": {
     "type": "disabled"
   }
 }`,
     tips: [
-      '关闭思维链提速 (强烈推荐)：在额外请求体中填入 `"thinking": { "type": "disabled" }` 以彻底关闭思维链，避免翻译任务时产生高延迟。',
-      '接口地址：`https://api.opencode.cn/v1`'
+      '`"type": "disabled"` 关闭思维链',
+      '接口：`https://open.bigmodel.cn/api/paas/v4`'
+    ]
+  },
+  yi: {
+    name: '零一万物 (01.AI)',
+    subTitle: 'reasoning_effort 参数',
+    intro: '提供 OpenAI 兼容接口，推理模型支持 `reasoning_effort` 参数。',
+    jsonSample: `{
+  "reasoning_effort": "none"
+}`,
+    tips: [
+      '`"none"` 关闭推理',
+      '接口：`https://api.lingyiwanwu.com/v1`'
+    ]
+  },
+  ollama: {
+    name: 'Ollama (本地部署)',
+    subTitle: 'reasoning_effort 参数',
+    intro: '本地部署的 Ollama 支持 OpenAI 兼容参数，具体行为取决于加载的模型。',
+    jsonSample: `{
+  "reasoning_effort": "none"
+}`,
+    tips: [
+      '`"none"` 关闭推理（需加载的模型支持该参数）',
+      '接口：`http://localhost:11434/v1`'
+    ]
+  },
+
+  // 闭源服务商
+  openai: {
+    name: 'OpenAI 官方',
+    subTitle: 'reasoning_effort 参数',
+    intro: '控制推理模型思维链深度。翻译场景建议设为 `"none"` 彻底关闭推理。',
+    jsonSample: `{
+  "reasoning_effort": "none"
+}`,
+    tips: [
+      '可选值：`"none"`（关闭推理，推荐）/ `"low"` / `"medium"` / `"high"`',
+      '接口：`https://api.openai.com/v1`'
+    ]
+  },
+  anthropic: {
+    name: 'Anthropic (Claude)',
+    subTitle: 'thinking 参数',
+    intro: '控制扩展思考预算。翻译场景建议设为 `"disabled"` 完全禁用。',
+    jsonSample: `{
+  "thinking": {
+    "type": "disabled"
+  }
+}`,
+    tips: [
+      '`"type": "disabled"` 彻底关闭（推荐）；`"type": "adaptive"` 自动思考，延迟明显增加',
+      '接口：`https://api.anthropic.com/v1`'
+    ]
+  },
+  gemini: {
+    name: 'Google Gemini',
+    subTitle: 'reasoning_effort 参数',
+    intro: '通过 OpenAI 兼容接口提供服务，推理模型可使用标准参数控制思考深度。',
+    jsonSample: `{
+  "reasoning_effort": "none"
+}`,
+    tips: [
+      '`"none"` 关闭推理；部分 Gemini 模型内置思考能力，可能无法完全关闭',
+      '接口：`https://generativelanguage.googleapis.com/v1beta/openai`'
+    ]
+  },
+  moonshot: {
+    name: '月之暗面 (Moonshot)',
+    subTitle: 'thinking 参数',
+    intro: 'Kimi 推理模型支持 `thinking` 参数控制思维链。',
+    jsonSample: `{
+  "thinking": {
+    "type": "disabled"
+  }
+}`,
+    tips: [
+      '`"type": "disabled"` 关闭思维链',
+      '接口：`https://api.moonshot.cn/v1`'
+    ]
+  },
+  hunyuan: {
+    name: '腾讯混元 (Hunyuan)',
+    subTitle: 'enable_thinking 参数',
+    intro: '混元推理模型支持通过 `enable_thinking` 控制深度思考。',
+    jsonSample: `{
+  "enable_thinking": false
+}`,
+    tips: [
+      '设为 `false` 关闭深度思考',
+      '接口：`https://api.hunyuan.cloud.tencent.com/v1`'
+    ]
+  },
+  qianfan: {
+    name: '百度千帆 (Qianfan)',
+    subTitle: 'thinking 参数',
+    intro: '千帆平台推理模型支持通过参数控制思维链。',
+    jsonSample: `{
+  "thinking": {
+    "type": "disabled"
+  }
+}`,
+    tips: [
+      '`"type": "disabled"` 关闭思维链',
+      '接口：`https://qianfan.baidubce.com/v2`'
+    ]
+  },
+  ark: {
+    name: '字节火山方舟 (Ark)',
+    subTitle: 'enable_thinking 参数',
+    intro: '在火山方舟上使用 DeepSeek 等推理模型时，通过 `enable_thinking` 控制思维链。',
+    jsonSample: `{
+  "enable_thinking": false
+}`,
+    tips: [
+      '设为 `false` 关闭思维链',
+      '接口：`https://ark.cn-beijing.volces.com/api/v3`'
+    ]
+  },
+
+  // 聚合 / 网关
+  siliconflow: {
+    name: '硅基流动 (SiliconFlow)',
+    subTitle: 'enable_thinking 参数',
+    intro: '控制 DeepSeek-V4 系列思维链。设为 `false` 即可关闭，响应速度显著提升。',
+    jsonSample: `{
+  "enable_thinking": false
+}`,
+    tips: [
+      '设为 `false` 关闭思维链，可大幅降低 Token 消耗',
+      '接口：`https://api.siliconflow.cn/v1`'
+    ]
+  },
+  openrouter: {
+    name: 'OpenRouter',
+    subTitle: 'include_reasoning 参数',
+    intro: '控制是否返回推理内容。设为 `false` 过滤思维链，直接输出翻译结果。',
+    jsonSample: `{
+  "include_reasoning": false
+}`,
+    tips: [
+      '设为 `false` 过滤思维链，翻译结果即时输出',
+      '接口：`https://openrouter.ai/api/v1`'
+    ]
+  },
+  together: {
+    name: 'Together AI',
+    subTitle: 'include_reasoning 参数',
+    intro: '通过 `include_reasoning` 控制是否返回推理内容。',
+    jsonSample: `{
+  "include_reasoning": false
+}`,
+    tips: [
+      '设为 `false` 过滤思维链内容',
+      '接口：`https://api.together.xyz/v1`'
+    ]
+  },
+  groq: {
+    name: 'Groq',
+    subTitle: 'reasoning_effort 参数',
+    intro: '提供 OpenAI 兼容接口，推理模型支持 `reasoning_effort` 参数。',
+    jsonSample: `{
+  "reasoning_effort": "none"
+}`,
+    tips: [
+      '`"none"` 关闭推理',
+      '接口：`https://api.groq.com/openai/v1`'
+    ]
+  },
+
+  // 其他
+  opencode: {
+    name: 'OpenCode',
+    subTitle: 'thinking 参数',
+    intro: '控制 DeepSeek-V4 系列思维链。设为 `"disabled"` 完全关闭。',
+    jsonSample: `{
+  "thinking": {
+    "type": "disabled"
+  }
+}`,
+    tips: [
+      '`"type": "disabled"` 关闭思维链，避免翻译高延迟',
+      '接口：`https://api.opencode.cn/v1`'
     ]
   }
 };
@@ -120,15 +285,6 @@ export function ReasoningHelpModal({ isOpen, onClose }: ReasoningHelpModalProps)
       // Ignore copy failure
     }
   };
-
-  const vendors: { id: Vendor; label: string }[] = [
-    { id: 'openai', label: 'OpenAI (o1/o3)' },
-    { id: 'anthropic', label: 'Anthropic Claude' },
-    { id: 'deepseek', label: 'DeepSeek 官方' },
-    { id: 'siliconflow', label: '硅基流动' },
-    { id: 'opencode', label: 'OpenCode' },
-    { id: 'openrouter', label: 'OpenRouter' }
-  ];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
@@ -153,11 +309,8 @@ export function ReasoningHelpModal({ isOpen, onClose }: ReasoningHelpModalProps)
         {/* Content Body */}
         <div className="flex-1 flex overflow-hidden min-h-[350px]">
           {/* Sidebar */}
-          <div className="w-52 border-r border-border bg-muted/10 p-3 space-y-1 overflow-y-auto">
-            <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2.5 py-1.5 mb-1">
-              服务商列表
-            </div>
-            {vendors.map(v => (
+          <div className="w-44 border-r border-border bg-muted/10 p-2 space-y-0.5 overflow-y-auto">
+            {VENDORS.map(v => (
               <button
                 key={v.id}
                 onClick={() => {
@@ -165,7 +318,7 @@ export function ReasoningHelpModal({ isOpen, onClose }: ReasoningHelpModalProps)
                   setCopied(false);
                 }}
                 className={cn(
-                  'w-full text-left px-3 py-2 text-xs font-medium rounded-md transition-colors cursor-pointer',
+                  'w-full text-left px-2.5 py-1.5 text-xs rounded-md transition-colors cursor-pointer truncate',
                   activeVendor === v.id
                     ? 'bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 font-semibold'
                     : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
@@ -179,16 +332,11 @@ export function ReasoningHelpModal({ isOpen, onClose }: ReasoningHelpModalProps)
           {/* Details Pane */}
           <div className="flex-1 p-6 overflow-y-auto flex flex-col space-y-4">
             {/* Speed warning banner */}
-            <div className="rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 p-3.5 flex items-start gap-2.5">
+            <div className="rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 p-3 flex items-start gap-2">
               <Lightbulb className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <div className="text-xs font-semibold text-amber-800 dark:text-amber-300">
-                  ⚡ 极致翻译速度优化建议 (核心推荐)
-                </div>
-                <p className="text-[11px] text-amber-700 dark:text-amber-400/90 leading-normal">
-                  本项目作为浏览器翻译扩展，追求极致的瞬时响应（Latency）。大模型的深度思考或思维链过程通常会额外耗费大量时间（十秒至数分钟不等）。<strong>如果您在使用中觉得页面翻译响应过慢，强烈建议在下方额外请求体中填入对应的 JSON 参数完全关闭思考功能</strong>，从而恢复毫秒级的疾速翻译体验。
-                </p>
-              </div>
+              <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+                大模型深度思考会额外耗费数秒至数分钟，翻译场景建议关闭思考功能以获得毫秒级响应。
+              </p>
             </div>
 
             <div>
@@ -196,45 +344,43 @@ export function ReasoningHelpModal({ isOpen, onClose }: ReasoningHelpModalProps)
                 <h4 className="text-base font-bold text-foreground">{currentDoc.name}</h4>
                 <span className="text-xs font-normal text-muted-foreground">| {currentDoc.subTitle}</span>
               </div>
-              <p className="text-xs text-muted-foreground/90 leading-relaxed mt-2 bg-muted/30 p-3 rounded-md border border-border/50">
+              <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
                 {currentDoc.intro}
               </p>
             </div>
 
             {/* JSON Code Example */}
-            {currentDoc.jsonSample !== '{}' && (
-              <div className="space-y-1.5">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
-                    <Code className="h-3.5 w-3.5" />
-                    建议填入的 JSON 字段：
-                  </span>
-                  <button
-                    onClick={handleCopy}
-                    className="text-xs text-indigo-600 hover:text-indigo-700 flex items-center gap-1 cursor-pointer hover:underline"
-                  >
-                    {copied ? (
-                      <>
-                        <Check className="h-3.5 w-3.5 text-emerald-600" />
-                        <span className="text-emerald-600 font-semibold">已复制!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Clipboard className="h-3.5 w-3.5" />
-                        <span>复制配置</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-                <pre className="font-mono text-xs text-foreground bg-muted p-4 rounded border border-border overflow-x-auto select-all leading-relaxed shadow-inner">
-                  {currentDoc.jsonSample}
-                </pre>
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                  <Code className="h-3.5 w-3.5" />
+                  JSON 配置：
+                </span>
+                <button
+                  onClick={handleCopy}
+                  className="text-xs text-indigo-600 hover:text-indigo-700 flex items-center gap-1 cursor-pointer hover:underline"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                      <span className="text-emerald-600 font-semibold">已复制!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Clipboard className="h-3.5 w-3.5" />
+                      <span>复制配置</span>
+                    </>
+                  )}
+                </button>
               </div>
-            )}
+              <pre className="font-mono text-xs text-foreground bg-muted p-4 rounded border border-border overflow-x-auto select-all leading-relaxed shadow-inner">
+                {currentDoc.jsonSample}
+              </pre>
+            </div>
 
             {/* Dynamic Tips List */}
             <div className="space-y-2">
-              <span className="text-xs font-semibold text-muted-foreground">参数详解及翻译场景建议：</span>
+              <span className="text-xs font-semibold text-muted-foreground">参数说明：</span>
               <ul className="space-y-2">
                 {currentDoc.tips.map((tip, idx) => (
                   <li key={idx} className="text-xs text-muted-foreground leading-relaxed flex items-start gap-2">
