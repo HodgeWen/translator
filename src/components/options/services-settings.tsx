@@ -357,7 +357,7 @@ export function OptionsServicesSettings({ settings, onSave }: OptionsServicesSet
           )}
 
           {/* Collapsible Advanced Config Accordion */}
-          <div className="border border-border rounded-md overflow-hidden bg-background">
+          <div className="border border-border rounded-md bg-background">
             <button
               type="button"
               onClick={() => setAdvancedOpen(!advancedOpen)}
