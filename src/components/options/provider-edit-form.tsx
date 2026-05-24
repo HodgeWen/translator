@@ -10,7 +10,8 @@ import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { testProvider } from '@/lib/api';
 import { getRandomGreeting } from '@/lib/greetings';
-import { Plus, Trash2, Save, Eye, EyeOff, FileText, Sliders, ArrowUp, ArrowDown, Play, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { Plus, Trash2, Save, Eye, EyeOff, FileText, Sliders, ArrowUp, ArrowDown, Play, Loader2, CheckCircle2, XCircle, Globe } from 'lucide-react';
+import { PresetUrlsModal } from './preset-urls-modal';
 
 interface ProviderEditFormProps {
   provider: ProviderConfig;
@@ -32,6 +33,7 @@ export function ProviderEditForm({
   const [editingProvider, setEditingProvider] = useState<ProviderConfig>({ ...initialProvider });
   const [showApiKey, setShowApiKey] = useState(false);
   const [showReasoningHelp, setShowReasoningHelp] = useState(false);
+  const [showPresetUrlsModal, setShowPresetUrlsModal] = useState(false);
   const testRunIdRef = useRef(0);
   const activeTestProviderIdRef = useRef<string | null>(null);
   const [testState, setTestState] = useState<
@@ -110,7 +112,17 @@ export function ProviderEditForm({
           />
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium">{t('label_base_url')}</label>
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium">{t('label_base_url')}</label>
+            <button
+              type="button"
+              onClick={() => setShowPresetUrlsModal(true)}
+              className="text-xs text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium flex items-center gap-1 cursor-pointer transition-colors"
+            >
+              <Globe className="h-3.5 w-3.5" />
+              <span>{t('label_preset_urls')}</span>
+            </button>
+          </div>
           <input
             type="text"
             value={editingProvider.baseURL}
@@ -458,6 +470,12 @@ export function ProviderEditForm({
       <ReasoningHelpModal
         isOpen={showReasoningHelp}
         onClose={() => setShowReasoningHelp(false)}
+      />
+
+      {/* Preset URLs list lookup modal */}
+      <PresetUrlsModal
+        isOpen={showPresetUrlsModal}
+        onClose={() => setShowPresetUrlsModal(false)}
       />
     </div>
   );
