@@ -103,7 +103,9 @@ export function ProviderEditForm({
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium">{t('label_name')}</label>
+          <div className="flex items-center h-5">
+            <label className="text-sm font-medium">{t('label_name')}</label>
+          </div>
           <input
             type="text"
             value={editingProvider.name}
@@ -112,7 +114,7 @@ export function ProviderEditForm({
           />
         </div>
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between h-5">
             <label className="text-sm font-medium">{t('label_base_url')}</label>
             <button
               type="button"
