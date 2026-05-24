@@ -21,63 +21,61 @@ interface VendorDoc {
 const VENDOR_DOCS: Record<Vendor, VendorDoc> = {
   openai: {
     name: 'OpenAI (GPT-5.5 / o3-mini / o5)',
-    subTitle: '控制推理开销 (Reasoning Effort)',
-    intro: 'OpenAI 支持通过 `reasoning_effort` 参数控制新一代推理模型（如 GPT-5.5、o3-mini、o5）在生成最终答案前的内部思维链深度，以此平衡速度、成本和生成质量。',
+    subTitle: '关闭或降低推理开销',
+    intro: 'OpenAI 支持通过 `reasoning_effort` 参数控制新一代推理模型在翻译前的内部思维深度。在翻译任务中，极力推荐完全关闭推理。',
     jsonSample: `{
-  "reasoning_effort": "low"
+  "reasoning_effort": "none"
 }`,
     tips: [
-      '可选值包括："none"（完全关闭推理过程，仅支持部分模型）、"low"（低推理预算，响应速度快）、"medium"（平衡的默认值）、"high"（高推理预算，适合极其复杂的逻辑或代码任务）。',
-      '在翻译任务中，为了低延迟和低成本，推荐将其设为 "none" 或 "low"；如果需要极高精确度的长篇学术翻译，可考虑 "medium" 或 "high"。'
+      '完全关闭思考 (强烈推荐)：设置 `"reasoning_effort": "none"` 可以彻底关闭模型内部思维链，直接输出最终译文，大幅减少翻译耗时与 Token 消耗。',
+      '快捷值选项："none"（极致瞬时响应）、"low"（极小推理，快）、"medium"（平衡）、"high"（长篇复杂学术任务）。'
     ]
   },
   anthropic: {
     name: 'Anthropic (Claude 4.7 Opus)',
-    subTitle: '自适应与预算思考 (Extended Thinking)',
-    intro: 'Anthropic 在新一代模型（如 Claude Opus 4.7 / Claude Sonnet 4.6）中引入了 `thinking` 额外请求体参数，支持开启自适应思考或强制控制思考的 Token 预算上限。',
+    subTitle: '关闭 Extended Thinking 思考',
+    intro: 'Anthropic 允许通过 `thinking` 参数配置新一代旗舰模型的思考预算上限。在翻译场景中，建议完全禁用该功能以实现瞬时翻译。',
     jsonSample: `{
   "thinking": {
-    "type": "adaptive"
+    "type": "disabled"
   }
 }`,
     tips: [
-      '动态自适应：推荐设置 `"type": "adaptive"`，Claude 4.7 等模型将根据输入任务复杂度自动判断是否思考以及思考深度。',
-      '完全关闭：若希望关闭深度思考，可设为 `"type": "disabled"` 或不传递 `thinking` 字段。',
-      '指定上限 (旧版兼容)：可设置为 `"type": "enabled", "budget_tokens": 1024`，强制给思考过程分配指定的 Token 预算。'
+      '彻底禁用思考 (强烈推荐)：在额外请求体中填入 `"type": "disabled"`，可完美规避 Extended Thinking 造成的数十秒翻译高延迟。',
+      '自适应开启：设置为 `"type": "adaptive"` 让模型自主决定，但速度可能会受复杂网页内容影响而出现明显变慢。'
     ]
   },
   deepseek: {
     name: 'DeepSeek 官方 API (DeepSeek-V4)',
-    subTitle: '原生深度思考 (Reasoning Content)',
-    intro: '针对 DeepSeek 官方 API（包括最新的 DeepSeek-V4 及新版推理模型），其核心推理模型（如 DeepSeek-R1-V4）的深度思考是原生强制开启的，当前官方 HTTP 协议中并没有提供独立的控制开关参数。',
+    subTitle: '合理选择非推理模型以提速',
+    intro: '在 DeepSeek 官方 API 中，其深度思考 R1 推理模型（如 `deepseek-reasoning`）的思维链是强制开启且在 API 协议上无法通过 JSON 关闭的。',
     jsonSample: `{}`,
     tips: [
-      '官方提示：DeepSeek 官方当前的 API 机制下，`deepseek-chat` (V4) 模型不具备推理过程，而 `deepseek-reasoning` (R1-V4) 强制输出推理。如需关闭深度思考以追求极致翻译速度，请在模型设置中将所选模型改为常规非推理模型（如 `deepseek-chat`）。',
-      '注意：官方 R1/V4 推理模型的温度建议保持在 0.5 ~ 0.7 之间，推荐 0.6，不可设置为 0 或 1.0。'
+      '官方提速方案：为获得毫秒级的翻译响应速度，请勿使用 `deepseek-reasoning` (R1) 推理模型。强烈建议在模型配置列表中直接选用常规无推理模型（如 `deepseek-chat` (V4)），即可瞬间恢复疾速翻译体验。'
     ]
   },
   siliconflow: {
     name: '硅基流动 (SiliconFlow)',
-    subTitle: '思维链开关 (enable_thinking)',
-    intro: '硅基流动针对支持推理输出的新一代模型（例如 DeepSeek-R1-V4 系列模型）进行了高度定制，提供了直观的开启/关闭以及 Token 预算参数。',
+    subTitle: '一键禁用 DeepSeek-R1 思考',
+    intro: '硅基流动针对支持推理输出的新一代模型（如 DeepSeek-R1 系列）提供了直观的 API 开关，能完美帮助翻译扩展跳过长耗时的思考过程。',
     jsonSample: `{
   "enable_thinking": false
 }`,
     tips: [
-      '一键禁用：如果需要极致翻译响应速度并规避思维链造成的无用 Token 成本，可以设置 `"enable_thinking": false` 强制关闭推理过程。',
-      '配额限制：若需要保留推理但限制 Token 消耗，可设置 `"enable_thinking": true, "thinking_budget": 1024`（最小限制为 1024）。'
+      '一键禁用提速 (强烈推荐)：对于 DeepSeek-R1 模型，在额外请求体中设置 `"enable_thinking": false` 可以一键彻底关闭思维链输出，翻译速度立即提升 10 倍以上！',
+      'Token 省流：禁用思维链可为您节省高达 80% 的输入/输出 Token 成本。'
     ]
   },
   openrouter: {
     name: 'OpenRouter',
-    subTitle: '统一思维链控制 (include_reasoning)',
-    intro: 'OpenRouter 作为多模型网关聚合商，针对所有推理类模型（如 DeepSeek R1）提供了统一的格式与推理结果过滤控制字段。',
+    subTitle: '统一过滤思维链内容',
+    intro: 'OpenRouter 针对所有推理类模型（如 DeepSeek R1/V4 系列）提供了统一的格式与推理结果过滤控制字段，能让划词翻译瞬间输出。',
     jsonSample: `{
   "include_reasoning": false
 }`,
     tips: [
-      '隐藏思维链：将 `"include_reasoning": false` 填入额外请求体中，OpenRouter 接口将不再返回推理思维链内容，显著提高数据传输响应效率。',
-      '兼容控制：OpenRouter 对 OpenAI-compatible 模型同样支持 `"reasoning_effort": "low"` 或 `"thinking": { "type": "disabled" }` 作为底层传递桥接。'
+      '隐藏思维链提速 (强烈推荐)：设置 `"include_reasoning": false` 强制 OpenRouter 网关在传输时过滤并剔除思维链内容，规避数据流积压，让翻译结果瞬间输出。',
+      '兼容模式：OpenRouter 对 OpenAI-compatible 模型同样支持 `"reasoning_effort": "none"` 作为底层控制桥接。'
     ]
   }
 };
@@ -156,6 +154,19 @@ export function ReasoningHelpModal({ isOpen, onClose }: ReasoningHelpModalProps)
 
           {/* Details Pane */}
           <div className="flex-1 p-6 overflow-y-auto flex flex-col space-y-4">
+            {/* Speed warning banner */}
+            <div className="rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 p-3.5 flex items-start gap-2.5">
+              <Lightbulb className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <div className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+                  ⚡ 极致翻译速度优化建议 (核心推荐)
+                </div>
+                <p className="text-[11px] text-amber-700 dark:text-amber-400/90 leading-normal">
+                  本项目作为浏览器翻译扩展，追求极致的瞬时响应（Latency）。大模型的深度思考或思维链过程通常会额外耗费大量时间（十秒至数分钟不等）。<strong>如果您在使用中觉得页面翻译响应过慢，强烈建议在下方额外请求体中填入对应的 JSON 参数完全关闭思考功能</strong>，从而恢复毫秒级的疾速翻译体验。
+                </p>
+              </div>
+            </div>
+
             <div>
               <div className="flex items-center gap-2">
                 <h4 className="text-base font-bold text-foreground">{currentDoc.name}</h4>
