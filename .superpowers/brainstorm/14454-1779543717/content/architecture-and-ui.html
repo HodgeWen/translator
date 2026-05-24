@@ -1,0 +1,240 @@
+<style>
+  :root {
+    --bg-card: #1e1e2e;
+    --border-color: #313244;
+    --text-primary: #cdd6f4;
+    --text-secondary: #a6adc8;
+    --accent: #cba6f7;
+    --accent-rgb: 203, 166, 247;
+    --success: #a6e3a1;
+  }
+
+  .preview-container {
+    font-family: system-ui, -apple-system, sans-serif;
+    color: var(--text-primary);
+    background-color: #11111b;
+    padding: 24px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    margin-bottom: 30px;
+  }
+
+  .diagram-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin: 20px 0;
+  }
+
+  .flow-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+  }
+
+  .flow-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    padding: 12px 16px;
+    border-radius: 8px;
+    text-align: center;
+    min-width: 180px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .flow-box.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.2);
+  }
+
+  .flow-arrow {
+    color: var(--text-secondary);
+    font-size: 20px;
+  }
+
+  .mockup-ui {
+    background: #181825;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 16px;
+  }
+
+  .mock-header {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .mock-tab {
+    padding: 4px 10px;
+    border-radius: 4px;
+    background: #313244;
+    font-size: 12px;
+  }
+
+  .mock-form-group {
+    margin-bottom: 12px;
+  }
+
+  .mock-label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+  }
+
+  .mock-select, .mock-input {
+    width: 100%;
+    background: #11111b;
+    border: 1px solid var(--border-color);
+    padding: 8px;
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-size: 13px;
+  }
+
+  .mock-btn-group {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+  }
+
+  .mock-btn {
+    background: #313244;
+    border: none;
+    color: var(--text-primary);
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  .mock-btn.primary {
+    background: var(--accent);
+    color: #11111b;
+    font-weight: 600;
+  }
+
+  .badge-tag {
+    font-size: 10px;
+    background: rgba(var(--accent-rgb), 0.15);
+    color: var(--accent);
+    padding: 2px 6px;
+    border-radius: 99px;
+    margin-left: 6px;
+  }
+
+  .options {
+    margin-top: 30px;
+  }
+</style>
+
+<h2>翻译风格与展示方式的级联覆盖机制</h2>
+<p class="subtitle">在翻译服务层重构后，我们需要确定“个人配置”与“翻译服务配置”的级联优先级。请在浏览器中查看下方直观图解并做出选择。</p>
+
+<div class="preview-container">
+  <h3>1. 级联覆盖机制示意图</h3>
+  <p class="subtitle" style="font-size: 13px; margin-bottom: 16px;">当用户发起页面翻译时，系统将按下图所示的层级顺序来决定翻译时使用的<b>翻译风格</b>和<b>展示样式</b>：</p>
+  
+  <div class="diagram-flow">
+    <div class="flow-row">
+      <div class="flow-box active">
+        <div style="font-weight: bold; color: var(--accent);">当前翻译请求/内容脚本覆盖</div>
+        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">如：快捷键临时指定的样式</div>
+      </div>
+    </div>
+    <div class="flow-row"><div class="flow-arrow">↓ <i>(未覆盖时)</i></div></div>
+    <div class="flow-row">
+      <div class="flow-box">
+        <div style="font-weight: bold;">全局个人配置 (User Default)</div>
+        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">选项：样式 / <span style="color: var(--accent)">使用服务默认</span></div>
+      </div>
+    </div>
+    <div class="flow-row"><div class="flow-arrow">↓ <i>(设为“使用服务默认”时)</i></div></div>
+    <div class="flow-row">
+      <div class="flow-box">
+        <div style="font-weight: bold;">当前翻译服务配置 (Service Default)</div>
+        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">选项：样式 / <span style="color: var(--accent)">使用个人默认</span></div>
+      </div>
+    </div>
+    <div class="flow-row"><div class="flow-arrow">↓ <i>(服务层未配置或设为“使用个人默认”时)</i></div></div>
+    <div class="flow-row">
+      <div class="flow-box" style="border-style: dashed; background: transparent;">
+        <div style="font-weight: bold; color: var(--success)">系统默认兜底 (System Fallback)</div>
+        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">展示样式: 原文替换<br>语气风格: 标准(Normal)</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 24px; border-top: 1px solid var(--border-color); padding-top: 16px;">
+    <h3>2. UI 配置界面预览 (Settings)</h3>
+    <div class="split">
+      <div class="mockup">
+        <div class="mockup-header">全局个人默认配置</div>
+        <div class="mockup-body" style="background: #181825;">
+          <div class="mock-form-group">
+            <span class="mock-label">默认展示方式</span>
+            <select class="mock-select" disabled>
+              <option>双语对照</option>
+              <option selected>使用服务默认 (service_default)</option>
+              <option>原文替换</option>
+            </select>
+          </div>
+          <div class="mock-form-group">
+            <span class="mock-label">默认翻译风格/语气</span>
+            <select class="mock-select" disabled>
+              <option selected>学术翻译 (Technical)</option>
+              <option>使用服务默认 (service_default)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <div class="mockup">
+        <div class="mockup-header">翻译服务配置 (编辑服务)</div>
+        <div class="mockup-body" style="background: #181825;">
+          <div class="mock-form-group">
+            <span class="mock-label">默认展示方式</span>
+            <select class="mock-select" disabled>
+              <option selected>使用个人默认 (personal_default)</option>
+              <option>原文替换</option>
+              <option>纯净替换</option>
+            </select>
+          </div>
+          <div class="mock-form-group">
+            <span class="mock-label">默认翻译风格/语气</span>
+            <select class="mock-select" disabled>
+              <option>使用个人默认 (personal_default)</option>
+              <option selected>爆款小红书风格 <span class="badge-tag">自定义</span></option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3>请选择您期望的级联覆盖机制实现方式：</h3>
+
+<div class="options">
+  <div class="option" data-choice="cascade-full" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>完全双向级联模型（推荐）</h3>
+      <p>如上图所示：全局个人配置可选“使用服务默认”，而翻译服务内部可选“使用个人默认”。在翻译时，若两者互指，系统自动回落到系统兜底设置（双语对照 / Normal），实现最大的配置灵活性。</p>
+    </div>
+  </div>
+  
+  <div class="option" data-choice="cascade-one-way" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>单向覆盖模型（服务优先）</h3>
+      <p>翻译服务中的配置是强制性的。如果翻译服务配置了特定风格，则<b>无条件覆盖</b>个人配置；如果翻译服务未配置（或选择空），才回落到全局个人配置。全局个人配置中不再提供“使用服务默认”这一选项，避免出现循环引用，结构更简单。</p>
+    </div>
+  </div>
+</div>

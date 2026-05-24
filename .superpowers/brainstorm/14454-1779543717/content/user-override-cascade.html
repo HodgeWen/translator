@@ -1,0 +1,324 @@
+<style>
+  :root {
+    --bg-card: #1e1e2e;
+    --border-color: #313244;
+    --text-primary: #cdd6f4;
+    --text-secondary: #a6adc8;
+    --accent: #cba6f7;
+    --accent-rgb: 203, 166, 247;
+    --success: #a6e3a1;
+  }
+
+  .preview-container {
+    font-family: system-ui, -apple-system, sans-serif;
+    color: var(--text-primary);
+    background-color: #11111b;
+    padding: 24px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    margin-bottom: 30px;
+  }
+
+  .diagram-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin: 20px 0;
+  }
+
+  .flow-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+  }
+
+  .flow-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    padding: 14px 18px;
+    border-radius: 8px;
+    text-align: center;
+    min-width: 240px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .flow-box.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.2);
+  }
+
+  .flow-arrow {
+    color: var(--text-secondary);
+    font-size: 20px;
+    font-weight: bold;
+  }
+
+  .mockup-ui {
+    background: #181825;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 16px;
+  }
+
+  .mock-header {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+  }
+
+  .mock-tab {
+    padding: 4px 10px;
+    border-radius: 4px;
+    background: #313244;
+    font-size: 12px;
+  }
+
+  .mock-form-group {
+    margin-bottom: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: 14px;
+  }
+
+  .mock-form-group:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .mock-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  .radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .radio-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .radio-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid var(--border-color);
+    display: inline-block;
+    position: relative;
+  }
+
+  .radio-option.selected .radio-dot {
+    border-color: var(--accent);
+  }
+
+  .radio-option.selected .radio-dot::after {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .mock-select {
+    width: 100%;
+    background: #11111b;
+    border: 1px solid var(--border-color);
+    padding: 8px;
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-size: 13px;
+    margin-top: 6px;
+    margin-left: 24px;
+    width: calc(100% - 24px);
+  }
+
+  .badge-tag {
+    font-size: 10px;
+    background: rgba(var(--accent-rgb), 0.15);
+    color: var(--accent);
+    padding: 2px 6px;
+    border-radius: 99px;
+    margin-left: 6px;
+  }
+
+  .options {
+    margin-top: 30px;
+  }
+</style>
+
+<h2>个人覆盖服务配置（User Overrides Service）</h2>
+<p class="subtitle">感谢您的及时纠正！我完全理解了您的构想：<b>默认继承服务配置，但允许用户通过个人自定义配置进行强行持久覆盖</b>。以下我为你重新设计了覆盖逻辑和 UI 展现。</p>
+
+<div class="preview-container">
+  <h3>1. “个人覆盖服务”级联解析逻辑图</h3>
+  <p class="subtitle" style="font-size: 13px; margin-bottom: 16px;">翻译时，系统读取个人覆盖状态以决定最终风格：</p>
+  
+  <div class="diagram-flow">
+    <div class="flow-row">
+      <div class="flow-box active" style="border-color: var(--accent);">
+        <div style="font-weight: bold; color: var(--accent);">个人当前覆盖设置 (User Overrides)</div>
+        <div style="font-size: 12px; margin-top: 6px; text-align: left; padding-left: 10px;">
+          🔘 <b>展示样式：</b> 自定义 / 服务默认<br>
+          🔘 <b>语气风格：</b> 自定义 / 服务默认
+        </div>
+      </div>
+    </div>
+    
+    <div class="flow-row">
+      <div style="display: flex; gap: 80px; width: 100%; justify-content: center;">
+        <div style="text-align: center;">
+          <div class="flow-arrow">↙</div>
+          <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">选择<b>「使用服务默认」</b></div>
+        </div>
+        <div style="text-align: center;">
+          <div class="flow-arrow">↘</div>
+          <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">选择<b>「自定义配置」</b></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-row" style="align-items: flex-start;">
+      <!-- 左分支：继承服务 -->
+      <div class="flow-box">
+        <div style="font-weight: bold; color: var(--success);">读取：当前翻译服务的配置</div>
+        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 6px;">
+          如：学术翻译服务<br>
+          (默认使用: 双语对照 + 学术语气)
+        </div>
+      </div>
+      
+      <!-- 右分支：直接覆盖 -->
+      <div class="flow-box" style="border-color: rgba(var(--accent-rgb), 0.5);">
+        <div style="font-weight: bold; color: var(--accent);">读取：个人持久自定义值</div>
+        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 6px;">
+          强制使用用户在此选择的：<br>
+          (如: 纯净替换 + 爆款小红书语气)
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 28px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+    <h3>2. 翻译面板 (Popup) 中的单选框快捷配置 UI Mockup</h3>
+    <p class="subtitle" style="font-size: 13px;">在 Popup 弹窗中提供单选框，直观控制是否覆盖以及具体自定义值（所有切换均会持久化保存）：</p>
+    
+    <div class="split">
+      <!-- 场景 A：继承服务默认 -->
+      <div class="mockup">
+        <div class="mockup-header">
+          <span>翻译面板 (Popup)</span>
+          <span class="mock-tab">继承服务默认</span>
+        </div>
+        <div class="mockup-body" style="background: #181825;">
+          <div class="mock-form-group">
+            <span class="mock-label">翻译展示样式</span>
+            <div class="radio-group">
+              <div class="radio-option selected">
+                <span class="radio-dot"></span>
+                <span>使用服务默认 <span style="color: var(--text-secondary); font-size: 11px;">(当前: 双语对照)</span></span>
+              </div>
+              <div class="radio-option">
+                <span class="radio-dot"></span>
+                <span>自定义配置</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mock-form-group">
+            <span class="mock-label">翻译风格与语气</span>
+            <div class="radio-group">
+              <div class="radio-option selected">
+                <span class="radio-dot"></span>
+                <span>使用服务默认 <span style="color: var(--text-secondary); font-size: 11px;">(当前: 学术翻译)</span></span>
+              </div>
+              <div class="radio-option">
+                <span class="radio-dot"></span>
+                <span>自定义配置</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 场景 B：自定义覆盖样式 -->
+      <div class="mockup">
+        <div class="mockup-header">
+          <span>翻译面板 (Popup)</span>
+          <span class="mock-tab" style="background: rgba(var(--accent-rgb), 0.2); color: var(--accent);">自定义覆盖中</span>
+        </div>
+        <div class="mockup-body" style="background: #181825;">
+          <div class="mock-form-group">
+            <span class="mock-label">翻译展示样式</span>
+            <div class="radio-group">
+              <div class="radio-option">
+                <span class="radio-dot"></span>
+                <span>使用服务默认 <span style="color: var(--text-secondary); font-size: 11px;">(当前: 双语对照)</span></span>
+              </div>
+              <div class="radio-option selected">
+                <span class="radio-dot"></span>
+                <span>自定义配置</span>
+              </div>
+            </div>
+            <!-- 自定义选中时展开下拉菜单 -->
+            <select class="mock-select">
+              <option selected>原文替换</option>
+              <option>纯净替换</option>
+              <option>下划线</option>
+            </select>
+          </div>
+          
+          <div class="mock-form-group">
+            <span class="mock-label">翻译风格与语气</span>
+            <div class="radio-group">
+              <div class="radio-option">
+                <span class="radio-dot"></span>
+                <span>使用服务默认 <span style="color: var(--text-secondary); font-size: 11px;">(当前: 学术翻译)</span></span>
+              </div>
+              <div class="radio-option selected">
+                <span class="radio-dot"></span>
+                <span>自定义配置</span>
+              </div>
+            </div>
+            <!-- 自定义选中时展开下拉菜单 -->
+            <select class="mock-select">
+              <option selected>爆款小红书风格</option>
+              <option>幽默风趣 (Humorous)</option>
+              <option>文学润色 (Literary)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3>请确认新的设计方案：</h3>
+
+<div class="options">
+  <div class="option" data-choice="user-override-approved" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>方案确认（非常符合预期！）</h3>
+      <p>采用这种由“个人配置强行且持久覆盖翻译服务”的单向传递链路。UI 上以单选框区隔「使用服务默认」和「自定义配置」，且无论在 Popup 还是在 Settings 中切换均会持久化同步，提供极高使用便利性。</p>
+    </div>
+  </div>
+</div>

@@ -572,6 +572,12 @@
   "tab_load_balance": {
     "message": "Load Balance"
   },
+  "tab_services": {
+    "message": "Services"
+  },
+  "tab_presets": {
+    "message": "Presets & Styles"
+  },
   "title_load_balance": {
     "message": "Load Balancing"
   },

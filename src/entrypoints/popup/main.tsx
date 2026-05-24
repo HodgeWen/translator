@@ -6,10 +6,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { useDarkMode } from '@/hooks/use-dark-mode'
 import { Toast } from '@/components/ui/toast'
 import { Select } from '@/components/ui/select'
-import { PopupProviderSelector } from '@/components/popup/provider-selector'
 import { PopupTranslationResult } from '@/components/popup/translation-result'
 import type {
-  ProviderConfig,
   GlobalSettings,
   TranslationResponse,
   LangCode,
@@ -21,8 +19,7 @@ import { detectLanguage, detectLanguageLocal, shouldSkipTranslation } from '@/li
 import { LANGUAGE_OPTIONS } from '@/lib/languages'
 import { t, setUILanguage } from '@/lib/i18n'
 import { useToast } from '@/hooks/use-toast'
-import { cn } from '@/lib/utils'
-import { Send, Loader2, Settings, Scale } from 'lucide-react'
+import { Send, Loader2, Settings, Layers } from 'lucide-react'
 import { LogoIcon } from '@/components/logo-icon'
 
 const TARGET_AUTO = 'auto' as const
@@ -39,8 +36,6 @@ function buildPolysemyPrompt(targetLang: string): string {
   return `Additional instruction: The user input may be a polysemous word or short phrase. If it has multiple distinct common meanings, provide the primary translations for each sense in ${targetLang}, prefixed with a bullet point (•). Include a brief part-of-speech or context hint in parentheses. If there is only one dominant meaning, output the translation directly without bullets.`
 }
 
-// 预览路径只走本地检测，避免输入过程中向远端发请求泄露内容；
-// 实际翻译时再走完整 detectLanguage（含用户配置的远端备用）。
 async function resolveTargetLang(
   text: string,
   settings: GlobalSettings,
@@ -60,9 +55,6 @@ async function resolveTargetLang(
 function App() {
   const { toast, showSuccess, showError, dismiss } = useToast()
   const [settings, setSettings] = useState<GlobalSettings | null>(null)
-  const [selectedProviderId, setSelectedProviderId] = useState<string>('')
-  const [selectedModelId, setSelectedModelId] = useState<string>('')
-  const [loadBalanceEnabled, setLoadBalanceEnabled] = useState(false)
   const [inputText, setInputText] = useState('')
   const [result, setResult] = useState('')
   const [resultMeta, setResultMeta] = useState<{
@@ -83,7 +75,6 @@ function App() {
   }, [])
 
   useEffect(() => {
-    // 稍微给一点点延迟（0ms），确保 Chrome 已经完成了弹出框的渲染
     const timer = setTimeout(() => {
       textareaRef.current?.focus()
     }, 30)
@@ -122,57 +113,14 @@ function App() {
       setTargetLangPreview(s.nativeLanguage)
       setLangVersion((v) => v + 1)
       setCurrentTone(s.translationTone)
-      setLoadBalanceEnabled(s.loadBalance.enabled)
-
-      // 恢复上次选择的 provider/model
-      if (s.selectedProviderId) {
-        setSelectedProviderId(s.selectedProviderId)
-        setSelectedModelId(s.selectedModelId)
-      } else if (s.providers.length > 0) {
-        setSelectedProviderId(s.providers[0].id)
-        if (s.providers[0].models.length > 0) {
-          setSelectedModelId(s.providers[0].models[0].id)
-        }
-      }
     } catch {
       showError(t('error_load_settings'))
     }
   }
 
-  const getSelectedProvider = (): ProviderConfig | undefined => {
-    return settings?.providers.find((p) => p.id === selectedProviderId)
-  }
-
-  const handleProviderChange = async (providerId: string) => {
-    setSelectedProviderId(providerId)
-    const provider = settings?.providers.find((p) => p.id === providerId)
-    if (!provider || !settings) return
-
-    const newModelId = provider.models.length > 0 ? provider.models[0].id : ''
-    setSelectedModelId(newModelId)
-
-    const newSettings = { ...settings, selectedProviderId: providerId, selectedModelId: newModelId }
-    setSettings(newSettings)
-    await saveSettings(newSettings)
-  }
-
-  const handleModelChange = async (modelId: string) => {
-    setSelectedModelId(modelId)
+  const handleServiceChange = async (serviceId: string) => {
     if (!settings) return
-
-    const newSettings = { ...settings, selectedProviderId, selectedModelId: modelId }
-    setSettings(newSettings)
-    await saveSettings(newSettings)
-  }
-
-  const handleLoadBalanceToggle = async () => {
-    if (!settings) return
-    const newEnabled = !loadBalanceEnabled
-    setLoadBalanceEnabled(newEnabled)
-    const newSettings = {
-      ...settings,
-      loadBalance: { ...settings.loadBalance, enabled: newEnabled }
-    }
+    const newSettings = { ...settings, selectedServiceId: serviceId }
     setSettings(newSettings)
     await saveSettings(newSettings)
   }
@@ -224,8 +172,6 @@ function App() {
   }
 
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
-    // 不阻止默认行为，让浏览器自然处理粘贴，onChange 接管 state 更新。
-    // 若手动 setInputText 会与 onChange 冲突导致双次粘贴。
     window.setTimeout(() => {
       const val = e.currentTarget.value
       if (val.trim()) handleTranslate(val)
@@ -246,7 +192,8 @@ function App() {
     { value: 'humorous', label: t('tone_humorous') },
     { value: 'literary', label: t('tone_literary') },
     { value: 'formal', label: t('tone_formal') },
-    { value: 'colloquial', label: t('tone_colloquial') }
+    { value: 'colloquial', label: t('tone_colloquial') },
+    ...(settings?.customTones.map(ct => ({ value: ct.id, label: ct.name })) ?? [])
   ]
 
   const handleToneChange = async (tone: string) => {
@@ -257,13 +204,9 @@ function App() {
     await saveSettings(newSettings)
   }
 
-  const provider = getSelectedProvider()
-  const modelOptions = provider?.models.map((m) => ({ value: m.id, label: m.name })) ?? []
-
   if (!settings) return null
 
-  // 负载均衡模式下是否有配置的 provider
-  const hasLoadBalanceProviders = settings.loadBalance.providers.length > 0
+  const activeServiceId = settings.selectedServiceId || (settings.services[0]?.id ?? '')
 
   return (
     <div className="w-[450px] bg-background text-foreground flex flex-col" key={langVersion}>
@@ -283,24 +226,9 @@ function App() {
             value={currentTone}
             options={toneOptions}
             onChange={handleToneChange}
-            className="w-[84px]"
+            className="w-[100px]"
             compact
           />
-          {/* Load Balance Toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className={cn(
-              'h-7 w-7 shrink-0 transition-colors',
-              loadBalanceEnabled &&
-                'text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30'
-            )}
-            onClick={handleLoadBalanceToggle}
-            title={t('popup_load_balance')}
-            disabled={!hasLoadBalanceProviders}
-          >
-            <Scale className="h-4 w-4" />
-          </Button>
           <Button
             variant="ghost"
             size="icon"
@@ -313,51 +241,28 @@ function App() {
         </div>
       </div>
 
-      {/* Load Balance Indicator */}
-      {loadBalanceEnabled && (
-        <div className="px-4 py-1.5 border-b border-border bg-violet-50/50 dark:bg-violet-950/20">
-          <div className="flex items-center gap-1.5 text-[11px] text-violet-600 dark:text-violet-400">
-            <Scale className="h-3 w-3" />
-            <span>{t('popup_load_balance_active')}</span>
-          </div>
-        </div>
-      )}
-
-      {/* Provider & Model — hidden when load balance is active */}
-      {!loadBalanceEnabled && (
-        <>
-          <div className="px-4 py-2 border-b border-border">
-            <div className="text-[10px] font-medium text-muted-foreground mb-1">
-              {t('popup_provider')}
-            </div>
-            <PopupProviderSelector
-              providers={settings?.providers ?? []}
-              selectedProviderId={selectedProviderId}
-              onChange={handleProviderChange}
-            />
-          </div>
-
-          <div className="px-4 py-2 border-b border-border">
-            <div className="text-[10px] font-medium text-muted-foreground mb-1">
-              {t('popup_model')}
-            </div>
-            <Select
-              value={selectedModelId}
-              options={modelOptions}
-              onChange={handleModelChange}
-              disabled={!provider}
-              placeholder={t('popup_model')}
-            />
-          </div>
-        </>
-      )}
+      {/* Services Selector Row */}
+      <div className="px-4 py-2 border-b border-border flex items-center justify-between gap-3 bg-muted/10">
+        <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+          <Layers className="h-3.5 w-3.5 text-indigo-500" />
+          当前翻译服务:
+        </span>
+        <Select
+          value={activeServiceId}
+          options={settings.services.map((s) => ({ value: s.id, label: s.name }))}
+          onChange={handleServiceChange}
+          placeholder="选择翻译服务"
+          className="flex-1 max-w-[280px]"
+          compact
+        />
+      </div>
 
       {/* Target Language Hint */}
-      <div className="px-4 pt-2 pb-0">
+      <div className="px-4 pt-2.5 pb-0">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 text-[11px] text-indigo-600 dark:text-indigo-400 min-w-0">
             <LogoIcon className="h-3 w-3 shrink-0" />
-            <span className="truncate">
+            <span className="truncate font-medium">
               {t('popup_translate_to')}: {targetLangPreview}
             </span>
           </div>

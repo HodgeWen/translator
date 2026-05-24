@@ -572,6 +572,12 @@
   "tab_load_balance": {
     "message": "负载均衡"
   },
+  "tab_services": {
+    "message": "翻译服务"
+  },
+  "tab_presets": {
+    "message": "预设与风格"
+  },
   "title_load_balance": {
     "message": "负载均衡"
   },

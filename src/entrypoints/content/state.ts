@@ -71,7 +71,23 @@ export const state: GlobalState = {
 };
 
 export function applySettingsToState(s: GlobalSettings): void {
-  state.displayStyle = s.displayStyle;
+  // 1. Locate active service
+  const activeService = s.services.find(service => service.id === s.selectedServiceId) || s.services[0];
+  
+  // 2. Resolve cascading displayStyle
+  let resolvedStyle: DisplayStyle = 'original';
+  if (activeService) {
+    if (s.overrideDisplayStyleEnabled) {
+      resolvedStyle = s.customDisplayStyle;
+    } else {
+      const serviceStyle = activeService.defaultDisplayStyle;
+      resolvedStyle = serviceStyle === 'personal_default' ? s.displayStyle : serviceStyle;
+    }
+  } else {
+    resolvedStyle = s.displayStyle;
+  }
+  
+  state.displayStyle = resolvedStyle;
   state.translationLoadingTheme = s.translationLoadingTheme;
   state.nativeLanguage = s.nativeLanguage;
   state.targetLang = s.nativeLanguage;
@@ -83,3 +99,4 @@ export function applySettingsToState(s: GlobalSettings): void {
     requestTimeout: s.requestTimeout,
   };
 }
+

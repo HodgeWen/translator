@@ -40,11 +40,31 @@ export function OptionsProviderSettings({ settings, onSave, onError }: OptionsPr
 
   const handleDeleteProvider = (providerId: string) => {
     const newProviders = settings.providers.filter((p) => p.id !== providerId);
-    const newLbProviders = settings.loadBalance.providers.filter(p => p.providerId !== providerId);
+    
+    // 级联清理已失效的翻译服务
+    const newServices = settings.services
+      .map(service => {
+        if (service.type === 'single') {
+          return service.providerId === providerId ? null : service;
+        } else {
+          const nextPool = service.poolProviders.filter(p => p.providerId !== providerId);
+          if (nextPool.length === 0) return null;
+          return { ...service, poolProviders: nextPool };
+        }
+      })
+      .filter((s): s is NonNullable<typeof s> => s !== null);
+
+    // 若当前选中的服务被删除了，重新选中第一个服务
+    let nextSelectedId = settings.selectedServiceId;
+    if (!newServices.some(s => s.id === nextSelectedId)) {
+      nextSelectedId = newServices[0]?.id || '';
+    }
+
     onSave({
       ...settings,
       providers: newProviders,
-      loadBalance: { ...settings.loadBalance, providers: newLbProviders },
+      services: newServices,
+      selectedServiceId: nextSelectedId
     });
   };
 

@@ -3,7 +3,8 @@ import { createRoot } from 'react-dom/client';
 import '@/assets/styles.css';
 import { Toast } from '@/components/ui/toast';
 import { OptionsProviderSettings } from '@/components/options/provider-settings';
-import { OptionsLoadBalanceSettings } from '@/components/options/load-balance-settings';
+import { OptionsServicesSettings } from '@/components/options/services-settings';
+import { OptionsPresetsTonesSettings } from '@/components/options/presets-tones-settings';
 import { OptionsLanguageSettings } from '@/components/options/language-settings';
 import { OptionsGeneralSettings } from '@/components/options/general-settings';
 import { OptionsDisplaySettings } from '@/components/options/display-settings';
@@ -15,10 +16,10 @@ import { useDarkMode } from '@/hooks/use-dark-mode';
 import { getSettings, saveSettings, DEFAULT_SETTINGS } from '@/lib/storage';
 import { t, setUILanguage } from '@/lib/i18n';
 import { useToast } from '@/hooks/use-toast';
-import { Server, Globe, Scale, Palette, Database, BookOpen } from 'lucide-react';
+import { Server, Globe, Palette, Database, BookOpen, Layers, Sparkles } from 'lucide-react';
 import { LogoIcon } from '@/components/logo-icon';
 
-type Tab = 'providers' | 'loadbalance' | 'language' | 'display' | 'general' | 'backup' | 'manual';
+type Tab = 'providers' | 'services' | 'presets' | 'language' | 'display' | 'general' | 'backup' | 'manual';
 
 function App() {
   const { toast, showSuccess, showError, dismiss } = useToast();
@@ -66,7 +67,8 @@ function App() {
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'providers', label: t('tab_providers'), icon: <Server className="h-4 w-4" /> },
-    { id: 'loadbalance', label: t('tab_load_balance'), icon: <Scale className="h-4 w-4" /> },
+    { id: 'services', label: t('tab_services'), icon: <Layers className="h-4 w-4" /> },
+    { id: 'presets', label: t('tab_presets'), icon: <Sparkles className="h-4 w-4" /> },
     { id: 'language', label: t('tab_language'), icon: <LogoIcon className="h-4 w-4" /> },
     { id: 'display', label: t('tab_display'), icon: <Palette className="h-4 w-4" /> },
     { id: 'general', label: t('tab_general'), icon: <Globe className="h-4 w-4" /> },
@@ -104,7 +106,7 @@ function App() {
               key={tab.id}
               onClick={() => { setActiveTab(tab.id); }}
               className={cn(
-                'flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap shrink-0',
+                'flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer',
                 activeTab === tab.id
                   ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
                   : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -124,8 +126,12 @@ function App() {
           />
         )}
 
-        {activeTab === 'loadbalance' && (
-          <OptionsLoadBalanceSettings settings={settings} onSave={handleSave} />
+        {activeTab === 'services' && (
+          <OptionsServicesSettings settings={settings} onSave={handleSave} />
+        )}
+
+        {activeTab === 'presets' && (
+          <OptionsPresetsTonesSettings settings={settings} onSave={handleSave} />
         )}
 
         {activeTab === 'language' && (
