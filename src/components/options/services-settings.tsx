@@ -7,6 +7,7 @@ import type { GlobalSettings, TranslationService, SingleService, PoolService } f
 import { t } from '@/lib/i18n';
 import { Plus, Trash2, Edit2, Settings2, ChevronDown, ChevronUp, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { NumberInput } from '@/components/ui/number-input';
 
 interface OptionsServicesSettingsProps {
   settings: GlobalSettings;
@@ -23,6 +24,9 @@ export function OptionsServicesSettings({ settings, onSave }: OptionsServicesSet
   const [isAdding, setIsAdding] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [showPresetMenu, setShowPresetMenu] = useState(false);
+
+  const poolProviders = editingService && editingService.type === 'pool' ? (editingService as PoolService).poolProviders : [];
+  const totalWeight = poolProviders.reduce((sum, item) => sum + (item.weight || 0), 0);
 
   // 常用风格与语气选项列表，合并内置与自定义语气
   const toneOptions = [
@@ -306,51 +310,58 @@ export function OptionsServicesSettings({ settings, onSave }: OptionsServicesSet
               </div>
 
               <div className="space-y-3">
-                {(editingService as PoolService).poolProviders.map((row, index) => (
-                  <div key={index} className="flex gap-3 items-end bg-background p-3 rounded border border-border">
-                    <div className="flex-1 space-y-1.5">
-                      <label className="text-xs text-muted-foreground">提供商</label>
-                      <Select
-                        value={row.providerId}
-                        options={settings.providers.map(p => ({ value: p.id, label: p.name }))}
-                        onChange={val => handlePoolRowChange(index, 'providerId', val)}
-                        compact
-                      />
-                    </div>
+                {(editingService as PoolService).poolProviders.map((row, index) => {
+                  const percentage = totalWeight > 0 ? ((row.weight || 0) / totalWeight * 100).toFixed(1) : '0.0';
+                  return (
+                    <div key={index} className="flex gap-3 items-end bg-background p-3 rounded border border-border">
+                      <div className="flex-1 space-y-1.5">
+                        <label className="text-xs text-muted-foreground">提供商</label>
+                        <Select
+                          value={row.providerId}
+                          options={settings.providers.map(p => ({ value: p.id, label: p.name }))}
+                          onChange={val => handlePoolRowChange(index, 'providerId', val)}
+                          compact
+                        />
+                      </div>
 
-                    <div className="flex-1 space-y-1.5">
-                      <label className="text-xs text-muted-foreground">模型 (选填)</label>
-                      <Select
-                        value={row.modelId || ''}
-                        options={[{ value: '', label: '使用默认第一个' }, ...getModelOptions(row.providerId)]}
-                        onChange={val => handlePoolRowChange(index, 'modelId', val || undefined)}
-                        compact
-                      />
-                    </div>
+                      <div className="flex-1 space-y-1.5">
+                        <label className="text-xs text-muted-foreground">模型 (选填)</label>
+                        <Select
+                          value={row.modelId || ''}
+                          options={[{ value: '', label: '使用默认第一个' }, ...getModelOptions(row.providerId)]}
+                          onChange={val => handlePoolRowChange(index, 'modelId', val || undefined)}
+                          compact
+                        />
+                      </div>
 
-                    <div className="w-24 space-y-1.5">
-                      <label className="text-xs text-muted-foreground">权重 (1-100)</label>
-                      <input
-                        type="number"
-                        min={1}
-                        max={100}
-                        value={row.weight}
-                        onChange={e => handlePoolRowChange(index, 'weight', parseInt(e.target.value) || 1)}
-                        className="flex h-7 w-full rounded border border-input bg-transparent px-2 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                      />
-                    </div>
+                      <div className="w-32 space-y-1.5" onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-between items-center text-xs text-muted-foreground">
+                          <label>权重</label>
+                          <span className="text-[10px] text-indigo-500 font-mono font-medium">
+                            {percentage}%
+                          </span>
+                        </div>
+                        <NumberInput
+                          min={1}
+                          value={row.weight}
+                          onChange={val => handlePoolRowChange(index, 'weight', val)}
+                          size="sm"
+                          className="w-full"
+                        />
+                      </div>
 
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      className="h-7 px-2 shrink-0"
-                      onClick={() => handleRemovePoolRow(index)}
-                      disabled={(editingService as PoolService).poolProviders.length <= 1}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                ))}
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="h-7 px-2 shrink-0"
+                        onClick={() => handleRemovePoolRow(index)}
+                        disabled={(editingService as PoolService).poolProviders.length <= 1}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
