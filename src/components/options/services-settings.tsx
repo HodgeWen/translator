@@ -320,7 +320,6 @@ export function OptionsServicesSettings({ settings, onSave }: OptionsServicesSet
                           value={row.providerId}
                           options={settings.providers.map(p => ({ value: p.id, label: p.name }))}
                           onChange={val => handlePoolRowChange(index, 'providerId', val)}
-                          compact
                         />
                       </div>
 
@@ -330,7 +329,6 @@ export function OptionsServicesSettings({ settings, onSave }: OptionsServicesSet
                           value={row.modelId || ''}
                           options={[{ value: '', label: '使用默认第一个' }, ...getModelOptions(row.providerId)]}
                           onChange={val => handlePoolRowChange(index, 'modelId', val || undefined)}
-                          compact
                         />
                       </div>
 
@@ -345,15 +343,13 @@ export function OptionsServicesSettings({ settings, onSave }: OptionsServicesSet
                           min={1}
                           value={row.weight}
                           onChange={val => handlePoolRowChange(index, 'weight', val)}
-                          size="sm"
                           className="w-full"
                         />
                       </div>
 
                       <Button
                         variant="destructive"
-                        size="sm"
-                        className="h-7 px-2 shrink-0"
+                        className="h-9 px-3 shrink-0"
                         onClick={() => handleRemovePoolRow(index)}
                         disabled={(editingService as PoolService).poolProviders.length <= 1}
                       >
