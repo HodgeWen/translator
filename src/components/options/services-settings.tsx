@@ -59,6 +59,8 @@ export function OptionsServicesSettings({ settings, onSave }: OptionsServicesSet
       fallbackEnabled: true,
       defaultDisplayStyle: 'personal_default',
       defaultTranslationTone: 'personal_default',
+      promptMode: 'append',
+      enablePolysemy: false,
     };
     setEditingService(newService);
     setIsAdding(true);
@@ -384,17 +386,31 @@ export function OptionsServicesSettings({ settings, onSave }: OptionsServicesSet
                     <label className="text-sm font-medium flex items-center gap-1">
                       自定义 Prompt
                     </label>
-                    <div className="relative">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 px-2 text-xs flex items-center gap-1 text-indigo-600 hover:text-indigo-700 bg-indigo-50 dark:bg-indigo-950/20"
-                        onClick={() => setShowPresetMenu(!showPresetMenu)}
-                      >
-                        <BookOpen className="h-3.5 w-3.5" />
-                        <span>应用预设</span>
-                      </Button>
+                    <div className="flex items-center gap-2">
+                      <Select
+                        value={editingService.promptMode || 'append'}
+                        options={[
+                          { value: 'append', label: '非覆盖 (追加)' },
+                          { value: 'override', label: '覆盖全局 Prompt' }
+                        ]}
+                        compact
+                        className="w-[140px] h-7 text-xs"
+                        onChange={val => setEditingService({
+                          ...editingService,
+                          promptMode: val as 'append' | 'override'
+                        })}
+                      />
+                      <div className="relative">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs flex items-center gap-1 text-indigo-600 hover:text-indigo-700 bg-indigo-50 dark:bg-indigo-950/20"
+                          onClick={() => setShowPresetMenu(!showPresetMenu)}
+                        >
+                          <BookOpen className="h-3.5 w-3.5" />
+                          <span>应用预设</span>
+                        </Button>
 
                       {showPresetMenu && (
                         <div className="absolute right-0 mt-1 w-64 rounded-md border border-border bg-popover shadow-lg z-50 py-1 overflow-hidden">
@@ -435,12 +451,39 @@ export function OptionsServicesSettings({ settings, onSave }: OptionsServicesSet
                       )}
                     </div>
                   </div>
+                </div>
                   <Textarea
                     placeholder="留空以使用全局翻译提示词..."
                     value={editingService.prompt || ''}
                     onChange={e => setEditingService({ ...editingService, prompt: e.target.value })}
                     className="font-mono text-xs min-h-[80px]"
                   />
+                </div>
+
+                {/* Polysemy Switch */}
+                <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                  <div>
+                    <div className="text-sm font-medium">启用多义词词典式翻译 (Polysemy)</div>
+                    <div className="text-xs text-muted-foreground">当输入为单个词或短语时，自动提供词性、多义项对比及英文音标释义</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setEditingService({
+                      ...editingService,
+                      enablePolysemy: !editingService.enablePolysemy
+                    })}
+                    className={cn(
+                      'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
+                      editingService.enablePolysemy ? 'bg-indigo-500' : 'bg-muted'
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        'inline-block h-4 w-4 transform rounded-full bg-white transition-transform',
+                        editingService.enablePolysemy ? 'translate-x-6' : 'translate-x-1'
+                      )}
+                    />
+                  </button>
                 </div>
 
                 {/* Cascade Default Options */}
@@ -568,7 +611,7 @@ export function OptionsServicesSettings({ settings, onSave }: OptionsServicesSet
                       <div className="flex gap-1.5 flex-wrap pt-0.5">
                         {service.prompt && (
                           <Badge variant="outline" className="text-[9px] px-1.5 text-indigo-500 border-indigo-200/50 bg-indigo-500/5">
-                            自定义 Prompt
+                            {service.promptMode === 'override' ? '覆盖 Prompt' : '追加 Prompt'}
                           </Badge>
                         )}
                         {service.defaultDisplayStyle !== 'personal_default' && (
@@ -579,6 +622,11 @@ export function OptionsServicesSettings({ settings, onSave }: OptionsServicesSet
                         {service.defaultTranslationTone !== 'personal_default' && (
                           <Badge variant="outline" className="text-[9px] px-1.5 text-violet-500 border-violet-200/50 bg-violet-500/5">
                             独立语气: {toneOptions.find(t => t.value === service.defaultTranslationTone)?.label || service.defaultTranslationTone}
+                          </Badge>
+                        )}
+                        {service.enablePolysemy && (
+                          <Badge variant="outline" className="text-[9px] px-1.5 text-emerald-500 border-emerald-200/50 bg-emerald-500/5">
+                            多义词翻译
                           </Badge>
                         )}
                       </div>

@@ -76,7 +76,7 @@ export function recordSequentialShortcutPress(
   };
 }
 
-export function getPlatformShortcutOptions(isMac: boolean): ShortcutOption[] {
+function getPlatformShortcutOptions(isMac: boolean): ShortcutOption[] {
   return [
     { value: 'Control', labelKey: 'shortcut_key_control' },
     { value: 'Alt', labelKey: isMac ? 'shortcut_key_option' : 'shortcut_key_alt' },

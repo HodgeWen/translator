@@ -1,4 +1,4 @@
-export const GREETINGS_MAP: Record<string, string> = {
+const GREETINGS_MAP: Record<string, string> = {
   'zh-CN': '你好',
   'zh-TW': '你好',
   'en': 'Hello',

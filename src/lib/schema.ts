@@ -9,7 +9,6 @@ const providerConfigSchema = z.object({
   headers: z.record(z.string(), z.string()).default({}),
   query: z.record(z.string(), z.string()).default({}),
   body: z.record(z.string(), z.unknown()).default({}),
-  prompt: z.string().optional(),
   temperature: z.number().min(0).max(2).optional(),
   topP: z.number().gt(0).max(1).optional(),
   maxTokens: z.number().int().positive().optional(),
@@ -40,8 +39,10 @@ const baseServiceSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   prompt: z.string().optional(),
+  promptMode: z.enum(['append', 'override']).default('append'),
   defaultDisplayStyle: z.enum(['original', 'bilingual', 'underline', 'clean', 'personal_default']).default('personal_default'),
   defaultTranslationTone: z.string().default('personal_default'),
+  enablePolysemy: z.boolean().default(false),
 });
 
 const singleServiceSchema = baseServiceSchema.extend({

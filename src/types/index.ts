@@ -18,7 +18,6 @@ export interface ProviderConfig {
   // Extra body overrides. Same-named keys are overridden by the dedicated
   // sampling fields below (temperature/topP/maxTokens/stream) when provided.
   body: Record<string, unknown>;
-  prompt?: string;
   temperature?: number;
   topP?: number;
   maxTokens?: number;
@@ -27,18 +26,6 @@ export interface ProviderConfig {
     id: string;
     name: string;
   }>;
-}
-
-// Load balance configuration
-export interface LoadBalanceProvider {
-  providerId: string;
-  modelId?: string; // 优先使用的模型 ID，空则使用模型列表第一个
-  weight: number; // 权重，默认 1
-}
-
-export interface LoadBalanceConfig {
-  enabled: boolean;
-  providers: LoadBalanceProvider[];
 }
 
 // Language detection provider configuration
@@ -163,8 +150,10 @@ export interface BaseService {
   id: string;
   name: string;
   prompt?: string;
+  promptMode?: 'append' | 'override';
   defaultDisplayStyle: DisplayStyle | 'personal_default';
   defaultTranslationTone: string | 'personal_default';
+  enablePolysemy?: boolean;
 }
 
 export interface SingleService extends BaseService {

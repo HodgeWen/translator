@@ -63,9 +63,6 @@ const CANDIDATE_SELECTOR = [...WHITELIST_TAGS, ...GRAYLIST_TAGS]
   .map((tag) => tag.toLowerCase())
   .join(',');
 
-/** 供外部（如 Ctrl+hover）快速判定"是不是一个段落级元素"。 */
-export const BLOCK_SELECTOR = CANDIDATE_SELECTOR;
-
 export function getDirectTextLength(el: HTMLElement): number {
   let len = 0;
   for (const node of Array.from(el.childNodes)) {

@@ -1,7 +1,7 @@
-import type { ProviderConfig, TranslationRequest, TranslationResponse, LangCode, DisplayStyle } from '@/types';
+import type { ProviderConfig, TranslationRequest, TranslationResponse, LangCode } from '@/types';
 import { getSettings } from './storage';
 import { getCachedTranslation, setCachedTranslation } from './cache';
-import { DEFAULT_GLOBAL_PROMPT, TONE_INSTRUCTIONS } from './prompts';
+import { DEFAULT_GLOBAL_PROMPT, TONE_INSTRUCTIONS, isLikelyWordOrPhrase, buildPolysemyPrompt } from './prompts';
 import { consumeOpenAIStream } from './api/sse-consumer';
 import { buildServiceQueue, type ProviderModel } from './api/queue-builder';
 
@@ -235,17 +235,6 @@ export async function translate(request: TranslationRequest): Promise<Translatio
     throw new Error('No active translation service available. Please configure services in settings.');
   }
 
-  // 级联解析
-  let finalStyle: DisplayStyle;
-  if (settings.overrideDisplayStyleEnabled) {
-    // 个人开启自定义覆盖
-    finalStyle = settings.customDisplayStyle;
-  } else {
-    // 继承服务配置
-    const serviceStyle = activeService.defaultDisplayStyle;
-    finalStyle = serviceStyle === 'personal_default' ? settings.displayStyle : serviceStyle;
-  }
-
   let finalTone: string;
   if (settings.overrideTranslationToneEnabled) {
     finalTone = settings.customTranslationTone;
@@ -261,20 +250,23 @@ export async function translate(request: TranslationRequest): Promise<Translatio
 
   const promise = (async () => {
     try {
-      // For debug/future integration, log the final display style
-      console.debug('[Translator] Using display style:', finalStyle);
-
       // 拼装提示词与风格
       let basePrompt = settings.globalPrompt;
       if (activeService.prompt?.trim()) {
         const servicePrompt = activeService.prompt.trim();
-        // 如果服务专属 Prompt 包含 {{targetLang}}，则完全覆盖全局 Prompt
-        if (servicePrompt.includes('{{targetLang}}')) {
+        const isOverride = activeService.promptMode === 'override';
+        if (isOverride) {
           basePrompt = servicePrompt;
         } else {
-          // 否则追加到全局 Prompt 后面
           basePrompt = `${settings.globalPrompt}\n\nAdditional translation instructions for this service:\n${servicePrompt}`;
         }
+      }
+
+      // 根据服务多义词配置及输入，自动拼接多义词翻译提示词
+      const shouldApplyPolysemy = activeService.enablePolysemy && isLikelyWordOrPhrase(text);
+      if (shouldApplyPolysemy) {
+        const polysemyPrompt = buildPolysemyPrompt(targetLang);
+        basePrompt = `${basePrompt}\n\n${polysemyPrompt}`;
       }
       let toneInstruction = '';
       // 优先在自定义风格里寻找，其次在内置寻找
@@ -363,7 +355,7 @@ export async function testProvider(
   const model = provider.models[0];
   if (!model) throw new Error('No models configured');
 
-  const promptTemplate = provider.prompt?.trim() || DEFAULT_GLOBAL_PROMPT;
+  const promptTemplate = DEFAULT_GLOBAL_PROMPT;
   const url = buildUrl(provider.baseURL, provider.query);
   const body = buildBody(model.id, text, targetLang, undefined, provider.body, promptTemplate, false, false, provider);
 

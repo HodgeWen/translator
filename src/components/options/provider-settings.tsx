@@ -120,11 +120,7 @@ export function OptionsProviderSettings({ settings, onSave, onError }: OptionsPr
                       API Key
                     </Badge>
                   )}
-                  {provider.prompt && (
-                    <Badge variant="outline" className="text-[10px] text-indigo-600 border-indigo-200 bg-indigo-50 dark:bg-indigo-900/20 dark:border-indigo-800 dark:text-indigo-400">
-                      Custom Prompt
-                    </Badge>
-                  )}
+
                   {provider.stream === true && (
                     <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-200 bg-emerald-50 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-400">
                       {t('badge_stream')}

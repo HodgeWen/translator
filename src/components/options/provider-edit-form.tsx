@@ -305,20 +305,6 @@ export function ProviderEditForm({
         />
       </div>
 
-      <div className="space-y-2">
-        <label className="text-sm font-medium flex items-center gap-2">
-          <FileText className="h-4 w-4 text-indigo-500" />
-          {t('label_provider_prompt')}
-        </label>
-        <textarea
-          value={editingProvider.prompt || ''}
-          onChange={(e) => updateEditingProvider({ prompt: e.target.value })}
-          placeholder={t('placeholder_provider_prompt')}
-          rows={4}
-          className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm resize-y"
-        />
-        <p className="text-xs text-muted-foreground">{t('hint_provider_prompt')}</p>
-      </div>
 
       <div className="space-y-2">
         <label className="text-sm font-medium">{t('label_models')}</label>
