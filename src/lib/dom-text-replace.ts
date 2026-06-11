@@ -32,7 +32,6 @@ const TRANSLATOR_RUNTIME_ATTRS = [
   'data-translator-pending',
   'data-translator-theme',
   'data-translator-error',
-  'data-translator-hover-target',
   'data-translator-processed',
   'data-translator-clone',
 ];

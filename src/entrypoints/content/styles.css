@@ -76,140 +76,37 @@
   }
 }
 
-/* ─── Pending 翻译中等待效果 ─────────────── */
-@keyframes translator-shimmer-flow {
-  0% {
-    background-position: 100% 0%;
-  }
-  100% {
-    background-position: -100% 0%;
-  }
-}
-
+/* ─── Pending 翻译中等待效果 ───────────────
+ *
+ * 设计原则：
+ * - 零布局偏移：不修改 padding / margin / box-decoration-break
+ * - 文字脉冲：完全淡出到 0 → 以主题色显现，形成柔和呼吸感
+ * - 平滑过渡：退出 loading 时 color/opacity 自然回归站点原始样式
+ */
 @keyframes translator-text-pulse {
-  0% { opacity: 0.75; }
-  50% { opacity: 0.9; }
-  100% { opacity: 0.75; }
+  0%, 100% { opacity: 0.2; }
+  50%      { opacity: 0.82; }
 }
 
+/* ─── 主题色 — 独立于 pending，hover / 翻译中均生效 ── */
+/* 不加 !important：站点 iframe / widget 等场景若需覆盖可降级。    */
+/* 与 [data-translator-pending] 共存时，pending 只控制透明度脉冲。 */
+[data-translator-theme='indigo'] {
+  color: rgba(165, 168, 224, 0.88) !important;
+}
+[data-translator-theme='aurora'] {
+  color: rgba(141, 194, 179, 0.88) !important;
+}
+[data-translator-theme='cosmic'] {
+  color: rgba(214, 167, 183, 0.88) !important;
+}
+/* monochrome：仅脉冲，不改变文字颜色 */
+
+/* ─── Pending 翻译中 — 仅控制透明度 + 脉冲，颜色由 theme 决定 ── */
 [data-translator-pending] {
-  box-decoration-break: clone !important;
-  -webkit-box-decoration-break: clone !important;
-  
-  padding: 0 4px !important;
-  margin: 0 -4px !important;
-  border-radius: 4px !important;
-  background-size: 200% 100% !important;
-  
-  animation: 
-    translator-shimmer-flow 1.5s linear infinite,
-    translator-text-pulse 2s ease-in-out infinite !important;
-}
-
-/* ─── 主题特定的渐变色定义 ───────────────── */
-
-/* 1. indigo: 经典蓝紫 */
-[data-translator-pending][data-translator-theme='indigo'] {
-  background: linear-gradient(
-    90deg,
-    rgba(99, 102, 241, 0.03) 0%,
-    rgba(99, 102, 241, 0.12) 25%,
-    rgba(139, 92, 246, 0.12) 50%,
-    rgba(99, 102, 241, 0.12) 75%,
-    rgba(99, 102, 241, 0.03) 100%
-  ) !important;
-  background-size: 200% 100% !important;
-}
-@media (prefers-color-scheme: dark) {
-  [data-translator-pending][data-translator-theme='indigo'] {
-    background: linear-gradient(
-      90deg,
-      rgba(129, 140, 248, 0.04) 0%,
-      rgba(129, 140, 248, 0.16) 25%,
-      rgba(167, 139, 250, 0.16) 50%,
-      rgba(129, 140, 248, 0.16) 75%,
-      rgba(129, 140, 248, 0.04) 100%
-    ) !important;
-    background-size: 200% 100% !important;
-  }
-}
-
-/* 2. aurora: 极光青绿 */
-[data-translator-pending][data-translator-theme='aurora'] {
-  background: linear-gradient(
-    90deg,
-    rgba(45, 212, 191, 0.03) 0%,
-    rgba(56, 189, 248, 0.12) 25%,
-    rgba(45, 212, 191, 0.12) 50%,
-    rgba(56, 189, 248, 0.12) 75%,
-    rgba(45, 212, 191, 0.03) 100%
-  ) !important;
-  background-size: 200% 100% !important;
-}
-@media (prefers-color-scheme: dark) {
-  [data-translator-pending][data-translator-theme='aurora'] {
-    background: linear-gradient(
-      90deg,
-      rgba(45, 212, 191, 0.04) 0%,
-      rgba(14, 165, 233, 0.16) 25%,
-      rgba(45, 212, 191, 0.16) 50%,
-      rgba(14, 165, 233, 0.16) 75%,
-      rgba(45, 212, 191, 0.04) 100%
-    ) !important;
-    background-size: 200% 100% !important;
-  }
-}
-
-/* 3. monochrome: 极简暖灰 */
-[data-translator-pending][data-translator-theme='monochrome'] {
-  background: linear-gradient(
-    90deg,
-    rgba(241, 245, 249, 0.4) 0%,
-    rgba(226, 232, 240, 0.8) 25%,
-    rgba(203, 213, 225, 0.8) 50%,
-    rgba(226, 232, 240, 0.8) 75%,
-    rgba(241, 245, 249, 0.4) 100%
-  ) !important;
-  background-size: 200% 100% !important;
-}
-@media (prefers-color-scheme: dark) {
-  [data-translator-pending][data-translator-theme='monochrome'] {
-    background: linear-gradient(
-      90deg,
-      rgba(30, 41, 59, 0.15) 0%,
-      rgba(51, 65, 85, 0.35) 25%,
-      rgba(71, 85, 105, 0.35) 50%,
-      rgba(51, 65, 85, 0.35) 75%,
-      rgba(30, 41, 59, 0.15) 100%
-    ) !important;
-    background-size: 200% 100% !important;
-  }
-}
-
-/* 4. cosmic: 幻彩暖流 */
-[data-translator-pending][data-translator-theme='cosmic'] {
-  background: linear-gradient(
-    90deg,
-    rgba(244, 63, 94, 0.03) 0%,
-    rgba(139, 92, 246, 0.12) 25%,
-    rgba(236, 72, 153, 0.12) 50%,
-    rgba(139, 92, 246, 0.12) 75%,
-    rgba(244, 63, 94, 0.03) 100%
-  ) !important;
-  background-size: 200% 100% !important;
-}
-@media (prefers-color-scheme: dark) {
-  [data-translator-pending][data-translator-theme='cosmic'] {
-    background: linear-gradient(
-      90deg,
-      rgba(251, 113, 133, 0.04) 0%,
-      rgba(167, 139, 250, 0.16) 25%,
-      rgba(244, 114, 182, 0.16) 50%,
-      rgba(167, 139, 250, 0.16) 75%,
-      rgba(251, 113, 133, 0.04) 100%
-    ) !important;
-    background-size: 200% 100% !important;
-  }
+  opacity: 0.2;
+  transition: opacity 0.35s ease;
+  animation: translator-text-pulse 1.8s ease-in-out infinite;
 }
 
 /* ─── Input 翻译中等待效果 ─────────────── */
@@ -238,16 +135,16 @@ textarea[data-translator-input-loading='true'],
 [data-translator-error] {
   box-decoration-break: clone !important;
   -webkit-box-decoration-break: clone !important;
-  
+
   padding: 0 3px !important;
   margin: 0 -3px !important;
   border-radius: 3px !important;
-  
+
   text-decoration: underline dashed rgba(239, 68, 68, 0.6) !important;
   text-underline-offset: 0.25em !important;
   text-decoration-thickness: 1px !important;
   cursor: help !important;
-  
+
   transition: background-color 150ms ease !important;
 }
 
@@ -264,21 +161,3 @@ textarea[data-translator-input-loading='true'],
   }
 }
 
-/* ─── Ctrl+Hover 翻译目标视觉反馈 ────────── */
-[data-translator-hover-target] {
-  box-decoration-break: clone !important;
-  -webkit-box-decoration-break: clone !important;
-  
-  padding: 0 3px !important;
-  margin: 0 -3px !important;
-  border-radius: 4px !important;
-  
-  background-color: rgba(80, 70, 229, 0.08) !important;
-  transition: background-color 120ms ease, box-shadow 120ms ease;
-}
-
-@media (prefers-color-scheme: dark) {
-  [data-translator-hover-target] {
-    background-color: rgba(111, 101, 236, 0.18) !important;
-  }
-}

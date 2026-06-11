@@ -196,6 +196,31 @@ export function isTranslatableBlock(
 }
 
 /**
+ * 递归收集匹配 CANDIDATE_SELECTOR 的元素，包括 Shadow DOM 内的元素。
+ *
+ * 背景：Reddit 的 <shreddit-comment> 等 Web Components 会将文本内容渲染在
+ * Shadow Root 内，而 querySelectorAll 默认不穿透 Shadow DOM。
+ * 此函数在光 DOM 搜索后遍历所有元素，发现 open shadowRoot 时递归进入，
+ * 确保 Web Components 内的文本也能被发现并翻译。
+ */
+function collectCandidatesWithShadow(scope: ParentNode): HTMLElement[] {
+  const results: HTMLElement[] = [];
+
+  // 在光 DOM 内快速搜索（浏览器原生优化路径）
+  results.push(...Array.from(scope.querySelectorAll(CANDIDATE_SELECTOR)) as HTMLElement[]);
+
+  // 遍历所有元素，递归进入 open shadow roots
+  const allElements = Array.from(scope.querySelectorAll('*')) as HTMLElement[];
+  for (const el of allElements) {
+    if (el.shadowRoot) {
+      results.push(...collectCandidatesWithShadow(el.shadowRoot));
+    }
+  }
+
+  return results;
+}
+
+/**
  * 从 root 起收集所有可翻译段落，并对父子同时命中的情况保留最外层。
  */
 export function collectBlocks(root: ParentNode = document): HTMLElement[] {
@@ -205,7 +230,7 @@ export function collectBlocks(root: ParentNode = document): HTMLElement[] {
   const excludedCache = new WeakSet<HTMLElement>();
   const safeCache = new WeakSet<HTMLElement>();
 
-  const all = Array.from(scope.querySelectorAll(CANDIDATE_SELECTOR)) as HTMLElement[];
+  const all = collectCandidatesWithShadow(scope);
   if (scope instanceof HTMLElement && scope.matches(CANDIDATE_SELECTOR)) {
     all.unshift(scope);
   }

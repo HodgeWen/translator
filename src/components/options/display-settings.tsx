@@ -85,7 +85,7 @@ export function OptionsDisplaySettings({ settings, onSave }: OptionsDisplaySetti
 
         <div className="space-y-4">
           <label className="text-sm font-medium">全局翻译展示样式</label>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <button
               type="button"
@@ -193,14 +193,12 @@ export function OptionsDisplaySettings({ settings, onSave }: OptionsDisplaySetti
                   </div>
                 </div>
                 <div className={cn(
-                  "h-6 w-6 rounded-full shrink-0 border border-black/10 dark:border-white/10 shadow-sm relative overflow-hidden",
-                  theme === 'indigo' && "bg-gradient-to-r from-indigo-500 to-purple-500",
-                  theme === 'aurora' && "bg-gradient-to-r from-emerald-400 to-cyan-500",
-                  theme === 'monochrome' && "bg-gradient-to-r from-neutral-400 to-neutral-600 dark:from-neutral-600 dark:to-neutral-400",
-                  theme === 'cosmic' && "bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500"
-                )}>
-                  <span className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/25 to-transparent" />
-                </div>
+                  "h-6 w-6 rounded-full shrink-0 border border-black/10 dark:border-white/10 shadow-sm",
+                  theme === 'indigo' && "bg-[#a5a8e0]",
+                  theme === 'aurora' && "bg-[#8dc2b3]",
+                  theme === 'monochrome' && "bg-neutral-400 dark:bg-neutral-500",
+                  theme === 'cosmic' && "bg-[#d6a7b7]"
+                )} />
               </button>
             ))}
           </div>

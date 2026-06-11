@@ -237,28 +237,28 @@
     "message": "Translation Loading Theme"
   },
   "theme_indigo": {
-    "message": "Indigo & Purple"
+    "message": "Lavender Mist"
   },
   "theme_indigo_desc": {
-    "message": "Elegant indigo to violet flow gradient, tech-forward feel"
+    "message": "Soft lavender tone, text pulses in and out with a gentle cadence — warm and understated"
   },
   "theme_aurora": {
-    "message": "Aurora Teal"
+    "message": "Sage Teal"
   },
   "theme_aurora_desc": {
-    "message": "Fresh mint green to sky blue flow gradient, crisp and modern"
+    "message": "Soft sage teal tone, text pulses in and out with a gentle cadence — calm and fresh"
   },
   "theme_monochrome": {
-    "message": "Minimalist Slate"
+    "message": "Quiet Slate"
   },
   "theme_monochrome_desc": {
-    "message": "No-chroma slate gray flow, deeply immersive and zero distraction"
+    "message": "Pure opacity pulse with zero chroma — deeply immersive and distraction-free"
   },
   "theme_cosmic": {
-    "message": "Cosmic Warmth"
+    "message": "Dusty Rose"
   },
   "theme_cosmic_desc": {
-    "message": "Warm rose pink to violet flow gradient, modern generative AI vibe"
+    "message": "Soft dusty rose tone, text pulses in and out with a gentle cadence — warm without being loud"
   },
   "title_translation_tone": {
     "message": "Translation Tone"

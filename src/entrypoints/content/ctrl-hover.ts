@@ -24,7 +24,7 @@ import {
 // 2. 先悬停在段落，再按下快捷键 → 由 `keydown` 配合最近 hover 目标触发。
 // 仅靠 `mouseover` 会漏掉姿势 2，因为按键不会重发 mouseover。
 
-const HOVER_HIGHLIGHT_ATTR = 'data-translator-hover-target';
+const THEME_ATTR = 'data-translator-theme';
 const HOVER_DEBOUNCE_MS = 200;
 // 高亮命中段落到清除的最小总时长。即使翻译瞬间完成，也保证用户至少看到
 // 0.25s 的视觉反馈，避免按键后高亮一闪而过的体验割裂。
@@ -76,10 +76,10 @@ function isCodeOrCodeBlock(el: HTMLElement): boolean {
 
 function findNearestTranslatableBlock(el: HTMLElement | null): HTMLElement | null {
   if (!el) return null;
-  
+
   let cur: HTMLElement | null = el;
   let fallbackTarget: HTMLElement | null = null;
-  
+
   while (cur && cur.tagName !== 'BODY' && cur.tagName !== 'HTML') {
     // 遇到代码或代码块，坚决不翻译
     if (isCodeOrCodeBlock(cur)) {
@@ -90,7 +90,7 @@ function findNearestTranslatableBlock(el: HTMLElement | null): HTMLElement | nul
     if (WHITELIST_TAGS.has(cur.tagName) && isTranslatableBlock(cur, undefined, undefined, false)) {
       return cur;
     }
-    
+
     // 2. 局部兜底匹配：若不是强段落，但它有文本且是可见的
     if (!fallbackTarget) {
       const text = cur.textContent?.trim() ?? '';
@@ -102,15 +102,15 @@ function findNearestTranslatableBlock(el: HTMLElement | null): HTMLElement | nul
         }
       }
     }
-    
+
     cur = cur.parentElement;
   }
-  
+
   // 若未找到强段落，使用行内/局部元素兜底
   if (fallbackTarget && isTranslatableBlock(fallbackTarget, undefined, undefined, true)) {
     return fallbackTarget;
   }
-  
+
   return null;
 }
 
@@ -145,9 +145,9 @@ function tryToggleDisplay(target: HTMLElement | null): boolean {
   }
 
   if (hoverTarget === toggleEl) cancelHoverDebounce();
-  toggleEl.removeAttribute(HOVER_HIGHLIGHT_ATTR);
+  toggleEl.removeAttribute(THEME_ATTR);
   const cloneEl = state.elementMap.get(toggleEl)?.cloneEl;
-  cloneEl?.removeAttribute(HOVER_HIGHLIGHT_ATTR);
+  cloneEl?.removeAttribute(THEME_ATTR);
   toggleElementDisplay(toggleEl);
   lastShortcutToggledEl = toggleEl;
   return true;
@@ -160,14 +160,14 @@ function tryToggleDisplay(target: HTMLElement | null): boolean {
 function cancelHoverDebounce(): void {
   if (hoverTimer === null) return;
   if (hoverTarget) {
-    hoverTarget.removeAttribute(HOVER_HIGHLIGHT_ATTR);
+    hoverTarget.removeAttribute(THEME_ATTR);
     hoverTarget = null;
   }
   window.clearTimeout(hoverTimer);
   hoverTimer = null;
 }
 
-function tryStartHoverFor(target: HTMLElement | null): void {
+async function tryStartHoverFor(target: HTMLElement | null): Promise<void> {
   if (!target) return;
   const paragraph = findNearestTranslatableBlock(target);
   if (!paragraph) {
@@ -181,26 +181,28 @@ function tryStartHoverFor(target: HTMLElement | null): void {
   // 切换段落时把旧候选的高亮 / 计时清掉。这里不复用 cancelHoverDebounce
   // 是因为旧 hoverTarget 可能正处于翻译阶段（hoverTimer 已为 null），
   // 但用户的鼠标已切到新段落，应让旧候选脱离 hover 状态机。
-  // 翻译完成 finally 是幂等的（removeAttribute + 比较 hoverTarget 再清空）。
-  if (hoverTarget) hoverTarget.removeAttribute(HOVER_HIGHLIGHT_ATTR);
+  if (hoverTarget) hoverTarget.removeAttribute(THEME_ATTR);
   if (hoverTimer !== null) window.clearTimeout(hoverTimer);
 
+  // 等待设置加载，确保使用用户选定的主题色（而非默认 indigo）
+  await ensureCtrlHoverSettings();
+
   hoverTarget = paragraph;
-  paragraph.setAttribute(HOVER_HIGHLIGHT_ATTR, 'true');
+  paragraph.setAttribute(THEME_ATTR, state.translationLoadingTheme);
   const startedAt = performance.now();
 
   hoverTimer = window.setTimeout(async () => {
     hoverTimer = null;
     if (hoverTarget !== paragraph) return;
     if (state.elementMap.has(paragraph) || paragraph.hasAttribute('data-translator-pending')) {
-      paragraph.removeAttribute(HOVER_HIGHLIGHT_ATTR);
+      paragraph.removeAttribute(THEME_ATTR);
       if (hoverTarget === paragraph) hoverTarget = null;
       return;
     }
-    // 进入翻译阶段：保持 hoverTarget=paragraph 与高亮 attribute；cancelHoverDebounce
-    // 此时短路（hoverTimer === null），mouseout / keyup / blur 都不会清掉高亮。
+    // 进入翻译阶段：data-translator-theme 已设好（主题色静态显示），
+    // translateSingleElement 会追加 data-translator-pending 启动脉冲动画，
+    // 颜色全程由 data-translator-theme 控制，无跳变。
     try {
-      await ensureCtrlHoverSettings();
       await translateSingleElement(paragraph, true, true);
     } finally {
       const elapsed = performance.now() - startedAt;
@@ -208,14 +210,10 @@ function tryStartHoverFor(target: HTMLElement | null): void {
       if (wait > 0) {
         await new Promise<void>((resolve) => window.setTimeout(resolve, wait));
       }
-      // bilingual / underline 模式：paragraph 仍在 DOM，直接清掉自身属性。
-      paragraph.removeAttribute(HOVER_HIGHLIGHT_ATTR);
-      // original / clean 模式：paragraph 已离开 DOM，但 cloneAsWrapper 通过
-      // cloneNode(false) 把高亮 attribute 复制到了 wrapper 上，需要主动从
-      // wrapper 移除——否则高亮永久残留在 DOM 中（因为 paragraph 上的
-      // removeAttribute 作用在已脱离的节点上、对 wrapper 无效）。
+      // 清除主题色：bilingual/underline 直接清；original/clean 清 wrapper
+      paragraph.removeAttribute(THEME_ATTR);
       const wrapper = state.elementMap.get(paragraph)?.cloneEl;
-      wrapper?.removeAttribute(HOVER_HIGHLIGHT_ATTR);
+      wrapper?.removeAttribute(THEME_ATTR);
       if (hoverTarget === paragraph) hoverTarget = null;
     }
   }, HOVER_DEBOUNCE_MS);

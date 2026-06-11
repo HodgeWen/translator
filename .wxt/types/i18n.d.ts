@@ -703,7 +703,7 @@ declare module "wxt/browser" {
       options?: GetMessageOptions,
     ): string;
     /**
-     * "经典蓝紫"
+     * "薰衣草淡紫"
      */
     getMessage(
       messageName: "theme_indigo",
@@ -711,7 +711,7 @@ declare module "wxt/browser" {
       options?: GetMessageOptions,
     ): string;
     /**
-     * "优雅的靛蓝至紫色流动渐变，科技质感"
+     * "柔和的淡紫色调，文字以脉冲方式渐隐渐现，温润克制"
      */
     getMessage(
       messageName: "theme_indigo_desc",
@@ -719,7 +719,7 @@ declare module "wxt/browser" {
       options?: GetMessageOptions,
     ): string;
     /**
-     * "极光青绿"
+     * "鼠尾草青绿"
      */
     getMessage(
       messageName: "theme_aurora",
@@ -727,7 +727,7 @@ declare module "wxt/browser" {
       options?: GetMessageOptions,
     ): string;
     /**
-     * "清爽的薄荷绿至天蓝流动渐变，清新现代"
+     * "柔和的青绿色调，文字以脉冲方式渐隐渐现，安静清新"
      */
     getMessage(
       messageName: "theme_aurora_desc",
@@ -735,7 +735,7 @@ declare module "wxt/browser" {
       options?: GetMessageOptions,
     ): string;
     /**
-     * "极简石墨灰"
+     * "素净石墨灰"
      */
     getMessage(
       messageName: "theme_monochrome",
@@ -743,7 +743,7 @@ declare module "wxt/browser" {
       options?: GetMessageOptions,
     ): string;
     /**
-     * "无彩度的 Slate 灰度流光，极致沉浸无打扰"
+     * "无彩度纯透明度脉冲，极致沉浸无打扰"
      */
     getMessage(
       messageName: "theme_monochrome_desc",
@@ -751,7 +751,7 @@ declare module "wxt/browser" {
       options?: GetMessageOptions,
     ): string;
     /**
-     * "幻彩暖流"
+     * "烟粉玫瑰"
      */
     getMessage(
       messageName: "theme_cosmic",
@@ -759,7 +759,7 @@ declare module "wxt/browser" {
       options?: GetMessageOptions,
     ): string;
     /**
-     * "温馨的玫瑰粉至紫罗兰流动渐变，充满前沿 AI 感"
+     * "柔和的烟粉色调，文字以脉冲方式渐隐渐现，温暖而不张扬"
      */
     getMessage(
       messageName: "theme_cosmic_desc",

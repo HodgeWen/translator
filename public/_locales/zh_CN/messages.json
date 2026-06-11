@@ -237,28 +237,28 @@
     "message": "网页翻译加载主题"
   },
   "theme_indigo": {
-    "message": "经典蓝紫"
+    "message": "薰衣草淡紫"
   },
   "theme_indigo_desc": {
-    "message": "优雅的靛蓝至紫色流动渐变，科技质感"
+    "message": "柔和的淡紫色调，文字以脉冲方式渐隐渐现，温润克制"
   },
   "theme_aurora": {
-    "message": "极光青绿"
+    "message": "鼠尾草青绿"
   },
   "theme_aurora_desc": {
-    "message": "清爽的薄荷绿至天蓝流动渐变，清新现代"
+    "message": "柔和的青绿色调，文字以脉冲方式渐隐渐现，安静清新"
   },
   "theme_monochrome": {
-    "message": "极简石墨灰"
+    "message": "素净石墨灰"
   },
   "theme_monochrome_desc": {
-    "message": "无彩度的 Slate 灰度流光，极致沉浸无打扰"
+    "message": "无彩度纯透明度脉冲，极致沉浸无打扰"
   },
   "theme_cosmic": {
-    "message": "幻彩暖流"
+    "message": "烟粉玫瑰"
   },
   "theme_cosmic_desc": {
-    "message": "温馨的玫瑰粉至紫罗兰流动渐变，充满前沿 AI 感"
+    "message": "柔和的烟粉色调，文字以脉冲方式渐隐渐现，温暖而不张扬"
   },
   "title_translation_tone": {
     "message": "翻译风格"
