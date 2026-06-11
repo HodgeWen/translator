@@ -1,6 +1,6 @@
 # Translator
 
-<div align="center">[中文](./README.md) · English</div>
+<div align="center"><a href="./README.md">中文</a> · English</div>
 
 A browser translation extension powered by LLMs, supporting any OpenAI-compatible API provider. Four translation modes and flexible translation service configuration.
 

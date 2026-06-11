@@ -1,6 +1,6 @@
 # 星禾
 
-<div align="center">中文 · [English](./README.en.md)</div>
+<div align="center">中文 · <a href="./README.en.md">English</a></div>
 
 基于大语言模型的浏览器翻译扩展，支持任意兼容 OpenAI API 的服务商。提供四种翻译方式和灵活的翻译服务配置。
 
