@@ -1,10 +1,33 @@
 import type { TranslationResponse } from '@/types';
 import { encodeInline } from '@/lib/inline-placeholder';
 import { encodeBatch, decodeBatch } from '@/lib/batch-protocol';
+import type { TextNodeTemplate } from '@/lib/dom-text-replace';
+import { assignTextNodeIds, createTextNodeTemplate } from '@/lib/dom-text-replace';
 import { sendBgMessage } from '@/lib/messaging';
 import { detectAndCheckSkip } from '@/lib/translate-via-bg';
 import { state } from './state';
 import { applyTranslation } from './style-apply';
+
+const TEXT_NODE_TRANSLATION_PROMPT = `Additional instruction: Each marked item represents one DOM text node. Translate the text inside each item, using nearby marked items as context when helpful. Keep every marker exactly as requested, and do not merge, split, remove, or add marked items.`;
+
+interface TextNodeBatchEntry {
+  el: HTMLElement;
+  template: TextNodeTemplate;
+}
+
+function usesTextNodeReplacement(): boolean {
+  return state.displayStyle === 'original' || state.displayStyle === 'clean';
+}
+
+function clearElementPending(el: HTMLElement): void {
+  el.removeAttribute('data-translator-pending');
+  el.removeAttribute('data-translator-theme');
+}
+
+function assignTemplateItems(template: TextNodeTemplate, startId: number): { items: Array<{ id: number; text: string }>; nextId: number } {
+  const items = assignTextNodeIds(template, startId);
+  return { items, nextId: startId + items.length };
+}
 
 // ─── Single Element Translation ─────────────────────────────────────────
 
@@ -36,11 +59,49 @@ export async function translateSingleElement(el: HTMLElement, force = false, ski
       return;
     }
 
+    if (usesTextNodeReplacement()) {
+      const template = createTextNodeTemplate(el);
+      if (!template) {
+        clearElementPending(el);
+        return;
+      }
+
+      const { items } = assignTemplateItems(template, 1);
+      const result = await sendBgMessage<TranslationResponse>({
+        type: 'TRANSLATE',
+        payload: {
+          text: encodeBatch(items),
+          sourceLang: detectedLang || undefined,
+          targetLang: state.targetLang,
+          isAggregate: true,
+          extraPrompt: TEXT_NODE_TRANSLATION_PROMPT,
+        },
+      });
+
+      const { translations } = decodeBatch(result.text, template.segments.length);
+      if (translations.size === 0) {
+        throw new Error('Text node translation protocol returned no segments');
+      }
+
+      clearElementPending(el);
+      if (!skipActiveCheck && !state.isActive) {
+        markElementIdle(el);
+        return;
+      }
+
+      applyTranslation(el, {
+        kind: 'textNodes',
+        translatedText: result.text,
+        template,
+        translations,
+      });
+      return;
+    }
+
     // encodeInline 在语言检测之后执行，避免跳过翻译时浪费 DOM clone 开销
     const { placeholderText, fragments, styleTemplates } = encodeInline(el);
     if (!placeholderText) {
-      el.removeAttribute('data-translator-pending');
-      el.removeAttribute('data-translator-theme');
+      clearElementPending(el);
       return;
     }
 
@@ -54,8 +115,7 @@ export async function translateSingleElement(el: HTMLElement, force = false, ski
       },
     });
 
-    el.removeAttribute('data-translator-pending');
-    el.removeAttribute('data-translator-theme');
+    clearElementPending(el);
     // 如果用户已在翻译完成前按快捷键关闭翻译，则不再应用结果
     // skipActiveCheck: Ctrl+Hover 独立翻译时 state.isActive 始终为 false，需跳过此检查
     if (!skipActiveCheck && !state.isActive) {
@@ -63,11 +123,10 @@ export async function translateSingleElement(el: HTMLElement, force = false, ski
       markElementIdle(el);
       return;
     }
-    applyTranslation(el, result.text, fragments, styleTemplates);
+    applyTranslation(el, { kind: 'inline', translatedText: result.text, placeholderText, fragments, styleTemplates });
   } catch (err) {
     console.warn('[Translator] translateSingleElement failed:', err);
-    el.removeAttribute('data-translator-pending');
-    el.removeAttribute('data-translator-theme');
+    clearElementPending(el);
     el.setAttribute('data-translator-error', 'true');
     state.elementMap.set(el, {
       originalHTML: el.innerHTML,
@@ -154,6 +213,11 @@ async function translateBatchWithFallback(batch: HTMLElement[]): Promise<void> {
     batchDetectedLang = detectedLang;
   }
 
+  if (usesTextNodeReplacement()) {
+    await translateTextNodeBatchWithFallback(batch, batchDetectedLang);
+    return;
+  }
+
   for (const el of batch) {
     const rawText = el.textContent?.trim();
     if (!rawText || rawText.length < 5) continue;
@@ -227,7 +291,13 @@ async function translateBatchWithFallback(batch: HTMLElement[]): Promise<void> {
       const translated = translations.get(index + 1);
       if (translated) {
         // 成功翻译：让 applyTranslation 在分片更新的同一帧中应用渲染并移除 pending 属性
-        applyTranslation(el, translated, fragmentsList[index], styleTemplatesList[index]);
+        applyTranslation(el, {
+          kind: 'inline',
+          translatedText: translated,
+          placeholderText: placeholderTexts[index],
+          fragments: fragmentsList[index],
+          styleTemplates: styleTemplatesList[index],
+        });
       } else {
         // 未能翻译（将重试）：同步清空 pending 属性以供下一次翻译
         el.removeAttribute('data-translator-pending');
@@ -242,6 +312,97 @@ async function translateBatchWithFallback(batch: HTMLElement[]): Promise<void> {
     }
   } catch (err) {
     console.warn('[Translator] aggregate translation failed, falling back to per-element:', err);
+    await fullFallback();
+  }
+}
+
+async function translateTextNodeBatchWithFallback(batch: HTMLElement[], batchDetectedLang: string | null): Promise<void> {
+  const entries: TextNodeBatchEntry[] = [];
+  const items: Array<{ id: number; text: string }> = [];
+  let nextId = 1;
+
+  for (const el of batch) {
+    const rawText = el.textContent?.trim();
+    if (!rawText || rawText.length < 5) continue;
+
+    const template = createTextNodeTemplate(el);
+    if (!template) continue;
+
+    const assigned = assignTemplateItems(template, nextId);
+    nextId = assigned.nextId;
+    items.push(...assigned.items);
+    entries.push({ el, template });
+  }
+
+  if (entries.length === 0 || items.length === 0) return;
+
+  const validElements = entries.map(entry => entry.el);
+  validElements.forEach(el => {
+    el.setAttribute('data-translator-pending', 'true');
+    el.setAttribute('data-translator-theme', state.translationLoadingTheme);
+  });
+
+  const clearPending = () => {
+    validElements.forEach(clearElementPending);
+  };
+
+  const fullFallback = async () => {
+    clearPending();
+    const tasks = validElements.map(el => () => translateSingleElement(el, true));
+    await limitConcurrency(tasks, state.aggregate.maxConcurrentRequests);
+  };
+
+  try {
+    const result = await sendBgMessage<TranslationResponse>({
+      type: 'TRANSLATE',
+      payload: {
+        text: encodeBatch(items),
+        sourceLang: batchDetectedLang || undefined,
+        targetLang: state.targetLang,
+        isAggregate: true,
+        extraPrompt: TEXT_NODE_TRANSLATION_PROMPT,
+      },
+    });
+
+    const { translations } = decodeBatch(result.text, items.length);
+    if (translations.size === 0) {
+      await fullFallback();
+      return;
+    }
+
+    if (!state.isActive) {
+      clearPending();
+      for (const el of validElements) {
+        markElementIdle(el);
+      }
+      return;
+    }
+
+    const retryElements: HTMLElement[] = [];
+    for (const entry of entries) {
+      const hasAnyTranslation = entry.template.segments.some(segment => (
+        segment.id !== null && translations.has(segment.id)
+      ));
+
+      if (hasAnyTranslation) {
+        applyTranslation(entry.el, {
+          kind: 'textNodes',
+          translatedText: result.text,
+          template: entry.template,
+          translations,
+        });
+      } else {
+        clearElementPending(entry.el);
+        retryElements.push(entry.el);
+      }
+    }
+
+    if (retryElements.length > 0) {
+      const tasks = retryElements.map(el => () => translateSingleElement(el, true));
+      await limitConcurrency(tasks, state.aggregate.maxConcurrentRequests);
+    }
+  } catch (err) {
+    console.warn('[Translator] aggregate text-node translation failed, falling back to per-element:', err);
     await fullFallback();
   }
 }

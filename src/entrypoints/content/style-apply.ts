@@ -1,6 +1,18 @@
 import type { ElementState } from './state';
 import { state, wrapperToOriginal, mutationIgnoredNodes } from './state';
+import type { InlineEncodedBlock } from '@/lib/inline-placeholder';
 import { decodeInline } from '@/lib/inline-placeholder';
+import type { TextNodeTemplate } from '@/lib/dom-text-replace';
+import { applyTextNodeTranslations, getTextNodeTemplateText } from '@/lib/dom-text-replace';
+
+export type TranslationRender =
+  | ({ kind: 'inline'; translatedText: string } & InlineEncodedBlock)
+  | {
+      kind: 'textNodes';
+      translatedText: string;
+      template: TextNodeTemplate;
+      translations: Map<number, string>;
+    };
 
 // ─── DOM Update Chunking Scheduler ──────────────────────────────────────
 const domUpdateQueue: Array<() => void> = [];
@@ -63,10 +75,20 @@ function isBlockElement(el: HTMLElement): boolean {
 // 这样 wrapper 拥有与原 el 完全一致的兄弟位置，所有 `:nth-child` /
 // `:not(:first-child)` / 相邻兄弟选择器对译文与原文的判定一致，避免站点
 // CSS（如 markdown 渲染常见的「首段无 margin-top」）在译文上失效。
-function applyReplaceStyle(el: HTMLElement, translatedText: string, fragments: DocumentFragment[], styleTemplates: Element[]): void {
+function applyReplaceStyle(el: HTMLElement, render: TranslationRender): void {
   const originalHTML = el.innerHTML;
-  const wrapper = cloneAsWrapper(el);
-  wrapper.appendChild(decodeInline(translatedText, fragments, styleTemplates));
+  let wrapper: HTMLElement;
+  let translatedText = render.translatedText;
+
+  if (render.kind === 'textNodes') {
+    applyTextNodeTranslations(render.template, render.translations);
+    wrapper = render.template.wrapper;
+    translatedText = getTextNodeTemplateText(render.template);
+  } else {
+    wrapper = cloneAsWrapper(el);
+    wrapper.appendChild(decodeInline(render.translatedText, render.fragments, render.styleTemplates));
+  }
+
   wrapper.setAttribute('data-translator-clone', 'true');
   wrapper.setAttribute('data-translator-processed', 'true');
 
@@ -128,13 +150,13 @@ function applyUnderlineStyle(el: HTMLElement, translatedText: string, fragments:
   state.elementMap.set(el, { originalHTML, originalNodes, translatedText, status: 'translated', cloneEl: wrapper, showingOriginal: false });
 }
 
-export function applyTranslation(el: HTMLElement, translatedText: string, fragments: DocumentFragment[], styleTemplates: Element[]): void {
+export function applyTranslation(el: HTMLElement, render: TranslationRender): void {
   if (state.elementMap.has(el)) return;
 
   // 同步占位，锁定元素，防止重入
   state.elementMap.set(el, {
     originalHTML: el.innerHTML,
-    translatedText,
+    translatedText: render.translatedText,
     status: 'pending',
     showingOriginal: false,
   });
@@ -153,14 +175,18 @@ export function applyTranslation(el: HTMLElement, translatedText: string, fragme
     switch (state.displayStyle) {
       case 'original':
       case 'clean':
-        applyReplaceStyle(el, translatedText, fragments, styleTemplates);
+        applyReplaceStyle(el, render);
         break;
-      case 'bilingual':
-        applyBilingualStyle(el, translatedText, fragments, styleTemplates);
+      case 'bilingual': {
+        if (render.kind !== 'inline') return;
+        applyBilingualStyle(el, render.translatedText, render.fragments, render.styleTemplates);
         break;
-      case 'underline':
-        applyUnderlineStyle(el, translatedText, fragments, styleTemplates);
+      }
+      case 'underline': {
+        if (render.kind !== 'inline') return;
+        applyUnderlineStyle(el, render.translatedText, render.fragments, render.styleTemplates);
         break;
+      }
     }
 
     // 若用户处于「全页显示原文」模式（Alt+W 切换过的），新翻译完成的段落也应立即切到原文显示

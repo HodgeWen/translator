@@ -13,7 +13,7 @@ interface OptionsDisplaySettingsProps {
   onSave: (settings: GlobalSettings) => void;
 }
 
-function commitInputLoadingKeyframe(
+export function commitInputLoadingKeyframe(
   keyframes: [string, string, string],
   index: number,
   value: string

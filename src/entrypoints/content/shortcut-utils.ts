@@ -76,7 +76,7 @@ export function recordSequentialShortcutPress(
   };
 }
 
-function getPlatformShortcutOptions(isMac: boolean): ShortcutOption[] {
+export function getPlatformShortcutOptions(isMac: boolean): ShortcutOption[] {
   return [
     { value: 'Control', labelKey: 'shortcut_key_control' },
     { value: 'Alt', labelKey: isMac ? 'shortcut_key_option' : 'shortcut_key_alt' },
@@ -96,4 +96,3 @@ export function getInputShortcutOptions(isMac: boolean): ShortcutOption[] {
   const NON_CHAR_KEYS = new Set([...MODIFIER_KEYS, 'Escape']);
   return getPlatformShortcutOptions(isMac).filter((option) => NON_CHAR_KEYS.has(option.value));
 }
-

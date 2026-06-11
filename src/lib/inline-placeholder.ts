@@ -9,7 +9,7 @@
  * - 占位标签编号从 0 开始，格式 `<sN>...</sN>`，主流 LLM 保留及重构率极高。
  */
 
-interface EncodedBlock {
+export interface InlineEncodedBlock {
   placeholderText: string;
   fragments: DocumentFragment[];
   styleTemplates: Element[];
@@ -71,7 +71,7 @@ function encodeNode(ctx: EncodeContext, node: Node): void {
 }
 
 /** 把块级元素的子孙编码为占位文本、Flat 片段及样式模板。 */
-export function encodeInline(el: HTMLElement): EncodedBlock {
+export function encodeInline(el: HTMLElement): InlineEncodedBlock {
   const ctx: EncodeContext = { fragments: [], styleTemplates: [], parts: [] };
   for (const child of Array.from(el.childNodes)) {
     encodeNode(ctx, child);
@@ -165,4 +165,3 @@ export function decodeInline(
 
   return root;
 }
-
