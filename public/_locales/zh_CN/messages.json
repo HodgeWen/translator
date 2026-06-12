@@ -670,5 +670,41 @@
   },
   "btn_doc": {
     "message": "官方文档"
+  },
+  "tab_statistics": {
+    "message": "统计"
+  },
+  "statistics_title": {
+    "message": "使用统计"
+  },
+  "statistics_subtitle": {
+    "message": "翻译请求性能与用量概览"
+  },
+  "statistics_response_time": {
+    "message": "最近 100 次请求统计"
+  },
+  "statistics_response_time_desc": {
+    "message": "各服务商/模型的平均响应时间与失败次数（基于最近 100 次请求）"
+  },
+  "statistics_avg_response_time": {
+    "message": "平均响应时间"
+  },
+  "statistics_failure_count": {
+    "message": "失败次数"
+  },
+  "statistics_token_usage": {
+    "message": "当月 Token 消耗"
+  },
+  "statistics_token_usage_desc": {
+    "message": "按服务商和模型堆叠的 Token 用量（当月每日累加）"
+  },
+  "statistics_no_data": {
+    "message": "暂无统计数据"
+  },
+  "statistics_no_data_hint": {
+    "message": "使用翻译功能后，统计数据将在此展示"
+  },
+  "loading": {
+    "message": "加载中..."
   }
 }

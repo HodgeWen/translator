@@ -10,16 +10,17 @@ import { OptionsGeneralSettings } from '@/components/options/general-settings';
 import { OptionsDisplaySettings } from '@/components/options/display-settings';
 import { OptionsBackupRestoreSettings } from '@/components/options/backup-restore-settings';
 import { OptionsUserManual } from '@/components/options/user-manual';
+import { OptionsStatisticsSettings } from '@/components/options/statistics-settings';
 import type { GlobalSettings } from '@/types';
 import { cn } from '@/lib/utils';
 import { useDarkMode } from '@/hooks/use-dark-mode';
 import { getSettings, saveSettings, DEFAULT_SETTINGS } from '@/lib/storage';
 import { t, setUILanguage } from '@/lib/i18n';
 import { useToast } from '@/hooks/use-toast';
-import { Server, Globe, Palette, Database, BookOpen, Layers, Sparkles } from 'lucide-react';
+import { Server, Globe, Palette, Database, BookOpen, Layers, Sparkles, BarChart3 } from 'lucide-react';
 import { LogoIcon } from '@/components/logo-icon';
 
-type Tab = 'providers' | 'services' | 'presets' | 'language' | 'display' | 'general' | 'backup' | 'manual';
+type Tab = 'providers' | 'services' | 'presets' | 'language' | 'display' | 'general' | 'backup' | 'manual' | 'statistics';
 
 function App() {
   const { toast, showSuccess, showError, dismiss } = useToast();
@@ -74,6 +75,7 @@ function App() {
     { id: 'general', label: t('tab_general'), icon: <Globe className="h-4 w-4" /> },
     { id: 'backup', label: t('tab_backup_restore'), icon: <Database className="h-4 w-4" /> },
     { id: 'manual', label: t('tab_manual'), icon: <BookOpen className="h-4 w-4" /> },
+    { id: 'statistics', label: t('tab_statistics'), icon: <BarChart3 className="h-4 w-4" /> },
   ];
 
   const i18nKey = langVersion;
@@ -163,6 +165,8 @@ function App() {
         )}
 
         {activeTab === 'manual' && <OptionsUserManual uiLanguage={settings.uiLanguage} />}
+
+        {activeTab === 'statistics' && <OptionsStatisticsSettings />}
       </div>
     </div>
   );

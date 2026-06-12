@@ -1,13 +1,15 @@
 import Dexie, { type EntityTable } from 'dexie';
-import type { CacheEntry } from '@/types';
+import type { CacheEntry, RequestLogEntry, DailyTokenUsageEntry } from '@/types';
 
 const DB_NAME = 'TranslatorCache';
-const DB_VERSION = 2; // v2: hash 改 SHA-256 + 新增 sourceText 字段
+const DB_VERSION = 3; // v3: 新增 request_logs 与 daily_token_usage 统计表
 const TTL_DAYS = 7;
 const TTL_MS = TTL_DAYS * 24 * 60 * 60 * 1000;
 
 interface CacheDatabase extends Dexie {
   translations: EntityTable<CacheEntry, 'hash'>;
+  request_logs: EntityTable<RequestLogEntry, 'id'>;
+  daily_token_usage: EntityTable<DailyTokenUsageEntry, 'id'>;
 }
 
 const db = new Dexie(DB_NAME, { autoOpen: false }) as CacheDatabase;
@@ -17,15 +19,20 @@ const db = new Dexie(DB_NAME, { autoOpen: false }) as CacheDatabase;
 db.version(1).stores({
   translations: 'hash, sourceLang, targetLang, createdAt',
 });
-db.version(DB_VERSION).stores({
+db.version(2).stores({
   translations: 'hash, sourceLang, targetLang, createdAt',
 }).upgrade(tx => {
   return tx.table('translations').clear();
 });
+db.version(DB_VERSION).stores({
+  translations: 'hash, sourceLang, targetLang, createdAt',
+  request_logs: '++id, [providerId+modelId], timestamp',
+  daily_token_usage: '++id, [providerId+modelId+date], date',
+});
 
 let openPromise: Promise<CacheDatabase> | null = null;
 
-async function ensureDb(): Promise<CacheDatabase> {
+export async function ensureDb(): Promise<CacheDatabase> {
   if (!openPromise) {
     openPromise = db.open().then(() => db).catch((err) => {
       openPromise = null;

@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { ProviderEditForm } from './provider-edit-form';
 import type { ProviderConfig, GlobalSettings } from '@/types';
 import { t } from '@/lib/i18n';
+import { clearStatsForProvider, clearStatsForProviderModel } from '@/lib/stats';
 import { Plus, Trash2 } from 'lucide-react';
 
 interface OptionsProviderSettingsProps {
@@ -40,7 +41,7 @@ export function OptionsProviderSettings({ settings, onSave, onError }: OptionsPr
 
   const handleDeleteProvider = (providerId: string) => {
     const newProviders = settings.providers.filter((p) => p.id !== providerId);
-    
+
     // 级联清理已失效的翻译服务
     const newServices = settings.services
       .map(service => {
@@ -60,6 +61,9 @@ export function OptionsProviderSettings({ settings, onSave, onError }: OptionsPr
       nextSelectedId = newServices[0]?.id || '';
     }
 
+    // 清理该 provider 的所有统计数据
+    clearStatsForProvider(providerId).catch(() => {});
+
     onSave({
       ...settings,
       providers: newProviders,
@@ -73,6 +77,17 @@ export function OptionsProviderSettings({ settings, onSave, onError }: OptionsPr
     if (isAddingProvider) {
       newProviders = [...settings.providers, savedProvider];
     } else {
+      // 检测被删除的 model，清理对应统计数据
+      const oldProvider = settings.providers.find((p) => p.id === savedProvider.id);
+      if (oldProvider) {
+        const oldModelIds = new Set(oldProvider.models.map((m) => m.id));
+        const newModelIds = new Set(savedProvider.models.map((m) => m.id));
+        for (const removedModelId of oldModelIds) {
+          if (!newModelIds.has(removedModelId)) {
+            clearStatsForProviderModel(savedProvider.id, removedModelId).catch(() => {});
+          }
+        }
+      }
       newProviders = settings.providers.map((p) => (p.id === savedProvider.id ? savedProvider : p));
     }
 

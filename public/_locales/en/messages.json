@@ -670,5 +670,41 @@
   },
   "btn_doc": {
     "message": "Doc"
+  },
+  "tab_statistics": {
+    "message": "Statistics"
+  },
+  "statistics_title": {
+    "message": "Usage Statistics"
+  },
+  "statistics_subtitle": {
+    "message": "Translation request performance and usage overview"
+  },
+  "statistics_response_time": {
+    "message": "Last 100 Requests"
+  },
+  "statistics_response_time_desc": {
+    "message": "Average response time and failure count per provider/model (based on last 100 requests)"
+  },
+  "statistics_avg_response_time": {
+    "message": "Avg Response Time"
+  },
+  "statistics_failure_count": {
+    "message": "Failures"
+  },
+  "statistics_token_usage": {
+    "message": "Monthly Token Usage"
+  },
+  "statistics_token_usage_desc": {
+    "message": "Token consumption stacked by provider and model (daily accumulation for current month)"
+  },
+  "statistics_no_data": {
+    "message": "No data yet"
+  },
+  "statistics_no_data_hint": {
+    "message": "Statistics will appear here after using the translation feature"
+  },
+  "loading": {
+    "message": "Loading..."
   }
 }

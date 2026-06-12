@@ -137,7 +137,7 @@ export function OptionsServicesSettings({ settings, onSave }: OptionsServicesSet
     if (!editingService || editingService.type !== 'pool') return;
     const firstProvider = settings.providers[0];
     if (!firstProvider) return;
-    
+
     const newRow = {
       providerId: firstProvider.id,
       modelId: firstProvider.models[0]?.id,
@@ -162,7 +162,7 @@ export function OptionsServicesSettings({ settings, onSave }: OptionsServicesSet
   const handlePoolRowChange = (index: number, key: string, value: any) => {
     if (!editingService || editingService.type !== 'pool') return;
     const nextPool = [...editingService.poolProviders];
-    
+
     if (key === 'providerId') {
       const provider = settings.providers.find(p => p.id === value);
       nextPool[index] = {
@@ -343,6 +343,7 @@ export function OptionsServicesSettings({ settings, onSave }: OptionsServicesSet
                         </div>
                         <NumberInput
                           min={1}
+                          max={100}
                           value={row.weight}
                           onChange={val => handlePoolRowChange(index, 'weight', val)}
                           className="w-full"

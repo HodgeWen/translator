@@ -4,6 +4,7 @@ import { getCachedTranslation, setCachedTranslation } from './cache';
 import { DEFAULT_GLOBAL_PROMPT, TONE_INSTRUCTIONS, isLikelyWordOrPhrase, buildPolysemyPrompt } from './prompts';
 import { consumeOpenAIStream } from './api/sse-consumer';
 import { buildServiceQueue, type ProviderModel } from './api/queue-builder';
+import { recordRequestStat, accumulateTokenUsage } from './stats';
 
 const inflightRequests = new Map<string, Promise<TranslationResponse>>();
 
@@ -300,6 +301,7 @@ export async function translate(request: TranslationRequest): Promise<Translatio
 
       for (let i = 0; i < models.length; i++) {
         const providerModel = models[i];
+        const startTime = Date.now();
         try {
           const result = await callProvider(
             providerModel,
@@ -313,16 +315,26 @@ export async function translate(request: TranslationRequest): Promise<Translatio
             extraPrompt
           );
 
+          const responseTime = Date.now() - startTime;
+          // 异步记录统计，不阻塞翻译
+          const pid = providerModel.provider.id;
+          const mid = providerModel.model.id;
+          recordRequestStat(pid, mid, responseTime, true).catch(() => {});
+          accumulateTokenUsage(pid, mid, result.usage).catch(() => {});
+
           await setCachedTranslation(text, cacheKeySourceLang, targetLang, result.text, undefined, promptSalt);
 
           return {
             text: result.text,
-            providerId: providerModel.provider.id,
-            modelId: providerModel.model.id,
+            providerId: pid,
+            modelId: mid,
             detectedLang: result.detectedLang as LangCode | undefined,
             usage: result.usage,
           };
         } catch (error) {
+          const responseTime = Date.now() - startTime;
+          recordRequestStat(providerModel.provider.id, providerModel.model.id, responseTime, false).catch(() => {});
+
           const errorMsg = error instanceof Error ? error.message : String(error);
           errors.push(`${providerModel.provider.name}/${providerModel.model.name}: ${errorMsg}`);
 

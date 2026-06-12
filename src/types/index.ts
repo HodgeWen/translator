@@ -173,3 +173,26 @@ export interface PoolService extends BaseService {
 }
 
 export type TranslationService = SingleService | PoolService;
+
+// --- 统计数据 ---
+
+/** 单次请求日志（用于滚动窗口统计，每 provider+model 保留最近 100 条） */
+export interface RequestLogEntry {
+  id?: number;
+  providerId: string;
+  modelId: string;
+  timestamp: number;
+  responseTime: number; // ms
+  success: boolean;
+}
+
+/** 每日 token 用量累加记录（按天 upsert） */
+export interface DailyTokenUsageEntry {
+  id?: number;
+  providerId: string;
+  modelId: string;
+  date: string; // "YYYY-MM-DD"
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+}
