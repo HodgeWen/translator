@@ -10,7 +10,6 @@ import {
   getInputLoadingEasingValue,
   isValidHexColor,
   setInputTranslationLoading,
-  resolveInputTargetLanguage,
 } from '../src/entrypoints/content/input-translate-utils';
 import { commitInputLoadingKeyframe } from '../src/components/options/display-settings';
 import { globalSettingsSchema } from '../src/lib/schema';
@@ -93,40 +92,6 @@ describe('settings validation', () => {
   test('normalizes persisted non-modifier hover shortcuts back to Control', () => {
     const parsed = globalSettingsSchema.parse({ ...DEFAULT_SETTINGS, hoverShortcutKey: 'Space' });
     expect(parsed.hoverShortcutKey).toBe('Control');
-  });
-});
-
-describe('input translation direction', () => {
-  test('native input translates to the input-specific source language first', () => {
-    expect(resolveInputTargetLanguage({
-      detectedLang: 'zh-CN',
-      nativeLanguage: 'zh-CN',
-      defaultSourceLanguage: 'en',
-      inputDefaultSourceLanguage: 'ja',
-    })).toBe('ja');
-  });
-
-  test('native input falls back to global default source language', () => {
-    expect(resolveInputTargetLanguage({
-      detectedLang: 'zh-CN',
-      nativeLanguage: 'zh-CN',
-      defaultSourceLanguage: 'en',
-    })).toBe('en');
-  });
-
-  test('non-native or unknown input translates to native language', () => {
-    expect(resolveInputTargetLanguage({
-      detectedLang: 'en',
-      nativeLanguage: 'zh-CN',
-      defaultSourceLanguage: 'en',
-      inputDefaultSourceLanguage: 'ja',
-    })).toBe('zh-CN');
-    expect(resolveInputTargetLanguage({
-      detectedLang: null,
-      nativeLanguage: 'zh-CN',
-      defaultSourceLanguage: 'en',
-      inputDefaultSourceLanguage: 'ja',
-    })).toBe('zh-CN');
   });
 });
 

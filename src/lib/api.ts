@@ -1,7 +1,7 @@
 import type { ProviderConfig, TranslationRequest, TranslationResponse, LangCode } from '@/types';
 import { getSettings } from './storage';
 import { getCachedTranslation, setCachedTranslation } from './cache';
-import { DEFAULT_GLOBAL_PROMPT, TONE_INSTRUCTIONS, isLikelyWordOrPhrase, buildPolysemyPrompt } from './prompts';
+import { DEFAULT_GLOBAL_PROMPT, TONE_INSTRUCTIONS, formatToneInstruction, isLikelyWordOrPhrase, buildPolysemyPrompt } from './prompts';
 import { consumeOpenAIStream } from './api/sse-consumer';
 import { buildServiceQueue, type ProviderModel } from './api/queue-builder';
 import { recordRequestStat, accumulateTokenUsage } from './stats';
@@ -10,13 +10,12 @@ const inflightRequests = new Map<string, Promise<TranslationResponse>>();
 
 function inflightKey(
   text: string,
-  sourceLang: string | undefined,
   targetLang: string,
   extraPrompt: string | undefined,
   serviceId: string,
   tone: string
 ): string {
-  return `${text}::${sourceLang ?? 'auto'}::${targetLang}::${extraPrompt ?? ''}::${serviceId}::${tone}`;
+  return `${text}::${targetLang}::${extraPrompt ?? ''}::${serviceId}::${tone}`;
 }
 
 async function shortPromptHash(prompt: string): Promise<string> {
@@ -85,18 +84,23 @@ function buildUrl(baseURL: string, query: Record<string, string>): string {
 
 const PLACEHOLDER_RULE = `\n\nThe text may contain numeric placeholders in the form of #1#, #2#, #3# ... (single "#" on each side). You MUST preserve every placeholder exactly as-is in your output: do not add, remove, modify, reorder, or translate any of them. Treat them as opaque tokens that stand in for inline HTML fragments.`;
 
+const HTML_PROTECTION_RULE = `\n\nThe text may contain HTML tags, code snippets, and format placeholders. Follow these rules:
+- Preserve all HTML tags, placeholders, format symbols, and whitespace exactly as they appear. Only translate the inner text content.
+- Do NOT translate content inside <code>, <pre>, <samp>, <kbd>, <var> tags, text enclosed in backticks (\`code\`), file paths, URLs, variable names, or placeholders like {1}, {{1}}, [1], [[1]].`;
+
 function renderPrompt(
   template: string,
   targetLang: string,
-  sourceLang: string | undefined,
   isAggregate: boolean,
   hasPlaceholders: boolean,
   extraPrompt?: string
 ): string {
-  const sourceLangLabel = sourceLang || 'auto-detected language';
   let prompt = template
-    .replace(/\{\{sourceLang\}\}/g, sourceLangLabel)
     .replace(/\{\{targetLang\}\}/g, targetLang);
+
+  if (isAggregate || hasPlaceholders) {
+    prompt += HTML_PROTECTION_RULE;
+  }
 
   if (hasPlaceholders) {
     prompt += PLACEHOLDER_RULE;
@@ -127,7 +131,6 @@ function buildBody(
   modelId: string,
   text: string,
   targetLang: string,
-  sourceLang: string | undefined,
   extraBody: Record<string, unknown>,
   promptTemplate: string,
   isAggregate: boolean,
@@ -135,7 +138,7 @@ function buildBody(
   provider: ProviderConfig,
   extraPrompt?: string
 ): Record<string, unknown> {
-  const systemPrompt = renderPrompt(promptTemplate, targetLang, sourceLang, isAggregate, hasPlaceholders, extraPrompt);
+  const systemPrompt = renderPrompt(promptTemplate, targetLang, isAggregate, hasPlaceholders, extraPrompt);
 
   const body: Record<string, unknown> = {
     model: modelId,
@@ -172,7 +175,6 @@ async function callProvider(
   providerModel: ProviderModel,
   text: string,
   targetLang: string,
-  sourceLang: string | undefined,
   promptTemplate: string,
   timeout: number,
   isAggregate: boolean,
@@ -182,7 +184,7 @@ async function callProvider(
   const { provider, model } = providerModel;
 
   const url = buildUrl(provider.baseURL, provider.query);
-  const body = buildBody(model.id, text, targetLang, sourceLang, provider.body, promptTemplate, isAggregate, hasPlaceholders, provider, extraPrompt);
+  const body = buildBody(model.id, text, targetLang, provider.body, promptTemplate, isAggregate, hasPlaceholders, provider, extraPrompt);
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -224,9 +226,7 @@ async function callProvider(
   }
 }
 export async function translate(request: TranslationRequest): Promise<TranslationResponse> {
-  const { text, sourceLang, targetLang, isAggregate, hasPlaceholders, extraPrompt } = request;
-
-  const cacheKeySourceLang = sourceLang || 'auto';
+  const { text, targetLang, isAggregate, hasPlaceholders, extraPrompt, enablePolysemy } = request;
 
   // Resolve settings and activeService/finalTone first to generate the correct in-flight key
   const settings = await getSettings();
@@ -244,7 +244,7 @@ export async function translate(request: TranslationRequest): Promise<Translatio
     finalTone = serviceTone === 'personal_default' ? settings.translationTone : serviceTone;
   }
 
-  const cacheKey = inflightKey(text, cacheKeySourceLang, targetLang, extraPrompt, activeService.id, finalTone);
+  const cacheKey = inflightKey(text, targetLang, extraPrompt, activeService.id, finalTone);
 
   const existing = inflightRequests.get(cacheKey);
   if (existing) return existing;
@@ -263,8 +263,9 @@ export async function translate(request: TranslationRequest): Promise<Translatio
         }
       }
 
-      // 根据服务多义词配置及输入，自动拼接多义词翻译提示词
-      const shouldApplyPolysemy = activeService.enablePolysemy && isLikelyWordOrPhrase(text);
+      // 仅在 popup 短文本场景（enablePolysemy=true）且服务开启时启用多义词词典式翻译。
+      // 网页翻译永不启用，避免多义项 bullet 输出污染 DOM 结构。
+      const shouldApplyPolysemy = enablePolysemy && activeService.enablePolysemy && isLikelyWordOrPhrase(text);
       if (shouldApplyPolysemy) {
         const polysemyPrompt = buildPolysemyPrompt(targetLang);
         basePrompt = `${basePrompt}\n\n${polysemyPrompt}`;
@@ -277,11 +278,11 @@ export async function translate(request: TranslationRequest): Promise<Translatio
       } else {
         toneInstruction = TONE_INSTRUCTIONS[finalTone as keyof typeof TONE_INSTRUCTIONS] || '';
       }
-      const finalPromptTemplate = toneInstruction ? `${basePrompt}\n\n${toneInstruction}` : basePrompt;
+      const finalPromptTemplate = toneInstruction ? `${basePrompt}${formatToneInstruction(toneInstruction)}` : basePrompt;
 
       const promptSalt = await buildTranslationCachePartition(basePrompt, extraPrompt, finalTone);
 
-      const cached = await getCachedTranslation(text, cacheKeySourceLang, targetLang, promptSalt);
+      const cached = await getCachedTranslation(text, targetLang, promptSalt);
       if (cached) {
         return {
           text: cached.text,
@@ -307,7 +308,6 @@ export async function translate(request: TranslationRequest): Promise<Translatio
             providerModel,
             text,
             targetLang,
-            sourceLang,
             finalPromptTemplate,
             timeout,
             isAggregate || false,
@@ -322,7 +322,7 @@ export async function translate(request: TranslationRequest): Promise<Translatio
           recordRequestStat(pid, mid, responseTime, true).catch(() => {});
           accumulateTokenUsage(pid, mid, result.usage).catch(() => {});
 
-          await setCachedTranslation(text, cacheKeySourceLang, targetLang, result.text, undefined, promptSalt);
+          await setCachedTranslation(text, targetLang, result.text, undefined, promptSalt);
 
           return {
             text: result.text,
@@ -369,7 +369,7 @@ export async function testProvider(
 
   const promptTemplate = DEFAULT_GLOBAL_PROMPT;
   const url = buildUrl(provider.baseURL, provider.query);
-  const body = buildBody(model.id, text, targetLang, undefined, provider.body, promptTemplate, false, false, provider);
+  const body = buildBody(model.id, text, targetLang, provider.body, promptTemplate, false, false, provider);
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 30000);

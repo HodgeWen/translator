@@ -45,7 +45,7 @@
     "message": "打开设置"
   },
   "popup_auto_detect_hint": {
-    "message": "自动识别输入语言"
+    "message": "自动检测：母语→第二语言，外语→母语"
   },
   "popup_target_auto": {
     "message": "自动"
@@ -168,40 +168,22 @@
     "message": "母语"
   },
   "hint_native_language": {
-    "message": "你的母语。翻译结果将以该语言为目标。"
+    "message": "你的母语。网页翻译和面板翻译默认以该语言为目标语言。"
   },
-  "label_default_source_language": {
-    "message": "默认源语言"
+  "label_second_language": {
+    "message": "第二语言"
   },
-  "hint_default_source_language": {
-    "message": "当输入语言为母语时，翻译为该语言"
+  "hint_second_language": {
+    "message": "在面板翻译中，当输入文本为母语时，翻译为该语言。"
   },
-  "label_input_default_source_language": {
-    "message": "输入框默认源语言"
+  "option_follow_native_language": {
+    "message": "跟随母语"
   },
-  "hint_input_default_source_language": {
-    "message": "输入框内容为母语时优先翻译为该语言；留空则跟随默认源语言"
+  "label_input_translation_target_language": {
+    "message": "输入框翻译目标语言"
   },
-  "option_follow_default_source_language": {
-    "message": "跟随默认源语言"
-  },
-  "title_lang_detect_providers": {
-    "message": "语言检测服务商"
-  },
-  "btn_add_api_detector": {
-    "message": "添加 API 检测器"
-  },
-  "btn_add_google_free_detector": {
-    "message": "添加 Google（免 key）"
-  },
-  "preset_google_free_name": {
-    "message": "Google 翻译（公共端点）"
-  },
-  "hint_google_free_detector": {
-    "message": "免 key 的 Google 翻译公共端点。隐私提醒：查询文本会发送至 Google 服务器，请避免输入敏感内容。部分地区可能不可达或被限速。"
-  },
-  "lang_detect_description": {
-    "message": "franc-min 始终优先使用。当 franc-min 无法确定时，额外的 API 检测器将作为备用。"
+  "hint_input_translation_target_language": {
+    "message": "输入框翻译通常是将母语翻译为外语，此处设置默认的目标语言。"
   },
   "label_default_style": {
     "message": "默认翻译样式"
@@ -440,9 +422,6 @@
   "new_provider": {
     "message": "新服务商"
   },
-  "new_api_detector": {
-    "message": "新 API 检测器"
-  },
   "label_endpoint_url": {
     "message": "接口地址"
   },
@@ -465,7 +444,7 @@
     "message": "留空以使用全局提示词..."
   },
   "hint_provider_prompt": {
-    "message": "自定义提示词，支持 {{sourceLang}}、{{targetLang}} 变量。原文通过 user 消息单独传递，无需在提示词中插入。"
+    "message": "自定义提示词，支持 {{targetLang}} 变量。原文通过 user 消息单独传递，无需在提示词中插入。"
   },
   "title_global_prompt": {
     "message": "通用翻译提示词"
@@ -576,7 +555,7 @@
     "message": "翻译服务"
   },
   "tab_presets": {
-    "message": "预设与风格"
+    "message": "提示词与风格"
   },
   "title_load_balance": {
     "message": "负载均衡"

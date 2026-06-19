@@ -191,7 +191,7 @@ declare module "wxt/browser" {
       options?: GetMessageOptions,
     ): string;
     /**
-     * "自动识别输入语言"
+     * "自动检测：母语→第二语言，外语→母语"
      */
     getMessage(
       messageName: "popup_auto_detect_hint",
@@ -519,7 +519,7 @@ declare module "wxt/browser" {
       options?: GetMessageOptions,
     ): string;
     /**
-     * "你的母语。翻译结果将以该语言为目标。"
+     * "你的母语。网页翻译和面板翻译默认以该语言为目标语言。"
      */
     getMessage(
       messageName: "hint_native_language",
@@ -527,90 +527,42 @@ declare module "wxt/browser" {
       options?: GetMessageOptions,
     ): string;
     /**
-     * "默认源语言"
+     * "第二语言"
      */
     getMessage(
-      messageName: "label_default_source_language",
+      messageName: "label_second_language",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "当输入语言为母语时，翻译为该语言"
+     * "在面板翻译中，当输入文本为母语时，翻译为该语言。"
      */
     getMessage(
-      messageName: "hint_default_source_language",
+      messageName: "hint_second_language",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "输入框默认源语言"
+     * "跟随母语"
      */
     getMessage(
-      messageName: "label_input_default_source_language",
+      messageName: "option_follow_native_language",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "输入框内容为母语时优先翻译为该语言；留空则跟随默认源语言"
+     * "输入框翻译目标语言"
      */
     getMessage(
-      messageName: "hint_input_default_source_language",
+      messageName: "label_input_translation_target_language",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "跟随默认源语言"
+     * "输入框翻译通常是将母语翻译为外语，此处设置默认的目标语言。"
      */
     getMessage(
-      messageName: "option_follow_default_source_language",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "语言检测服务商"
-     */
-    getMessage(
-      messageName: "title_lang_detect_providers",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "添加 API 检测器"
-     */
-    getMessage(
-      messageName: "btn_add_api_detector",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "添加 Google（免 key）"
-     */
-    getMessage(
-      messageName: "btn_add_google_free_detector",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "Google 翻译（公共端点）"
-     */
-    getMessage(
-      messageName: "preset_google_free_name",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "免 key 的 Google 翻译公共端点。隐私提醒：查询文本会发送至 Google 服务器，请避免输入敏感内容。部分地区可能不可达或被限速。"
-     */
-    getMessage(
-      messageName: "hint_google_free_detector",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "franc-min 始终优先使用。当 franc-min 无法确定时，额外的 API 检测器将作为备用。"
-     */
-    getMessage(
-      messageName: "lang_detect_description",
+      messageName: "hint_input_translation_target_language",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
@@ -1247,14 +1199,6 @@ declare module "wxt/browser" {
       options?: GetMessageOptions,
     ): string;
     /**
-     * "新 API 检测器"
-     */
-    getMessage(
-      messageName: "new_api_detector",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
      * "接口地址"
      */
     getMessage(
@@ -1311,7 +1255,7 @@ declare module "wxt/browser" {
       options?: GetMessageOptions,
     ): string;
     /**
-     * "自定义提示词，支持 {{sourceLang}}、{{targetLang}} 变量。原文通过 user 消息单独传递，无需在提示词中插入。"
+     * "自定义提示词，支持 {{targetLang}} 变量。原文通过 user 消息单独传递，无需在提示词中插入。"
      */
     getMessage(
       messageName: "hint_provider_prompt",
@@ -1609,7 +1553,7 @@ declare module "wxt/browser" {
       options?: GetMessageOptions,
     ): string;
     /**
-     * "预设与风格"
+     * "提示词与风格"
      */
     getMessage(
       messageName: "tab_presets",
@@ -1961,7 +1905,7 @@ declare module "wxt/browser" {
       options?: GetMessageOptions,
     ): string;
     getMessage(
-      messageName: "@@extension_id" | "@@ui_locale" | "@@bidi_dir" | "@@bidi_reversed_dir" | "@@bidi_start_edge" | "@@bidi_end_edge" | "extName" | "extDescription" | "command_toggle_desc" | "popup_provider" | "popup_model" | "popup_translate_to" | "popup_placeholder" | "popup_translating" | "popup_translate" | "popup_result" | "popup_error" | "popup_error_hint" | "popup_dismiss_error" | "popup_open_settings" | "popup_auto_detect_hint" | "popup_target_auto" | "popup_manual_override_hint" | "popup_copied" | "options_title" | "options_subtitle" | "options_saved" | "options_imported" | "tab_providers" | "tab_model_queue" | "tab_language" | "tab_display" | "tab_general" | "tab_backup_restore" | "tab_manual" | "btn_add_provider" | "title_add_provider" | "title_edit_provider" | "btn_save" | "btn_cancel" | "label_name" | "label_base_url" | "label_api_key" | "placeholder_api_key" | "hint_api_key" | "btn_show" | "btn_hide" | "label_headers" | "label_query_params" | "label_extra_body" | "label_models" | "label_model_id" | "label_display_name" | "btn_add_model" | "btn_edit" | "btn_delete" | "queue_description" | "label_timeout" | "label_ui_language" | "hint_ui_language" | "label_native_language" | "hint_native_language" | "label_default_source_language" | "hint_default_source_language" | "label_input_default_source_language" | "hint_input_default_source_language" | "option_follow_default_source_language" | "title_lang_detect_providers" | "btn_add_api_detector" | "btn_add_google_free_detector" | "preset_google_free_name" | "hint_google_free_detector" | "lang_detect_description" | "label_default_style" | "style_original" | "style_bilingual" | "style_underline" | "style_clean" | "style_original_desc" | "style_bilingual_desc" | "style_underline_desc" | "style_clean_desc" | "title_display_mode_settings" | "title_translation_loading_theme" | "theme_indigo" | "theme_indigo_desc" | "theme_aurora" | "theme_aurora_desc" | "theme_monochrome" | "theme_monochrome_desc" | "theme_cosmic" | "theme_cosmic_desc" | "title_translation_tone" | "label_translation_tone" | "tone_normal" | "tone_normal_desc" | "tone_technical" | "tone_technical_desc" | "tone_tech_forward" | "tone_tech_forward_desc" | "tone_humorous" | "tone_humorous_desc" | "tone_literary" | "tone_literary_desc" | "tone_formal" | "tone_formal_desc" | "tone_colloquial" | "tone_colloquial_desc" | "label_keyboard_shortcut" | "shortcut_hint" | "shortcut_unbound" | "title_shortcut_settings" | "label_hover_shortcut_key" | "label_input_shortcut_key" | "hint_single_key_shortcut" | "hint_input_shortcut_key" | "shortcut_key_control" | "shortcut_key_alt" | "shortcut_key_option" | "shortcut_key_shift" | "shortcut_key_command" | "shortcut_key_win" | "shortcut_key_space" | "shortcut_key_escape" | "label_input_loading_pulse_color" | "title_display_style_settings" | "title_input_loading_settings" | "label_input_loading_keyframe_0" | "label_input_loading_keyframe_1" | "label_input_loading_keyframe_2" | "error_invalid_hex_color" | "label_input_loading_pulse_duration" | "hint_input_loading_pulse_duration" | "label_input_loading_pulse_easing" | "hint_input_loading_pulse_easing" | "label_input_loading_preview" | "input_loading_preview_text" | "pulse_easing_linear" | "pulse_easing_ease_out" | "pulse_easing_spring" | "title_backup_restore" | "btn_export_settings" | "btn_import_settings" | "btn_reset_default" | "error_load_settings" | "error_save_failed" | "error_export_failed" | "error_import_failed" | "error_required_fields" | "error_translation_failed" | "error_unknown" | "new_provider" | "new_api_detector" | "label_endpoint_url" | "label_api_key_optional" | "label_key" | "label_value" | "btn_add" | "label_provider_prompt" | "placeholder_provider_prompt" | "hint_provider_prompt" | "title_global_prompt" | "desc_global_prompt" | "hint_prompt_vars" | "title_aggregation" | "label_aggregate_enabled" | "desc_aggregate_enabled" | "label_max_paragraphs" | "label_max_text_length" | "label_max_concurrent" | "label_request_timeout" | "title_display_settings" | "label_sampling" | "label_temperature" | "label_top_p" | "label_max_tokens" | "label_top_p_enable" | "label_stream" | "hint_stream" | "hint_extra_body_override" | "hint_extra_body_examples" | "hint_temperature" | "hint_top_p" | "hint_max_tokens" | "hint_content_type_auto" | "badge_stream" | "label_export_passphrase" | "hint_export_passphrase" | "hint_export_passphrase_warn" | "label_import_passphrase" | "btn_import_confirm" | "btn_import_cancel" | "toast_export_encrypted_remember" | "error_import_decrypt_failed" | "error_import_passphrase_required" | "tab_load_balance" | "tab_services" | "tab_presets" | "title_load_balance" | "desc_load_balance" | "warn_no_lb_providers" | "label_weight" | "hint_load_balance" | "popup_load_balance" | "popup_load_balance_active" | "hint_model_order" | "btn_move_up" | "btn_move_down" | "lb_preferred_model" | "lb_model_default" | "title_request_settings" | "desc_request_settings" | "label_test_provider" | "hint_test_provider" | "btn_test" | "test_success" | "test_failed" | "popup_meta_show" | "popup_meta_hide" | "label_preset_urls" | "preset_urls_modal_title" | "preset_urls_modal_close" | "preset_urls_category_all" | "preset_urls_category_open" | "preset_urls_category_closed" | "preset_urls_category_gateway" | "btn_copy_url" | "btn_copied_url" | "btn_doc" | "tab_statistics" | "statistics_title" | "statistics_subtitle" | "statistics_response_time" | "statistics_response_time_desc" | "statistics_avg_response_time" | "statistics_failure_count" | "statistics_token_usage" | "statistics_token_usage_desc" | "statistics_no_data" | "statistics_no_data_hint" | "loading",
+      messageName: "@@extension_id" | "@@ui_locale" | "@@bidi_dir" | "@@bidi_reversed_dir" | "@@bidi_start_edge" | "@@bidi_end_edge" | "extName" | "extDescription" | "command_toggle_desc" | "popup_provider" | "popup_model" | "popup_translate_to" | "popup_placeholder" | "popup_translating" | "popup_translate" | "popup_result" | "popup_error" | "popup_error_hint" | "popup_dismiss_error" | "popup_open_settings" | "popup_auto_detect_hint" | "popup_target_auto" | "popup_manual_override_hint" | "popup_copied" | "options_title" | "options_subtitle" | "options_saved" | "options_imported" | "tab_providers" | "tab_model_queue" | "tab_language" | "tab_display" | "tab_general" | "tab_backup_restore" | "tab_manual" | "btn_add_provider" | "title_add_provider" | "title_edit_provider" | "btn_save" | "btn_cancel" | "label_name" | "label_base_url" | "label_api_key" | "placeholder_api_key" | "hint_api_key" | "btn_show" | "btn_hide" | "label_headers" | "label_query_params" | "label_extra_body" | "label_models" | "label_model_id" | "label_display_name" | "btn_add_model" | "btn_edit" | "btn_delete" | "queue_description" | "label_timeout" | "label_ui_language" | "hint_ui_language" | "label_native_language" | "hint_native_language" | "label_second_language" | "hint_second_language" | "option_follow_native_language" | "label_input_translation_target_language" | "hint_input_translation_target_language" | "label_default_style" | "style_original" | "style_bilingual" | "style_underline" | "style_clean" | "style_original_desc" | "style_bilingual_desc" | "style_underline_desc" | "style_clean_desc" | "title_display_mode_settings" | "title_translation_loading_theme" | "theme_indigo" | "theme_indigo_desc" | "theme_aurora" | "theme_aurora_desc" | "theme_monochrome" | "theme_monochrome_desc" | "theme_cosmic" | "theme_cosmic_desc" | "title_translation_tone" | "label_translation_tone" | "tone_normal" | "tone_normal_desc" | "tone_technical" | "tone_technical_desc" | "tone_tech_forward" | "tone_tech_forward_desc" | "tone_humorous" | "tone_humorous_desc" | "tone_literary" | "tone_literary_desc" | "tone_formal" | "tone_formal_desc" | "tone_colloquial" | "tone_colloquial_desc" | "label_keyboard_shortcut" | "shortcut_hint" | "shortcut_unbound" | "title_shortcut_settings" | "label_hover_shortcut_key" | "label_input_shortcut_key" | "hint_single_key_shortcut" | "hint_input_shortcut_key" | "shortcut_key_control" | "shortcut_key_alt" | "shortcut_key_option" | "shortcut_key_shift" | "shortcut_key_command" | "shortcut_key_win" | "shortcut_key_space" | "shortcut_key_escape" | "label_input_loading_pulse_color" | "title_display_style_settings" | "title_input_loading_settings" | "label_input_loading_keyframe_0" | "label_input_loading_keyframe_1" | "label_input_loading_keyframe_2" | "error_invalid_hex_color" | "label_input_loading_pulse_duration" | "hint_input_loading_pulse_duration" | "label_input_loading_pulse_easing" | "hint_input_loading_pulse_easing" | "label_input_loading_preview" | "input_loading_preview_text" | "pulse_easing_linear" | "pulse_easing_ease_out" | "pulse_easing_spring" | "title_backup_restore" | "btn_export_settings" | "btn_import_settings" | "btn_reset_default" | "error_load_settings" | "error_save_failed" | "error_export_failed" | "error_import_failed" | "error_required_fields" | "error_translation_failed" | "error_unknown" | "new_provider" | "label_endpoint_url" | "label_api_key_optional" | "label_key" | "label_value" | "btn_add" | "label_provider_prompt" | "placeholder_provider_prompt" | "hint_provider_prompt" | "title_global_prompt" | "desc_global_prompt" | "hint_prompt_vars" | "title_aggregation" | "label_aggregate_enabled" | "desc_aggregate_enabled" | "label_max_paragraphs" | "label_max_text_length" | "label_max_concurrent" | "label_request_timeout" | "title_display_settings" | "label_sampling" | "label_temperature" | "label_top_p" | "label_max_tokens" | "label_top_p_enable" | "label_stream" | "hint_stream" | "hint_extra_body_override" | "hint_extra_body_examples" | "hint_temperature" | "hint_top_p" | "hint_max_tokens" | "hint_content_type_auto" | "badge_stream" | "label_export_passphrase" | "hint_export_passphrase" | "hint_export_passphrase_warn" | "label_import_passphrase" | "btn_import_confirm" | "btn_import_cancel" | "toast_export_encrypted_remember" | "error_import_decrypt_failed" | "error_import_passphrase_required" | "tab_load_balance" | "tab_services" | "tab_presets" | "title_load_balance" | "desc_load_balance" | "warn_no_lb_providers" | "label_weight" | "hint_load_balance" | "popup_load_balance" | "popup_load_balance_active" | "hint_model_order" | "btn_move_up" | "btn_move_down" | "lb_preferred_model" | "lb_model_default" | "title_request_settings" | "desc_request_settings" | "label_test_provider" | "hint_test_provider" | "btn_test" | "test_success" | "test_failed" | "popup_meta_show" | "popup_meta_hide" | "label_preset_urls" | "preset_urls_modal_title" | "preset_urls_modal_close" | "preset_urls_category_all" | "preset_urls_category_open" | "preset_urls_category_closed" | "preset_urls_category_gateway" | "btn_copy_url" | "btn_copied_url" | "btn_doc" | "tab_statistics" | "statistics_title" | "statistics_subtitle" | "statistics_response_time" | "statistics_response_time_desc" | "statistics_avg_response_time" | "statistics_failure_count" | "statistics_token_usage" | "statistics_token_usage_desc" | "statistics_no_data" | "statistics_no_data_hint" | "loading",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;

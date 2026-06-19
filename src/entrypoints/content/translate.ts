@@ -4,7 +4,6 @@ import { encodeBatch, decodeBatch } from '@/lib/batch-protocol';
 import type { TextNodeTemplate } from '@/lib/dom-text-replace';
 import { assignTextNodeIds, createTextNodeTemplate } from '@/lib/dom-text-replace';
 import { sendBgMessage } from '@/lib/messaging';
-import { detectAndCheckSkip } from '@/lib/translate-via-bg';
 import { state } from './state';
 import { applyTranslation } from './style-apply';
 
@@ -51,14 +50,6 @@ export async function translateSingleElement(el: HTMLElement, force = false, ski
   el.setAttribute('data-translator-theme', state.translationLoadingTheme);
 
   try {
-    const { skip, detectedLang } = await detectAndCheckSkip(rawText, state.nativeLanguage);
-    if (skip) {
-      el.removeAttribute('data-translator-pending');
-      el.removeAttribute('data-translator-theme');
-      markElementIdle(el);
-      return;
-    }
-
     if (usesTextNodeReplacement()) {
       const template = createTextNodeTemplate(el);
       if (!template) {
@@ -71,7 +62,6 @@ export async function translateSingleElement(el: HTMLElement, force = false, ski
         type: 'TRANSLATE',
         payload: {
           text: encodeBatch(items),
-          sourceLang: detectedLang || undefined,
           targetLang: state.targetLang,
           isAggregate: true,
           extraPrompt: TEXT_NODE_TRANSLATION_PROMPT,
@@ -98,7 +88,7 @@ export async function translateSingleElement(el: HTMLElement, force = false, ski
       return;
     }
 
-    // encodeInline 在语言检测之后执行，避免跳过翻译时浪费 DOM clone 开销
+    // encodeInline
     const { placeholderText, fragments, styleTemplates } = encodeInline(el);
     if (!placeholderText) {
       clearElementPending(el);
@@ -109,7 +99,6 @@ export async function translateSingleElement(el: HTMLElement, force = false, ski
       type: 'TRANSLATE',
       payload: {
         text: placeholderText,
-        sourceLang: detectedLang || undefined,
         targetLang: state.targetLang,
         hasPlaceholders: fragments.length > 0 || styleTemplates.length > 0,
       },
@@ -198,23 +187,8 @@ async function translateBatchWithFallback(batch: HTMLElement[]): Promise<void> {
   const styleTemplatesList: Element[][] = [];
   const validElements: HTMLElement[] = [];
 
-  // Detect language once on a representative sample, apply to entire batch.
-  let batchDetectedLang: string | null = null;
-  const sampleEl = batch.find(el => (el.textContent?.trim()?.length ?? 0) >= 5);
-  if (sampleEl) {
-    const { skip, detectedLang } = await detectAndCheckSkip(
-      sampleEl.textContent!.trim(),
-      state.nativeLanguage
-    );
-    if (skip) {
-      for (const el of batch) markElementIdle(el);
-      return;
-    }
-    batchDetectedLang = detectedLang;
-  }
-
   if (usesTextNodeReplacement()) {
-    await translateTextNodeBatchWithFallback(batch, batchDetectedLang);
+    await translateTextNodeBatchWithFallback(batch);
     return;
   }
 
@@ -260,7 +234,6 @@ async function translateBatchWithFallback(batch: HTMLElement[]): Promise<void> {
       type: 'TRANSLATE',
       payload: {
         text: combinedText,
-        sourceLang: batchDetectedLang || undefined,
         targetLang: state.targetLang,
         isAggregate: true,
         hasPlaceholders: fragmentsList.some(f => f.length > 0) || styleTemplatesList.some(s => s.length > 0),
@@ -316,7 +289,7 @@ async function translateBatchWithFallback(batch: HTMLElement[]): Promise<void> {
   }
 }
 
-async function translateTextNodeBatchWithFallback(batch: HTMLElement[], batchDetectedLang: string | null): Promise<void> {
+async function translateTextNodeBatchWithFallback(batch: HTMLElement[]): Promise<void> {
   const entries: TextNodeBatchEntry[] = [];
   const items: Array<{ id: number; text: string }> = [];
   let nextId = 1;
@@ -357,7 +330,6 @@ async function translateTextNodeBatchWithFallback(batch: HTMLElement[], batchDet
       type: 'TRANSLATE',
       payload: {
         text: encodeBatch(items),
-        sourceLang: batchDetectedLang || undefined,
         targetLang: state.targetLang,
         isAggregate: true,
         extraPrompt: TEXT_NODE_TRANSLATION_PROMPT,

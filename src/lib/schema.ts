@@ -21,14 +21,6 @@ const providerConfigSchema = z.object({
   ).min(1, 'At least one model is required'),
 });
 
-const presetPromptSchema = z.object({
-  id: z.string().min(1),
-  name: z.string().min(1),
-  description: z.string().default(''),
-  content: z.string().min(1),
-  isSystem: z.boolean().optional(),
-});
-
 const customToneSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
@@ -68,16 +60,6 @@ const translationServiceSchema = z.discriminatedUnion('type', [
   poolServiceSchema,
 ]);
 
-const langDetectProviderSchema = z.object({
-  id: z.string().min(1),
-  name: z.string().min(1),
-  type: z.enum(['franc', 'api', 'google_free']),
-  endpoint: z.string().url().optional(),
-  apiKey: z.string().optional(),
-  headers: z.record(z.string(), z.string()).optional(),
-  timeout: z.number().int().min(1000).max(60000).optional(),
-});
-
 const hexColorSchema = z.string().regex(/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/);
 const inputLoadingPulseKeyframesDefault: [string, string, string] = ['#4b5563', '#2563eb', '#0f172a'];
 const hoverShortcutKeySchema = z.enum(['Control', 'Alt', 'Shift', 'Meta']).catch('Control').default('Control');
@@ -88,24 +70,22 @@ export const globalSettingsSchema = z.object({
   selectedModelId: z.string().default(''),
   services: z.array(translationServiceSchema).default([]),
   selectedServiceId: z.string().default(''),
-  customPresetPrompts: z.array(presetPromptSchema).default([]),
   customTones: z.array(customToneSchema).default([]),
   overrideDisplayStyleEnabled: z.boolean().default(false),
   customDisplayStyle: z.enum(['original', 'bilingual', 'underline', 'clean']).default('original'),
   overrideTranslationToneEnabled: z.boolean().default(false),
   customTranslationTone: z.string().default('normal'),
   nativeLanguage: z.string().min(2).max(10).default('zh-CN'),
-  defaultSourceLanguage: z.string().min(2).max(10).default('en'),
+  secondLanguage: z.string().min(2).max(10).default('en'),
   uiLanguage: z.string().min(2).max(10).default('zh-CN'),
   displayStyle: z.enum(['original', 'bilingual', 'underline', 'clean']).default('original'),
   translationTone: z.enum(['normal', 'technical', 'tech_forward', 'humorous', 'literary', 'formal', 'colloquial']).default('normal'),
   translationLoadingTheme: z.enum(['indigo', 'aurora', 'monochrome', 'cosmic']).default('indigo'),
   globalPrompt: z.string().min(1).default(DEFAULT_GLOBAL_PROMPT),
-  detectLangProviders: z.array(langDetectProviderSchema).default([{ id: 'franc', name: 'franc-min', type: 'franc' }]),
   shortcutKey: z.string().default('Alt+W'),
   hoverShortcutKey: hoverShortcutKeySchema,
   inputShortcutKey: z.enum(['Control', 'Alt', 'Shift', 'Meta', 'Escape']).catch('Control').default('Control'),
-  inputDefaultSourceLanguage: z.string().default(''),
+  inputTranslationTargetLanguage: z.string().min(2).max(10).default('en'),
   inputLoadingPulseKeyframes: z.tuple([hexColorSchema, hexColorSchema, hexColorSchema])
     .catch(inputLoadingPulseKeyframesDefault)
     .default(inputLoadingPulseKeyframesDefault),

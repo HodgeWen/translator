@@ -1,12 +1,11 @@
 import type { TranslationResponse } from "@/types";
 import { sendBgMessage } from "@/lib/messaging";
-import { shouldSkipTranslation } from "@/lib/lang-detect";
 import { state } from "./state";
 import {
   eventMatchesSingleKeyShortcut,
   recordSequentialShortcutPress,
 } from "./shortcut-utils";
-import { resolveInputTargetLanguage, setInputTranslationLoading } from "./input-translate-utils";
+import { setInputTranslationLoading } from "./input-translate-utils";
 
 // ─── Native setter helper ───────────────────────────────────────────────
 // Direct `el.value = x` bypasses React / Vue controlled‑component state,
@@ -93,8 +92,7 @@ interface InputState {
 const inputStateMap = new WeakMap<EditableElement, InputState>();
 let inputSettingsLoaded = false;
 let inputShortcutKey = "Control";
-let inputDefaultSourceLanguage = "";
-let defaultSourceLanguage = "en";
+let inputTranslationTargetLanguage = "en";
 let inputLoadingPulseKeyframes: [string, string, string] = ["#4b5563", "#2563eb", "#0f172a"];
 let inputLoadingPulseDurationMs = 1200;
 let inputLoadingPulseEasing: "linear" | "ease-out" | "spring" = "ease-out";
@@ -119,8 +117,7 @@ async function loadInputSettings(): Promise<void> {
   const s = await getSettings();
   state.nativeLanguage = s.nativeLanguage;
   state.targetLang = s.nativeLanguage;
-  defaultSourceLanguage = s.defaultSourceLanguage;
-  inputDefaultSourceLanguage = s.inputDefaultSourceLanguage;
+  inputTranslationTargetLanguage = s.inputTranslationTargetLanguage;
   inputShortcutKey = s.inputShortcutKey;
   inputLoadingPulseKeyframes = s.inputLoadingPulseKeyframes;
   inputLoadingPulseDurationMs = s.inputLoadingPulseDurationMs;
@@ -148,30 +145,12 @@ async function translateInput(el: EditableElement, isContentEditable: boolean): 
       easing: inputLoadingPulseEasing,
     });
 
-    let detectedLang: string | null = null;
-    try {
-      const r = await sendBgMessage<{ lang: string | null }>({
-        type: "DETECT_LANG",
-        payload: { text },
-      });
-      detectedLang = r.lang;
-    } catch {
-      detectedLang = null;
-    }
-
-    const targetLang = resolveInputTargetLanguage({
-      detectedLang,
-      nativeLanguage: state.nativeLanguage,
-      defaultSourceLanguage,
-      inputDefaultSourceLanguage,
-    });
-    if (detectedLang && shouldSkipTranslation(detectedLang, targetLang)) return;
+    const targetLang = inputTranslationTargetLanguage;
 
     const result = await sendBgMessage<TranslationResponse>({
       type: "TRANSLATE",
       payload: {
         text,
-        sourceLang: detectedLang || undefined,
         targetLang,
         hasPlaceholders: false,
       },

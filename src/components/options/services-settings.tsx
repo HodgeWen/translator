@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import type { GlobalSettings, TranslationService, SingleService, PoolService } from '@/types';
 import { t } from '@/lib/i18n';
-import { Plus, Trash2, Edit2, Settings2, ChevronDown, ChevronUp, BookOpen } from 'lucide-react';
+import { Plus, Trash2, Edit2, Settings2, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NumberInput } from '@/components/ui/number-input';
 
@@ -14,16 +14,10 @@ interface OptionsServicesSettingsProps {
   onSave: (settings: GlobalSettings) => void;
 }
 
-// 内置系统提示词预设，用于快捷填充
-const SYSTEM_PRESETS = [
-  { id: 'academic', name: '标准学术翻译', content: 'You are a professional academic translator. Translate the text into clear, precise, and formal academic prose, maintaining the scholarly tone and terminology.' }
-];
-
 export function OptionsServicesSettings({ settings, onSave }: OptionsServicesSettingsProps) {
   const [editingService, setEditingService] = useState<TranslationService | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
-  const [showPresetMenu, setShowPresetMenu] = useState(false);
 
   const poolProviders = editingService && editingService.type === 'pool' ? (editingService as PoolService).poolProviders : [];
   const totalWeight = poolProviders.reduce((sum, item) => sum + (item.weight || 0), 0);
@@ -115,15 +109,6 @@ export function OptionsServicesSettings({ settings, onSave }: OptionsServicesSet
 
     setEditingService(null);
     setIsAdding(false);
-  };
-
-  const handleApplyPreset = (content: string) => {
-    if (!editingService) return;
-    setEditingService({
-      ...editingService,
-      prompt: content
-    });
-    setShowPresetMenu(false);
   };
 
   // 辅助获取 Provider 的 Model 选项
@@ -384,77 +369,29 @@ export function OptionsServicesSettings({ settings, onSave }: OptionsServicesSet
                 {/* Service Specific Prompt */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium flex items-center gap-1">
+                    <label className="text-sm font-medium">
                       自定义 Prompt
                     </label>
-                    <div className="flex items-center gap-2">
-                      <Select
-                        value={editingService.promptMode || 'append'}
-                        options={[
-                          { value: 'append', label: '非覆盖 (追加)' },
-                          { value: 'override', label: '覆盖全局 Prompt' }
-                        ]}
-                        compact
-                        className="w-[140px] h-7 text-xs"
-                        onChange={val => setEditingService({
-                          ...editingService,
-                          promptMode: val as 'append' | 'override'
-                        })}
-                      />
-                      <div className="relative">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 px-2 text-xs flex items-center gap-1 text-indigo-600 hover:text-indigo-700 bg-indigo-50 dark:bg-indigo-950/20"
-                          onClick={() => setShowPresetMenu(!showPresetMenu)}
-                        >
-                          <BookOpen className="h-3.5 w-3.5" />
-                          <span>应用预设</span>
-                        </Button>
-
-                      {showPresetMenu && (
-                        <div className="absolute right-0 mt-1 w-64 rounded-md border border-border bg-popover shadow-lg z-50 py-1 overflow-hidden">
-                          <div className="text-[10px] font-semibold text-muted-foreground px-3 py-1.5 bg-muted/30 border-b border-border">内置预设</div>
-                          {SYSTEM_PRESETS.map(preset => (
-                            <button
-                              key={preset.id}
-                              type="button"
-                              className="w-full text-left px-3 py-2 text-xs hover:bg-accent transition-colors border-b border-border/50 text-foreground"
-                              onClick={() => handleApplyPreset(preset.content)}
-                            >
-                              <div className="font-semibold">{preset.name}</div>
-                              <div className="text-[10px] text-muted-foreground truncate">{preset.content}</div>
-                            </button>
-                          ))}
-
-                          {settings.customPresetPrompts.length > 0 && (
-                            <>
-                              <div className="text-[10px] font-semibold text-muted-foreground px-3 py-1.5 bg-muted/30 border-b border-border">用户自定义</div>
-                              {settings.customPresetPrompts.map(preset => (
-                                <button
-                                  key={preset.id}
-                                  type="button"
-                                  className="w-full text-left px-3 py-2 text-xs hover:bg-accent transition-colors border-b border-border/50 text-foreground"
-                                  onClick={() => handleApplyPreset(preset.content)}
-                                >
-                                  <div className="font-semibold">{preset.name}</div>
-                                  <div className="text-[10px] text-muted-foreground truncate">{preset.content}</div>
-                                </button>
-                              ))}
-                            </>
-                          )}
-
-                          <div className="p-1.5 bg-muted/10 text-[10px] text-muted-foreground text-center">
-                            可以在「预设与风格」Tab 中管理自定义提示词
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    <Select
+                      value={editingService.promptMode || 'append'}
+                      options={[
+                        { value: 'append', label: '追加到全局 Prompt' },
+                        { value: 'override', label: '覆盖全局 Prompt' }
+                      ]}
+                      compact
+                      className="w-[150px] h-7 text-xs"
+                      onChange={val => setEditingService({
+                        ...editingService,
+                        promptMode: val as 'append' | 'override'
+                      })}
+                    />
                   </div>
-                </div>
                   <Textarea
-                    placeholder="留空以使用全局翻译提示词..."
+                    placeholder={
+                      editingService.promptMode === 'override'
+                        ? '留空以使用全局翻译提示词；填写后将完全替换全局提示词，仅使用此处内容作为该服务的系统提示词...'
+                        : '留空以仅使用全局翻译提示词；填写后将追加到全局提示词之后，作为该服务的额外翻译指令...'
+                    }
                     value={editingService.prompt || ''}
                     onChange={e => setEditingService({ ...editingService, prompt: e.target.value })}
                     className="font-mono text-xs min-h-[80px]"
@@ -464,8 +401,8 @@ export function OptionsServicesSettings({ settings, onSave }: OptionsServicesSet
                 {/* Polysemy Switch */}
                 <div className="flex items-center justify-between pt-2 border-t border-border/50">
                   <div>
-                    <div className="text-sm font-medium">启用多义词词典式翻译 (Polysemy)</div>
-                    <div className="text-xs text-muted-foreground">当输入为单个词或短语时，自动提供词性、多义项对比及英文音标释义</div>
+                    <div className="text-sm font-medium">在 popup 翻译面板上启用多义词词典式翻译</div>
+                    <div className="text-xs text-muted-foreground">仅对 popup 短文本翻译生效。当输入为单个词或短语时，自动提供词性、多义项对比及英文音标释义。网页翻译不会启用，避免多义项输出导致页面形变。</div>
                   </div>
                   <button
                     type="button"
@@ -627,7 +564,7 @@ export function OptionsServicesSettings({ settings, onSave }: OptionsServicesSet
                         )}
                         {service.enablePolysemy && (
                           <Badge variant="outline" className="text-[9px] px-1.5 text-emerald-500 border-emerald-200/50 bg-emerald-500/5">
-                            多义词翻译
+                            Popup 多义词
                           </Badge>
                         )}
                       </div>

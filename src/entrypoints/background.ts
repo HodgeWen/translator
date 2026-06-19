@@ -1,7 +1,6 @@
 import { defineBackground } from 'wxt/utils/define-background';
 import type { BackgroundDefinition } from 'wxt';
 import { translate } from '@/lib/api';
-import { detectLanguage } from '@/lib/lang-detect';
 import { clearExpiredCache } from '@/lib/cache';
 import { importSettings } from '@/lib/storage';
 import type { BgMessage } from '@/types';
@@ -57,19 +56,13 @@ export default defineBackground(() => {
           case 'TRANSLATE': {
             const result = await translate({
               text: message.payload.text,
-              sourceLang: message.payload.sourceLang,
               targetLang: message.payload.targetLang,
               isAggregate: message.payload.isAggregate,
               hasPlaceholders: message.payload.hasPlaceholders,
               extraPrompt: message.payload.extraPrompt,
+              enablePolysemy: message.payload.enablePolysemy,
             });
             sendResponse({ success: true, data: result });
-            break;
-          }
-
-          case 'DETECT_LANG': {
-            const lang = await detectLanguage(message.payload.text);
-            sendResponse({ success: true, data: { lang } });
             break;
           }
 

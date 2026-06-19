@@ -1,5 +1,4 @@
-import type { InputLoadingPulseEasing, LangCode } from '@/types';
-import { shouldSkipTranslation } from '@/lib/lang-detect';
+import type { InputLoadingPulseEasing } from '@/types';
 
 export const INPUT_TRANSLATION_LOADING_ATTR = 'translatorInputLoading';
 const INPUT_LOADING_COLOR_0_VAR = '--translator-input-loading-color-0';
@@ -13,25 +12,6 @@ interface InputLoadingAnimationOptions {
   keyframes: [string, string, string];
   durationMs: number;
   easing: InputLoadingPulseEasing;
-}
-
-interface ResolveInputTargetLanguageArgs {
-  detectedLang: LangCode | null;
-  nativeLanguage: LangCode;
-  defaultSourceLanguage: LangCode;
-  inputDefaultSourceLanguage?: LangCode;
-}
-
-export function resolveInputTargetLanguage({
-  detectedLang,
-  nativeLanguage,
-  defaultSourceLanguage,
-  inputDefaultSourceLanguage,
-}: ResolveInputTargetLanguageArgs): LangCode {
-  if (detectedLang && shouldSkipTranslation(detectedLang, nativeLanguage)) {
-    return inputDefaultSourceLanguage || defaultSourceLanguage;
-  }
-  return nativeLanguage;
 }
 
 export function isValidHexColor(value: string): boolean {

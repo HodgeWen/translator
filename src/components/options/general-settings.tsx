@@ -1,14 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { NumberInput } from '@/components/ui/number-input';
 import type { GlobalSettings } from '@/types';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
-import { DEFAULT_GLOBAL_PROMPT } from '@/lib/prompts';
 import { getHoverShortcutOptions, getInputShortcutOptions } from '@/entrypoints/content/shortcut-utils';
 import {
-  FileText, Clock, Layers, RotateCcw, Keyboard, ExternalLink,
+  Clock, Layers, Keyboard, ExternalLink,
 } from 'lucide-react';
 
 const KEY_ICON_MAP: Record<string, string> = {
@@ -67,13 +65,11 @@ export function OptionsGeneralSettings({ settings, onSave }: OptionsGeneralSetti
   const [actualShortcut, setActualShortcut] = useState<string>(settings.shortcutKey);
 
   // Local draft state for text/number inputs to avoid hitting chrome.storage.sync rate limits
-  const [draftPrompt, setDraftPrompt] = useState(settings.globalPrompt);
   const [draftTimeout, setDraftTimeout] = useState(settings.requestTimeout);
   const [draftMaxParagraphs, setDraftMaxParagraphs] = useState(settings.maxParagraphsPerRequest);
   const [draftMaxTextLength, setDraftMaxTextLength] = useState(settings.maxTextLengthPerRequest);
   const [draftMaxConcurrent, setDraftMaxConcurrent] = useState(settings.maxConcurrentRequests);
 
-  useEffect(() => { setDraftPrompt(settings.globalPrompt); }, [settings.globalPrompt]);
   useEffect(() => { setDraftTimeout(settings.requestTimeout); }, [settings.requestTimeout]);
   useEffect(() => { setDraftMaxParagraphs(settings.maxParagraphsPerRequest); }, [settings.maxParagraphsPerRequest]);
   useEffect(() => { setDraftMaxTextLength(settings.maxTextLengthPerRequest); }, [settings.maxTextLengthPerRequest]);
@@ -114,37 +110,6 @@ export function OptionsGeneralSettings({ settings, onSave }: OptionsGeneralSetti
 
   return (
     <div className="space-y-6">
-      {/* Global Prompt */}
-      <div className="rounded-lg border border-border p-6 space-y-4">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-indigo-500" />
-            <h3 className="text-lg font-semibold">{t('title_global_prompt')}</h3>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onSave({ ...settings, globalPrompt: DEFAULT_GLOBAL_PROMPT })}
-            disabled={settings.globalPrompt === DEFAULT_GLOBAL_PROMPT}
-          >
-            <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-            {t('btn_reset_default')}
-          </Button>
-        </div>
-        <p className="text-sm text-muted-foreground">{t('desc_global_prompt')}</p>
-        <textarea
-          value={draftPrompt}
-          onChange={(e) => { setDraftPrompt(e.target.value); debouncedSave({ globalPrompt: e.target.value }); }}
-          rows={4}
-          className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm resize-y font-mono"
-        />
-        <div className="text-xs text-muted-foreground space-y-1">
-          <p>{t('hint_prompt_vars')}</p>
-          <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded">{'{{sourceLang}}'}</code>{' '}
-          <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded">{'{{targetLang}}'}</code>
-        </div>
-      </div>
-
       {/* Request Settings */}
       <div className="rounded-lg border border-border p-6 space-y-4">
         <div className="flex items-center gap-2">

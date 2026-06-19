@@ -2,7 +2,7 @@ import Dexie, { type EntityTable } from 'dexie';
 import type { CacheEntry, RequestLogEntry, DailyTokenUsageEntry } from '@/types';
 
 const DB_NAME = 'TranslatorCache';
-const DB_VERSION = 3; // v3: 新增 request_logs 与 daily_token_usage 统计表
+const DB_VERSION = 4; // v4: 移除 sourceLang 缓存维度，hash 键改为 (text, targetLang, salt)
 const TTL_DAYS = 7;
 const TTL_MS = TTL_DAYS * 24 * 60 * 60 * 1000;
 
@@ -24,10 +24,18 @@ db.version(2).stores({
 }).upgrade(tx => {
   return tx.table('translations').clear();
 });
-db.version(DB_VERSION).stores({
+db.version(3).stores({
   translations: 'hash, sourceLang, targetLang, createdAt',
   request_logs: '++id, [providerId+modelId], timestamp',
   daily_token_usage: '++id, [providerId+modelId+date], date',
+});
+// v4: 移除 sourceLang 索引维度，清空旧缓存（hash 计算方式已变更）
+db.version(DB_VERSION).stores({
+  translations: 'hash, targetLang, createdAt',
+  request_logs: '++id, [providerId+modelId], timestamp',
+  daily_token_usage: '++id, [providerId+modelId+date], date',
+}).upgrade(tx => {
+  return tx.table('translations').clear();
 });
 
 let openPromise: Promise<CacheDatabase> | null = null;
@@ -47,8 +55,8 @@ export async function ensureDb(): Promise<CacheDatabase> {
 //
 // extraSalt：可选盐值（如 globalPrompt 的摘要）。同 salt 共享缓存；
 // 调用方修改 prompt 后传入新 salt 即可让旧缓存自然失效，TTL 兜底回收。
-async function hashKey(text: string, sourceLang: string, targetLang: string, extraSalt = ''): Promise<string> {
-  const str = `${text}:${sourceLang}:${targetLang}:${extraSalt}`;
+async function hashKey(text: string, targetLang: string, extraSalt = ''): Promise<string> {
+  const str = `${text}:${targetLang}:${extraSalt}`;
   const data = new TextEncoder().encode(str);
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   return Array.from(new Uint8Array(hashBuffer))
@@ -58,12 +66,11 @@ async function hashKey(text: string, sourceLang: string, targetLang: string, ext
 
 export async function getCachedTranslation(
   text: string,
-  sourceLang: string,
   targetLang: string,
   extraSalt = ''
 ): Promise<{ text: string; hash: string } | null> {
   const dbInstance = await ensureDb();
-  const hash = await hashKey(text, sourceLang, targetLang, extraSalt);
+  const hash = await hashKey(text, targetLang, extraSalt);
   const entry = await dbInstance.translations.get(hash);
 
   if (!entry) return null;
@@ -85,18 +92,16 @@ export async function getCachedTranslation(
 
 export async function setCachedTranslation(
   text: string,
-  sourceLang: string,
   targetLang: string,
   translatedText: string,
   precomputedHash?: string,
   extraSalt = ''
 ): Promise<void> {
   const dbInstance = await ensureDb();
-  const hash = precomputedHash ?? await hashKey(text, sourceLang, targetLang, extraSalt);
+  const hash = precomputedHash ?? await hashKey(text, targetLang, extraSalt);
   await dbInstance.translations.put({
     hash,
     sourceText: text,
-    sourceLang,
     targetLang,
     text: translatedText,
     createdAt: Date.now(),

@@ -45,7 +45,7 @@
     "message": "Open Settings"
   },
   "popup_auto_detect_hint": {
-    "message": "Auto-detect input language"
+    "message": "Auto-detect: native→second language, foreign→native"
   },
   "popup_target_auto": {
     "message": "Auto"
@@ -168,40 +168,22 @@
     "message": "Native Language"
   },
   "hint_native_language": {
-    "message": "Your native language. Translations will target this language."
+    "message": "Your native language. Web and popup translations target this language by default."
   },
-  "label_default_source_language": {
-    "message": "Default source language"
+  "label_second_language": {
+    "message": "Second Language"
   },
-  "hint_default_source_language": {
-    "message": "When the input language is your native language, translate into this."
+  "hint_second_language": {
+    "message": "In popup translation, when the input is in your native language, it is translated into this language."
   },
-  "label_input_default_source_language": {
-    "message": "Input default source language"
+  "option_follow_native_language": {
+    "message": "Follow native language"
   },
-  "hint_input_default_source_language": {
-    "message": "When input box content is your native language, translate into this first; leave blank to follow the default source language."
+  "label_input_translation_target_language": {
+    "message": "Input translation target language"
   },
-  "option_follow_default_source_language": {
-    "message": "Follow default source language"
-  },
-  "title_lang_detect_providers": {
-    "message": "Language Detection Providers"
-  },
-  "btn_add_api_detector": {
-    "message": "Add API Detector"
-  },
-  "btn_add_google_free_detector": {
-    "message": "Add Google (Free)"
-  },
-  "preset_google_free_name": {
-    "message": "Google Translate (Public)"
-  },
-  "hint_google_free_detector": {
-    "message": "Public Google Translate endpoint, no API key required. Privacy notice: queries are sent to Google's servers — avoid sensitive content. May be unreachable or rate-limited in some regions."
-  },
-  "lang_detect_description": {
-    "message": "franc-min is always used first. Additional API detectors are used as fallback when franc-min is uncertain."
+  "hint_input_translation_target_language": {
+    "message": "Input box translation typically translates from your native language to a foreign language. Set the default target language here."
   },
   "label_default_style": {
     "message": "Default Translation Style"
@@ -440,9 +422,6 @@
   "new_provider": {
     "message": "New Provider"
   },
-  "new_api_detector": {
-    "message": "New API Detector"
-  },
   "label_endpoint_url": {
     "message": "Endpoint URL"
   },
@@ -465,7 +444,7 @@
     "message": "Leave empty to use global prompt..."
   },
   "hint_provider_prompt": {
-    "message": "Custom prompt for this provider. Supports {{sourceLang}}, {{targetLang}} variables. The source text is passed separately as the user message; do not embed it in the prompt."
+    "message": "Custom prompt for this provider. Supports {{targetLang}} variable. The source text is passed separately as the user message; do not embed it in the prompt."
   },
   "title_global_prompt": {
     "message": "Global Translation Prompt"
@@ -576,7 +555,7 @@
     "message": "Services"
   },
   "tab_presets": {
-    "message": "Presets & Styles"
+    "message": "Prompt & Styles"
   },
   "title_load_balance": {
     "message": "Load Balancing"

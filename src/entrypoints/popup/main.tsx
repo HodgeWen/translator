@@ -15,7 +15,7 @@ import type {
 } from '@/types'
 import { getSettings, saveSettings } from '@/lib/storage'
 import { sendBgMessage } from '@/lib/messaging'
-import { detectLanguage, detectLanguageLocal, shouldSkipTranslation } from '@/lib/lang-detect'
+import { detectLanguageLocal, isSameLanguage } from '@/lib/lang-detect'
 import { LANGUAGE_OPTIONS } from '@/lib/languages'
 import { t, setUILanguage } from '@/lib/i18n'
 import { useToast } from '@/hooks/use-toast'
@@ -25,20 +25,16 @@ import { LogoIcon } from '@/components/logo-icon'
 const TARGET_AUTO = 'auto' as const
 type TargetSelection = typeof TARGET_AUTO | LangCode
 
-async function resolveTargetLang(
-  text: string,
-  settings: GlobalSettings,
-  options: { localOnly?: boolean } = {}
-): Promise<LangCode> {
-  const trimmed = text.trim()
-  if (!trimmed) return settings.nativeLanguage
-  const detected = options.localOnly
-    ? await detectLanguageLocal(trimmed)
-    : await detectLanguage(trimmed)
-  if (detected && shouldSkipTranslation(detected, settings.nativeLanguage)) {
-    return settings.defaultSourceLanguage
+// 根据检测结果决定翻译方向：母语→第二语言，外语→母语
+function resolveAutoTargetLang(
+  detectedLang: LangCode | null,
+  nativeLanguage: LangCode,
+  secondLanguage: LangCode
+): LangCode {
+  if (detectedLang && isSameLanguage(detectedLang, nativeLanguage)) {
+    return secondLanguage
   }
-  return settings.nativeLanguage
+  return nativeLanguage
 }
 
 function App() {
@@ -86,9 +82,9 @@ function App() {
     }
     const seq = ++detectSeqRef.current
     const timer = window.setTimeout(async () => {
-      const target = await resolveTargetLang(trimmed, settings, { localOnly: true })
+      const detected = await detectLanguageLocal(trimmed)
       if (seq === detectSeqRef.current) {
-        setTargetLangPreview(target)
+        setTargetLangPreview(resolveAutoTargetLang(detected, settings.nativeLanguage, settings.secondLanguage))
       }
     }, 200)
     return () => window.clearTimeout(timer)
@@ -124,14 +120,20 @@ function App() {
 
     try {
       const trimmed = text.trim()
-      const targetLang =
-        manualTarget !== TARGET_AUTO ? manualTarget : await resolveTargetLang(trimmed, settings)
+      let targetLang: LangCode
+      if (manualTarget !== TARGET_AUTO) {
+        targetLang = manualTarget
+      } else {
+        const detected = await detectLanguageLocal(trimmed)
+        targetLang = resolveAutoTargetLang(detected, settings.nativeLanguage, settings.secondLanguage)
+      }
       setTargetLangPreview(targetLang)
       const response = await sendBgMessage<TranslationResponse>({
         type: 'TRANSLATE',
         payload: {
           text: trimmed,
-          targetLang
+          targetLang,
+          enablePolysemy: true,
         }
       })
 

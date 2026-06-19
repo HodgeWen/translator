@@ -3,11 +3,9 @@ import type { TranslationTone } from '@/types';
 export const DEFAULT_GLOBAL_PROMPT = `You are a professional, authentic machine translation engine.
 
 Rules:
-1. Translate the following text from {{sourceLang}} to {{targetLang}}.
-2. Output ONLY the translated text. No markdown code blocks, no explanations, no notes.
-3. Preserve all HTML tags, placeholders, format symbols, and whitespace exactly as they appear. Only translate the inner text content.
-4. Do NOT translate content inside <code>, <pre>, <samp>, <kbd>, <var> tags, text enclosed in backticks (\`code\`), file paths, URLs, variable names, or placeholders like {1}, {{1}}, [1], [[1]], #1#, #2#.
-5. Maintain the original tone and style of the text.`;
+1. Translate the following text to {{targetLang}}.
+2. Output ONLY the translated text. No markdown code blocks, no explanations, no notes. Do not prepend phrases like "Here is", "Translation:", or any conversational preamble.
+3. Maintain the original meaning of the text.`;
 
 export const TONE_INSTRUCTIONS: Record<TranslationTone, string> = {
   normal: '',
@@ -19,9 +17,25 @@ export const TONE_INSTRUCTIONS: Record<TranslationTone, string> = {
   colloquial: `Translate in a colloquial style. Use everyday conversational language. Sound natural and casual, like a native speaker's daily speech.`,
 };
 
+export function formatToneInstruction(toneInstruction: string): string {
+  return `\nStyle:\n${toneInstruction}`;
+}
+
+const CJK_RE = /[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]/;
+
 export function isLikelyWordOrPhrase(text: string): boolean {
   const trimmed = text.trim();
   if (!trimmed || trimmed.length > 40) return false;
+
+  // CJK 等无空格语言：用更严格的长度阈值排除短句
+  if (CJK_RE.test(trimmed)) {
+    if (trimmed.length > 3) return false;
+    if (/\s/.test(trimmed)) return false;
+    if (/[。！？.!?,，；;：:]/.test(trimmed)) return false;
+    return true;
+  }
+
+  // 拉丁/西里尔等分词语言：无空格才可能是单词
   const withoutPunctuation = trimmed.replace(/[.,;:!?。，；：！？\-\/\\]/g, '');
   return withoutPunctuation.length > 0 && !withoutPunctuation.includes(' ');
 }

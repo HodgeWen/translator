@@ -1,6 +1,5 @@
 import { franc } from 'franc-min';
-import type { LangCode, LangDetectProvider } from '@/types';
-import { getSettings } from './storage';
+import type { LangCode } from '@/types';
 
 // ISO 639-3 to BCP 47 / ISO 639-1 mapping for common languages
 const ISO3_TO_BCP47: Record<string, string> = {
@@ -69,10 +68,6 @@ function detectByCharset(text: string): LangCode | null {
 
   if (total === 0) return null;
 
-  // 阈值说明：
-  // - 假名 ≥ 0.25：日文文本中假名密度通常很高（30-60%），低于此可能是中文夹引日文片段。
-  // - 谚文 ≥ 0.3：韩文文本中谚文音节密集，间杂少量汉字。
-  // - CJK ≥ 0.3：中文兜底（注意：日文/韩文已在前两条筛掉）。
   if (kana / total >= 0.25) return 'ja';
   if (hangul / total >= 0.3) return 'ko';
   if (cjk / total >= 0.3) return 'zh';
@@ -80,7 +75,9 @@ function detectByCharset(text: string): LangCode | null {
   return null;
 }
 
-async function detectWithFranc(text: string): Promise<LangCode | null> {
+// 本地检测：franc-min + CJK 字符集兜底，不发起任何网络请求。
+// 仅用于 popup 翻译面板：检测输入语言以决定翻译方向（母语→第二语言 / 外语→母语）。
+export async function detectLanguageLocal(text: string): Promise<LangCode | null> {
   const trimmed = text.trim();
 
   // franc-min requires at least ~10 chars for reliable detection；短文本走字符集兜底。
@@ -100,123 +97,13 @@ async function detectWithFranc(text: string): Promise<LangCode | null> {
   }
 }
 
-// Google translate 公共端点：免 key，但中国大陆访问可能不稳定。
-// 响应是裸数组：[ [["译文","原文",...]], null, "zh-CN", ... ]，第三个元素是检测到的源语言。
-async function detectWithGoogleFree(provider: LangDetectProvider, text: string): Promise<LangCode | null> {
-  const endpoint = provider.endpoint?.trim() || 'https://translate.googleapis.com/translate_a/single';
-
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), provider.timeout || 10000);
-
-    const url = new URL(endpoint);
-    url.searchParams.set('client', 'gtx');
-    url.searchParams.set('sl', 'auto');
-    url.searchParams.set('tl', 'en');
-    url.searchParams.set('dt', 't');
-    url.searchParams.set('q', text);
-
-    const response = await fetch(url.toString(), {
-      method: 'GET',
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
-    if (!response.ok) return null;
-
-    const data = await response.json();
-    const lang = Array.isArray(data) && typeof data[2] === 'string' ? data[2] : null;
-    if (lang && lang.length >= 2) {
-      return lang;
-    }
-    return null;
-  } catch (err) {
-    console.warn('[Translator] detectWithGoogleFree failed:', err);
-    return null;
-  }
-}
-
-async function detectWithApi(provider: LangDetectProvider, text: string): Promise<LangCode | null> {
-  if (!provider.endpoint) return null;
-
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), provider.timeout || 10000);
-
-    const response = await fetch(provider.endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(provider.headers || {}),
-      },
-      body: JSON.stringify({ text }),
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) return null;
-
-    const data = await response.json();
-
-    // Try common response shapes
-    const lang =
-      data.language ||
-      data.lang ||
-      data.detectedLanguage ||
-      data.source_language ||
-      data.data?.language ||
-      data.data?.detections?.[0]?.language ||
-      data.result?.language;
-
-    if (typeof lang === 'string' && lang.length >= 2) {
-      return lang;
-    }
-
-    return null;
-  } catch (err) {
-    console.warn('[Translator] detectWithApi failed:', err);
-    return null;
-  }
-}
-
-// 本地检测：仅 franc-min + CJK 字符集兜底，不发起任何网络请求。
-// 用于 popup 输入预览等隐私敏感场景，避免每次按键都把内容发给远端检测器。
-export async function detectLanguageLocal(text: string): Promise<LangCode | null> {
-  return detectWithFranc(text);
-}
-
-export async function detectLanguage(text: string): Promise<LangCode | null> {
-  const settings = await getSettings();
-
-  for (const provider of settings.detectLangProviders) {
-    let result: LangCode | null = null;
-
-    if (provider.type === 'franc') {
-      result = await detectWithFranc(text);
-    } else if (provider.type === 'api') {
-      result = await detectWithApi(provider, text);
-    } else if (provider.type === 'google_free') {
-      result = await detectWithGoogleFree(provider, text);
-    }
-
-    if (result) {
-      return result;
-    }
-  }
-
-  return null;
-}
-
-export function shouldSkipTranslation(
+// 比较检测语言与目标语言是否同源（前缀匹配）。
+export function isSameLanguage(
   detectedLang: LangCode | null | undefined,
-  nativeLanguage: LangCode
+  targetLang: LangCode
 ): boolean {
   if (!detectedLang) return false;
-
-  // Normalize for comparison
   const detected = detectedLang.toLowerCase().split('-')[0];
-  const native = nativeLanguage.toLowerCase().split('-')[0];
-
-  return detected === native;
+  const target = targetLang.toLowerCase().split('-')[0];
+  return detected === target;
 }

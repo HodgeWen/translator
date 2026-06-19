@@ -28,18 +28,6 @@ export interface ProviderConfig {
   }>;
 }
 
-// Language detection provider configuration
-export interface LangDetectProvider {
-  id: string;
-  name: string;
-  type: 'franc' | 'api' | 'google_free';
-  // For API-based detection
-  endpoint?: string;
-  apiKey?: string;
-  headers?: Record<string, string>;
-  timeout?: number;
-}
-
 // Global application settings
 export interface GlobalSettings {
   providers: ProviderConfig[];
@@ -47,24 +35,22 @@ export interface GlobalSettings {
   selectedModelId: string;
   services: TranslationService[];
   selectedServiceId: string;
-  customPresetPrompts: PresetPrompt[];
   customTones: CustomTone[];
   overrideDisplayStyleEnabled: boolean;
   customDisplayStyle: DisplayStyle;
   overrideTranslationToneEnabled: boolean;
   customTranslationTone: string;
   nativeLanguage: LangCode;
-  defaultSourceLanguage: LangCode;
+  secondLanguage: LangCode;
   uiLanguage: LangCode;
   displayStyle: DisplayStyle;
   translationTone: TranslationTone;
   translationLoadingTheme: TranslationLoadingTheme;
   globalPrompt: string;
-  detectLangProviders: LangDetectProvider[];
   shortcutKey: string;
   hoverShortcutKey: string;
   inputShortcutKey: string;
-  inputDefaultSourceLanguage: LangCode;
+  inputTranslationTargetLanguage: LangCode;
   inputLoadingPulseKeyframes: [string, string, string];
   inputLoadingPulseDurationMs: number;
   inputLoadingPulseEasing: InputLoadingPulseEasing;
@@ -79,7 +65,6 @@ export interface GlobalSettings {
 export interface CacheEntry {
   hash: string;
   sourceText: string; // 原文，用于 hash 碰撞校验
-  sourceLang: LangCode;
   targetLang: LangCode;
   text: string;
   createdAt: number; // timestamp
@@ -88,7 +73,6 @@ export interface CacheEntry {
 // Translation request payload
 export interface TranslationRequest {
   text: string;
-  sourceLang?: LangCode;
   targetLang: LangCode;
   isAggregate?: boolean;
   // 调用方告知文本内是否含 #N# 行内占位符。仅在 true 时才向 prompt 附加占位符规则，
@@ -96,6 +80,9 @@ export interface TranslationRequest {
   hasPlaceholders?: boolean;
   // 额外提示词片段，追加到 system prompt 末尾。用于 popup 等场景注入特定规则。
   extraPrompt?: string;
+  // 调用方声明本次翻译适合多义词词典式翻译（如 popup 短文本）。
+  // 网页翻译永不设置，避免多义项 bullet 输出污染 DOM。
+  enablePolysemy?: boolean;
 }
 
 export interface TokenUsage {
@@ -116,29 +103,16 @@ export interface TranslationResponse {
 // Background message types
 interface BgTranslatePayload {
   text: string;
-  sourceLang?: LangCode;
   targetLang: LangCode;
   isAggregate?: boolean;
   hasPlaceholders?: boolean;
   extraPrompt?: string;
-}
-
-interface BgDetectLangPayload {
-  text: string;
+  enablePolysemy?: boolean;
 }
 
 export type BgMessage =
   | { type: 'TRANSLATE'; payload: BgTranslatePayload }
-  | { type: 'DETECT_LANG'; payload: BgDetectLangPayload }
   | { type: 'PING' };
-
-export interface PresetPrompt {
-  id: string;
-  name: string;
-  description: string;
-  content: string;
-  isSystem?: boolean;
-}
 
 export interface CustomTone {
   id: string;
