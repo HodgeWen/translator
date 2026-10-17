@@ -17,6 +17,7 @@ const providerConfigSchema = z.object({
     z.object({
       id: z.string().min(1),
       name: z.string().min(1),
+      supportsVision: z.boolean().default(false),
     })
   ).min(1, 'At least one model is required'),
 });
@@ -81,6 +82,7 @@ export const globalSettingsSchema = z.object({
   displayStyle: z.enum(['original', 'bilingual', 'underline', 'clean']).default('original'),
   translationTone: z.enum(['normal', 'technical', 'tech_forward', 'humorous', 'literary', 'formal', 'colloquial']).default('normal'),
   translationLoadingTheme: z.enum(['indigo', 'aurora', 'monochrome', 'cosmic']).default('indigo'),
+  imageHoverButtonEnabled: z.boolean().default(true),
   globalPrompt: z.string().min(1).default(DEFAULT_GLOBAL_PROMPT),
   shortcutKey: z.string().default('Alt+W'),
   hoverShortcutKey: hoverShortcutKeySchema,

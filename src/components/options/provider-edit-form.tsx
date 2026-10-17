@@ -361,6 +361,22 @@ export function ProviderEditForm({
               placeholder={t('label_display_name')}
               className="flex-1 h-8 rounded-md border border-input bg-transparent px-2 text-sm"
             />
+            <label
+              className="inline-flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground"
+              title={t('hint_supports_vision')}
+            >
+              <input
+                type="checkbox"
+                checked={model.supportsVision === true}
+                onChange={(e) => {
+                  const newModels = [...editingProvider.models];
+                  newModels[index] = { ...newModels[index], supportsVision: e.target.checked };
+                  updateEditingModels(newModels);
+                }}
+                className="accent-indigo-500"
+              />
+              {t('label_supports_vision')}
+            </label>
             <Button
               variant="ghost"
               size="icon"
@@ -378,7 +394,7 @@ export function ProviderEditForm({
           variant="outline"
           size="sm"
           className="h-7 text-xs"
-          onClick={() => updateEditingModels([...editingProvider.models, { id: '', name: '' }])}
+          onClick={() => updateEditingModels([...editingProvider.models, { id: '', name: '', supportsVision: false }])}
         >
           <Plus className="mr-1 h-3 w-3" />
           {t('btn_add_model')}

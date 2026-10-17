@@ -25,6 +25,8 @@ export interface ProviderConfig {
   models: Array<{
     id: string;
     name: string;
+    // 支持图片输入（用于图片文字识别）；默认关闭
+    supportsVision?: boolean;
   }>;
 }
 
@@ -46,6 +48,7 @@ export interface GlobalSettings {
   displayStyle: DisplayStyle;
   translationTone: TranslationTone;
   translationLoadingTheme: TranslationLoadingTheme;
+  imageHoverButtonEnabled: boolean;
   globalPrompt: string;
   shortcutKey: string;
   hoverShortcutKey: string;

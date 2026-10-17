@@ -694,5 +694,86 @@
   },
   "loading": {
     "message": "Loading..."
+  },
+  "label_supports_vision": {
+    "message": "Supports image input"
+  },
+  "hint_supports_vision": {
+    "message": "Enable this to use the model for recognizing text in images. Only models with this flag are used for image recognition."
+  },
+  "menu_translate_image": {
+    "message": "Translate this image"
+  },
+  "image_hover_button_text": {
+    "message": "T"
+  },
+  "image_hover_button_title": {
+    "message": "Translate image text"
+  },
+  "label_image_hover_button": {
+    "message": "Image hover button"
+  },
+  "hint_image_hover_button": {
+    "message": "Shows a floating \"T\" button when hovering over large images; the context menu stays available. Image translation is only available in Chromium browsers such as Chrome and Edge."
+  },
+  "image_translate_loading": {
+    "message": "Recognizing image text..."
+  },
+  "image_translate_translating": {
+    "message": "Translating image text..."
+  },
+  "image_translate_unsupported": {
+    "message": "Image translation isn't available in this browser"
+  },
+  "error_image_translate_no_vision_model": {
+    "message": "No model supports image input. Enable \"Supports image input\" for a model in settings."
+  },
+  "error_image_translate_fetch_failed": {
+    "message": "Couldn't load the image. Please try again."
+  },
+  "error_image_translate_recognize_failed": {
+    "message": "Couldn't recognize text in the image. Please try again."
+  },
+  "error_image_translate_translate_failed": {
+    "message": "Couldn't translate the recognized text. Please try again."
+  },
+  "error_image_invalid_format": {
+    "message": "Only PNG, JPEG and WebP images are supported."
+  },
+  "error_image_too_large": {
+    "message": "Image is too large: max 20MB and 16384px on the longest side."
+  },
+  "error_image_load_failed": {
+    "message": "Couldn't read the image. The file may be corrupted."
+  },
+  "error_image_clipboard_empty": {
+    "message": "No image found in the clipboard."
+  },
+  "btn_retry": {
+    "message": "Retry"
+  },
+  "image_toolbar_original": {
+    "message": "Original"
+  },
+  "image_toolbar_translation": {
+    "message": "Translation"
+  },
+  "image_toolbar_close": {
+    "message": "Close"
+  },
+  "popup_image_translate": {
+    "message": "Translate image"
+  },
+  "popup_image_select_file": {
+    "message": "Choose image"
+  },
+  "popup_image_drop_hint": {
+    "message": "Drop an image here, or paste a screenshot"
+  },
+  "popup_image_file_types": {
+    "message": "PNG, JPEG or WebP, up to 20MB each"
+  },
+  "popup_image_replace": {
+    "message": "Choose another"
   }
 }

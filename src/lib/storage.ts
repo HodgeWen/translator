@@ -35,6 +35,7 @@ export const DEFAULT_SETTINGS: GlobalSettings = {
   displayStyle: 'original',
   translationTone: 'normal',
   translationLoadingTheme: 'indigo',
+  imageHoverButtonEnabled: true,
   globalPrompt: DEFAULT_GLOBAL_PROMPT,
   shortcutKey: 'Alt+W',
   hoverShortcutKey: 'Control',

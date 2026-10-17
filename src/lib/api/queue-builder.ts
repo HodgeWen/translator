@@ -2,7 +2,7 @@ import type { GlobalSettings, TranslationService, ProviderConfig } from '@/types
 
 export interface ProviderModel {
   provider: ProviderConfig;
-  model: { id: string; name: string };
+  model: ProviderConfig['models'][number];
 }
 
 const poolCounters = new Map<string, number>();
@@ -26,7 +26,7 @@ export function buildServiceQueue(settings: GlobalSettings, activeService: Trans
   const queue: ProviderModel[] = [];
   const seen = new Set<string>();
 
-  const addModel = (provider: ProviderConfig, model: { id: string; name: string }) => {
+  const addModel = (provider: ProviderConfig, model: ProviderConfig['models'][number]) => {
     const key = `${provider.id}:${model.id}`;
     if (seen.has(key)) return;
     seen.add(key);
@@ -105,4 +105,9 @@ export function buildServiceQueue(settings: GlobalSettings, activeService: Trans
   }
 
   return queue;
+}
+
+// 识图队列：复用文本队列的降级顺序，只保留显式标记支持图片输入的模型
+export function buildVisionQueue(settings: GlobalSettings, activeService: TranslationService): ProviderModel[] {
+  return buildServiceQueue(settings, activeService).filter(({ model }) => model.supportsVision === true);
 }

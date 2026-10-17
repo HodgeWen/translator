@@ -694,5 +694,86 @@
   },
   "loading": {
     "message": "加载中..."
+  },
+  "label_supports_vision": {
+    "message": "支持图片输入"
+  },
+  "hint_supports_vision": {
+    "message": "勾选后该模型可用于识别图片中的文字；识图只会使用带此标记的模型。"
+  },
+  "menu_translate_image": {
+    "message": "翻译此图片"
+  },
+  "image_hover_button_text": {
+    "message": "译"
+  },
+  "image_hover_button_title": {
+    "message": "翻译图片文字"
+  },
+  "label_image_hover_button": {
+    "message": "图片悬浮按钮"
+  },
+  "hint_image_hover_button": {
+    "message": "悬停较大网页图片时显示「译」按钮，右键菜单始终可用。仅 Chrome / Edge 等 Chromium 浏览器支持图片翻译。"
+  },
+  "image_translate_loading": {
+    "message": "正在识别图片文字..."
+  },
+  "image_translate_translating": {
+    "message": "正在翻译图片文字..."
+  },
+  "image_translate_unsupported": {
+    "message": "当前浏览器不支持图片翻译"
+  },
+  "error_image_translate_no_vision_model": {
+    "message": "没有可用的图片识图模型，请在设置中为模型勾选「支持图片输入」。"
+  },
+  "error_image_translate_fetch_failed": {
+    "message": "图片获取失败，请重试。"
+  },
+  "error_image_translate_recognize_failed": {
+    "message": "图片文字识别失败，请重试。"
+  },
+  "error_image_translate_translate_failed": {
+    "message": "图片文字翻译失败，请重试。"
+  },
+  "error_image_invalid_format": {
+    "message": "仅支持 PNG、JPEG、WebP 格式的图片。"
+  },
+  "error_image_too_large": {
+    "message": "图片过大：单张不能超过 20MB，最长边不能超过 16384 像素。"
+  },
+  "error_image_load_failed": {
+    "message": "图片读取失败，文件可能已损坏。"
+  },
+  "error_image_clipboard_empty": {
+    "message": "剪贴板中没有图片。"
+  },
+  "btn_retry": {
+    "message": "重试"
+  },
+  "image_toolbar_original": {
+    "message": "原文"
+  },
+  "image_toolbar_translation": {
+    "message": "译文"
+  },
+  "image_toolbar_close": {
+    "message": "关闭"
+  },
+  "popup_image_translate": {
+    "message": "图片翻译"
+  },
+  "popup_image_select_file": {
+    "message": "选择图片"
+  },
+  "popup_image_drop_hint": {
+    "message": "拖拽图片到此处，或直接粘贴截图"
+  },
+  "popup_image_file_types": {
+    "message": "支持 PNG、JPEG、WebP，单张不超过 20MB"
+  },
+  "popup_image_replace": {
+    "message": "重新选择"
   }
 }
