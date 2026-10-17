@@ -9,6 +9,9 @@ export interface ElementState {
   status: 'idle' | 'pending' | 'translated' | 'error';
   cloneEl?: HTMLElement;
   showingOriginal: boolean;
+  // 失败时间戳（performance.now()），仅 status === 'error' 时写入；
+  // 用于 IntersectionObserver 再次进入视口时判断是否已过重试阈值
+  errorAt?: number;
 }
 
 export interface AggregateSettings {

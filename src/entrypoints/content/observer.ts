@@ -2,6 +2,7 @@ import { collectBlocks } from '@/lib/block-detect';
 import { state, mutationIgnoredNodes } from './state';
 import { restoreAll } from './style-apply';
 import { translateSingleElement, scheduleAggregateFlush } from './translate';
+import { shouldRetryError } from './retry';
 
 // ─── Utilities ──────────────────────────────────────────────────────────
 
@@ -96,7 +97,15 @@ function createObserver(): IntersectionObserver {
         return;
       }
       if (pending.has(el)) return;
-      if (state.elementMap.has(el)) return;
+      // 失败段落重试：error 状态且距失败 ≥ 阈值时清理该条目并移除错误标记，
+      // 随后按当前模式（聚合入队 / 单元素调度）重新进入翻译流程；
+      // 已翻译 / idle / 未超阈值的条目维持现状跳过，只清理这一个 error 元素。
+      const existing = state.elementMap.get(el);
+      if (existing) {
+        if (!shouldRetryError(existing.status, existing.errorAt, performance.now())) return;
+        state.elementMap.delete(el);
+        el.removeAttribute('data-translator-error');
+      }
 
       if (state.aggregate.aggregateEnabled) {
         state.pendingAggregateElements.add(el);

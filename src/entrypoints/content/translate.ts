@@ -139,6 +139,7 @@ export async function translateSingleElement(el: HTMLElement, force = false, ski
       translatedText: '',
       status: 'error',
       showingOriginal: false,
+      errorAt: performance.now(),
     });
   }
 }
