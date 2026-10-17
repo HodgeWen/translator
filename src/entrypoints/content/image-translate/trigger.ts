@@ -1,10 +1,11 @@
 import type { BgImageTranslatePayload, ImageTranslationResult } from '@/types';
 import { ImageTranslationError, type ImageSource } from '@/lib/image-translate/types';
 import { sendBgMessage } from '@/lib/messaging';
-import { classifyImageSrc, matchesImageSrc } from './image-target';
+import { classifyImageSrc, matchesImageSrc, resolveImageSrc } from './image-target';
 import { imageErrorCodeFrom, imageErrorMessage } from './errors';
 import { ensureImageTranslateSettings, getImageTranslateTargetLang } from './settings';
 import { clearImageStatus, setImageErrorStatus, setImageLoadingStatus } from './status-view';
+import { removeImageOverlay, showImageOverlay } from './overlay';
 import {
   clearImageTranslateState,
   getImageTranslateState,
@@ -14,10 +15,6 @@ import {
 
 // 单飞：同一张图片加载中重复触发（悬浮按钮连点、右键重复点击）不再发第二次请求。
 const inflight = new WeakMap<HTMLImageElement, Promise<void>>();
-
-function resolveImageSrc(image: HTMLImageElement): string {
-  return image.currentSrc || image.src || '';
-}
 
 function errorDetail(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -74,6 +71,8 @@ async function runImageTranslation(image: HTMLImageElement): Promise<void> {
   if (!src) return;
 
   const requestId = nextImageRequestId();
+  // 加载/错误徽标与覆盖层互斥：重新触发时先移除旧覆盖层。
+  removeImageOverlay(image);
   setImageTranslateState(image, { status: 'loading', src, requestId });
   setImageLoadingStatus(image);
 
@@ -84,6 +83,7 @@ async function runImageTranslation(image: HTMLImageElement): Promise<void> {
     if (resolveImageSrc(image) !== src) {
       clearImageTranslateState(image);
       clearImageStatus(image);
+      removeImageOverlay(image);
       return false;
     }
     return true;
@@ -105,14 +105,23 @@ async function runImageTranslation(image: HTMLImageElement): Promise<void> {
       clearImageStatus(image);
       return;
     }
-    setImageTranslateState(image, { status: 'translated', src, requestId, result });
+    setImageTranslateState(image, {
+      status: 'translated',
+      src,
+      requestId,
+      result,
+      view: 'translation'
+    });
     clearImageStatus(image);
+    showImageOverlay(image, result);
   } catch (error) {
     if (!isCurrentRequest()) {
       clearImageStatus(image);
       return;
     }
     const code = imageErrorCodeFrom(error);
+    // 失败不留下半成品覆盖层。
+    removeImageOverlay(image);
     setImageTranslateState(image, { status: 'error', src, requestId, errorCode: code });
     setImageErrorStatus(image, imageErrorMessage(code), () => {
       void triggerImageTranslation(image);

@@ -265,3 +265,105 @@ textarea[data-translator-input-loading='true'],
     transform: rotate(360deg);
   }
 }
+
+/* ─── 图片翻译：原位覆盖层与工具条 ─────────────────────────
+ *
+ * 覆盖层是 fixed 定位的独立节点，只读取 <img> 的 getBoundingClientRect，
+ * 不改动图片节点本身；块尺寸用百分比跟随显示尺寸，字号由 JS 重算。
+ * 层 pointer-events: none，只有工具条可交互。
+ */
+[data-translator-image-overlay] {
+  all: revert;
+  position: fixed;
+  z-index: 2147483645;
+  box-sizing: border-box;
+  overflow: visible;
+  pointer-events: none;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 12px;
+  line-height: 1.15;
+  letter-spacing: normal;
+  text-align: center;
+  color: #0f172a;
+}
+
+[data-translator-image-overlay][hidden] {
+  display: none !important;
+}
+
+[data-translator-image-overlay-layer] {
+  all: revert;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+[data-translator-image-overlay-layer][hidden] {
+  display: none !important;
+}
+
+[data-translator-image-overlay-block] {
+  all: revert;
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  overflow: hidden;
+  padding: 0 2px;
+  border-radius: 2px;
+  font-weight: 500;
+  text-align: center;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  pointer-events: none;
+}
+
+[data-translator-image-overlay-toolbar] {
+  all: revert;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.88);
+  color: #f8fafc;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: normal;
+  pointer-events: auto;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.35);
+  backdrop-filter: blur(4px);
+}
+
+[data-translator-image-overlay-toolbar] button {
+  all: revert;
+  appearance: none;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+[data-translator-image-overlay-toolbar] button:hover {
+  background: rgba(148, 163, 184, 0.28);
+}
+
+[data-translator-image-overlay-toolbar] button:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 1px;
+}
+

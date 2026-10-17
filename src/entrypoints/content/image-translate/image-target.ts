@@ -15,6 +15,11 @@ export function classifyImageSrc(src: string | null | undefined): ImageSrcKind {
   return 'unsupported';
 }
 
+/** 图片当前实际加载的源：优先 currentSrc（srcset 已选定），回退 src */
+export function resolveImageSrc(image: HTMLImageElement): string {
+  return image.currentSrc || image.src || '';
+}
+
 /** 悬浮「译」按钮只对渲染尺寸 ≥ 200×200 CSS px 的图片显示 */
 export function isImageLargeEnough(size: { width: number; height: number }): boolean {
   return (

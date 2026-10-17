@@ -68,6 +68,11 @@
       width: 480px;
       height: 360px;
     }
+    #overlay-a,
+    #overlay-b {
+      width: 420px;
+      height: auto;
+    }
     #display-small {
       width: 150px;
       height: 112px;
@@ -190,6 +195,27 @@
     <p>预期：悬停不显示「译」；P4 不把 canvas 视为图片入口。</p>
   </section>
 
+  <section>
+    <h2>7. P6 原位覆盖层、工具条与多图独立</h2>
+    <p>
+      预期：用支持图片输入的模型分别触发下面两张图。翻译完成后覆盖块贴在原文位置、背景色取自图片本身；
+      右上角工具条显示「原文」与「关闭」。点击「原文」只隐藏该图覆盖块、工具条保留，按钮变为「译文」；
+      点击「译文」恢复。点击「关闭」后该图的覆盖层、工具条与注入节点消失，另一张图不受影响；
+      再次触发可重新显示（命中识别缓存）。滚动页面、调整窗口宽度或用 DevTools 改变图片 CSS 宽度后，
+      覆盖块应始终贴合原图（偏差 ≤2 CSS px），且图片的 src、naturalWidth/Height 与 CSS 宽高不变。
+    </p>
+    <figure>
+      <div class="stage">
+        <img id="overlay-a" alt="Overlay sample A" />
+        <img id="overlay-b" alt="Overlay sample B" />
+      </div>
+      <figcaption>
+        两图独立触发、切换与关闭。点击按钮只改第一张图的 src，覆盖层应随之清理，不再覆盖新图。
+        <button type="button" id="change-overlay-src">更换第一张图 src</button>
+      </figcaption>
+    </figure>
+  </section>
+
   <script>
     const TEXT_LINES = [
       'Quarterly Report 2026',
@@ -261,6 +287,12 @@
       'url(' + createTextCanvas(640, 400).toDataURL('image/png') + ')';
 
     drawTextImage(document.getElementById('plain-canvas'));
+
+    document.getElementById('overlay-a').src = createTextCanvas(640, 480).toDataURL('image/png');
+    document.getElementById('overlay-b').src = createTextCanvas(520, 360).toDataURL('image/png');
+    document.getElementById('change-overlay-src').addEventListener('click', () => {
+      document.getElementById('overlay-a').src = createTextCanvas(560, 420).toDataURL('image/png');
+    });
   </script>
 </body>
 </html>

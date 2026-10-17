@@ -1,5 +1,6 @@
 import type { ImageTranslationResult } from '@/types';
 import type { ImageTranslationErrorCode } from '@/lib/image-translate/types';
+import type { ImageOverlayView } from './overlay-model';
 
 export type ImageTranslateStatus = 'loading' | 'translated' | 'error';
 
@@ -10,6 +11,8 @@ export interface ImageTranslateState {
   requestId: number;
   result?: ImageTranslationResult;
   errorCode?: ImageTranslationErrorCode;
+  /** 覆盖层原文/译文视图；关闭覆盖层会清除状态，迟到结果随之作废 */
+  view?: ImageOverlayView;
 }
 
 const imageStates = new WeakMap<HTMLImageElement, ImageTranslateState>();
@@ -35,4 +38,11 @@ export function setImageTranslateState(
 
 export function clearImageTranslateState(image: HTMLImageElement): void {
   imageStates.delete(image);
+}
+
+/** 覆盖层切换原文/译文；状态已被关闭或新请求替换时忽略 */
+export function setImageTranslateView(image: HTMLImageElement, view: ImageOverlayView): void {
+  const current = imageStates.get(image);
+  if (!current) return;
+  imageStates.set(image, { ...current, view });
 }
