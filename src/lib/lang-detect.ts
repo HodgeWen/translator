@@ -112,19 +112,26 @@ export function isSameLanguage(
 // 避免对拉丁等语言做字符集误判。
 const CJK_LANG_PREFIXES = new Set(['zh', 'ja', 'ko']);
 
-// 翻译调度前的目标语言跳过判定（纯函数，不调用 franc、不发网络请求）：
-// - langAttr 存在：按 BCP-47 前缀与 targetLang 比对，同语言则跳过；
-// - langAttr 缺失：仅当 targetLang 为 CJK 语言且文本命中 detectByCharset
-//   的字符集兜底判定（复用其阈值）时跳过。
+// 翻译调度前的目标语言跳过判定（纯函数，不调用 franc、不发网络请求）。
+// lang 来源分两种，语义不同：
+// - ownLang（元素自身 lang 属性）：直接决定该元素语言，命中目标语即跳过；
+// - ancestorLang（最近 [lang] 祖先）：只是页面环境——站点 UI 本地化为目标语
+//   （如中文 locale 的 X，<html lang="zh-cn">）时祖先必然命中，正文却可能是外语。
+//   因此目标语为 CJK 时还需 detectByCharset 确认文本确为目标语才跳过，否则放行翻译；
+//   非 CJK 目标语维持前缀比对（复用其阈值）。
+// - 两者皆缺失：仅当 targetLang 为 CJK 语言且文本命中 detectByCharset 兜底时跳过。
 export function shouldSkipByLanguage(
-  langAttr: string | null,
+  ownLang: string | null,
+  ancestorLang: string | null,
   text: string,
   targetLang: LangCode
 ): boolean {
-  if (langAttr) {
-    return isSameLanguage(langAttr, targetLang);
+  if (ownLang) {
+    return isSameLanguage(ownLang, targetLang);
   }
-  const target = targetLang.toLowerCase().split('-')[0];
-  if (!CJK_LANG_PREFIXES.has(target)) return false;
-  return isSameLanguage(detectByCharset(text), targetLang);
+  const isCjkTarget = CJK_LANG_PREFIXES.has(targetLang.toLowerCase().split('-')[0]);
+  if (ancestorLang && isSameLanguage(ancestorLang, targetLang)) {
+    return !isCjkTarget || isSameLanguage(detectByCharset(text), targetLang);
+  }
+  return isCjkTarget && isSameLanguage(detectByCharset(text), targetLang);
 }

@@ -40,16 +40,18 @@ function markElementIdle(el: HTMLElement): void {
   });
 }
 
-// 取元素自身 lang 属性，缺失时沿最近 [lang] 祖先取值（closest 从自身开始匹配）。
-function getEffectiveLang(el: HTMLElement): string | null {
-  const tagged: Element | null = el.closest('[lang]');
-  return tagged?.getAttribute('lang') ?? null;
+// 自身 lang 属性与最近 [lang] 祖先分别取值传入跳过判定：自身属性直接决定元素语言，
+// 祖先只是页面环境（站点 UI 本地化时正文可能是外语），二者判定语义不同。
+function getAncestorLang(el: HTMLElement): string | null {
+  return el.parentElement?.closest('[lang]')?.getAttribute('lang') ?? null;
 }
 
 // 目标语言跳过：已是目标语言的元素标记 idle（进 elementMap，避免重复判定），
 // 不发 TRANSLATE 消息、不加 loading 态。
 function skipIfTargetLanguage(el: HTMLElement, text: string): boolean {
-  if (!shouldSkipByLanguage(getEffectiveLang(el), text, state.targetLang)) return false;
+  const ownLang = el.getAttribute('lang');
+  const ancestorLang = getAncestorLang(el);
+  if (!shouldSkipByLanguage(ownLang, ancestorLang, text, state.targetLang)) return false;
   markElementIdle(el);
   return true;
 }
