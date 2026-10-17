@@ -7,6 +7,7 @@ import { useDarkMode } from '@/hooks/use-dark-mode'
 import { Toast } from '@/components/ui/toast'
 import { Select } from '@/components/ui/select'
 import { PopupTranslationResult } from '@/components/popup/translation-result'
+import { ImageTranslatePanel } from '@/components/popup/image-translate-panel'
 import type {
   GlobalSettings,
   TranslationResponse,
@@ -17,14 +18,17 @@ import type {
 import { getSettings, saveSettings } from '@/lib/storage'
 import { sendBgMessage } from '@/lib/messaging'
 import { detectLanguageLocal, isSameLanguage } from '@/lib/lang-detect'
+import { resolveLocalImageTargetLang } from '@/lib/image-translate/local-image'
 import { LANGUAGE_OPTIONS } from '@/lib/languages'
 import { t, setUILanguage } from '@/lib/i18n'
 import { useToast } from '@/hooks/use-toast'
-import { Send, Loader2, Settings, Layers, Languages, Square } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { Send, Loader2, Settings, Layers, Languages, Square, ImageIcon } from 'lucide-react'
 import { LogoIcon } from '@/components/logo-icon'
 
 const TARGET_AUTO = 'auto' as const
 type TargetSelection = typeof TARGET_AUTO | LangCode
+const IMAGE_MODE_AVAILABLE = !import.meta.env.FIREFOX
 
 // 根据检测结果决定翻译方向：母语→第二语言，外语→母语
 function resolveAutoTargetLang(
@@ -55,6 +59,7 @@ function App() {
   const [manualTarget, setManualTarget] = useState<TargetSelection>(TARGET_AUTO)
   // 页面翻译开关态由 popup 本地维护：点击即切换，成功送达 content script 后翻转
   const [pageTranslating, setPageTranslating] = useState(false)
+  const [mode, setMode] = useState<'text' | 'image'>('text')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const detectSeqRef = useRef(0)
 
@@ -63,12 +68,13 @@ function App() {
   }, [])
 
   useEffect(() => {
+    if (mode !== 'text') return
     const timer = setTimeout(() => {
       textareaRef.current?.focus()
     }, 30)
 
     return () => clearTimeout(timer)
-  }, [])
+  }, [mode])
 
   useDarkMode()
 
@@ -342,44 +348,93 @@ function App() {
         </div>
       </div>
 
+      {/* Mode Switch */}
+      {IMAGE_MODE_AVAILABLE && (
+        <div className="px-4 pt-2">
+          <div className="flex gap-0.5 rounded-md bg-muted p-0.5">
+            <button
+              type="button"
+              aria-pressed={mode === 'text'}
+              onClick={() => setMode('text')}
+              className={cn(
+                'flex flex-1 items-center justify-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition-colors',
+                mode === 'text'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <Languages className="h-3 w-3" />
+              {t('popup_translate')}
+            </button>
+            <button
+              type="button"
+              aria-pressed={mode === 'image'}
+              onClick={() => setMode('image')}
+              className={cn(
+                'flex flex-1 items-center justify-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition-colors',
+                mode === 'image'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <ImageIcon className="h-3 w-3" />
+              {t('popup_image_translate')}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Input Area */}
       <div className="px-4 py-2 flex-1 flex flex-col gap-2">
-        <Textarea
-          ref={textareaRef}
-          autoFocus
-          placeholder={t('popup_placeholder')}
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          onPaste={handlePaste}
-          onKeyDown={handleKeyDown}
-          className="min-h-[80px] resize-none"
-        />
+        {mode === 'text' ? (
+          <>
+            <Textarea
+              ref={textareaRef}
+              autoFocus
+              placeholder={t('popup_placeholder')}
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              onPaste={handlePaste}
+              onKeyDown={handleKeyDown}
+              className="min-h-[80px] resize-none"
+            />
 
-        <Button
-          onClick={() => handleTranslate()}
-          disabled={loading || !inputText.trim()}
-          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
-        >
-          {loading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              {t('popup_translating')}
-            </>
-          ) : (
-            <>
-              <Send className="mr-2 h-4 w-4" />
-              {t('popup_translate')}
-            </>
-          )}
-        </Button>
+            <Button
+              onClick={() => handleTranslate()}
+              disabled={loading || !inputText.trim()}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {t('popup_translating')}
+                </>
+              ) : (
+                <>
+                  <Send className="mr-2 h-4 w-4" />
+                  {t('popup_translate')}
+                </>
+              )}
+            </Button>
 
-        <PopupTranslationResult
-          result={result}
-          onCopy={handleCopy}
-          providerName={resultMeta?.providerName}
-          modelName={resultMeta?.modelName}
-          usage={resultMeta?.usage}
-        />
+            <PopupTranslationResult
+              result={result}
+              onCopy={handleCopy}
+              providerName={resultMeta?.providerName}
+              modelName={resultMeta?.modelName}
+              usage={resultMeta?.usage}
+            />
+          </>
+        ) : (
+          <ImageTranslatePanel
+            targetLang={resolveLocalImageTargetLang(
+              manualTarget,
+              targetLangPreview,
+              settings.nativeLanguage
+            )}
+            onError={showError}
+          />
+        )}
       </div>
     </div>
   )
