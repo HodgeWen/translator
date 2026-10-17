@@ -1,15 +1,31 @@
-import Dexie, { type EntityTable } from 'dexie';
+import Dexie, { type EntityTable, type Table } from 'dexie';
 import type { CacheEntry, RequestLogEntry, DailyTokenUsageEntry } from '@/types';
+import type { RecognizedImageBlock } from '@/lib/image-translate/types';
 
 const DB_NAME = 'TranslatorCache';
-const DB_VERSION = 4; // v4: 移除 sourceLang 缓存维度，hash 键改为 (text, targetLang, salt)
+const DB_VERSION = 5; // v5: 新增图片识别缓存表；v4 移除 sourceLang 缓存维度
 const TTL_DAYS = 7;
 const TTL_MS = TTL_DAYS * 24 * 60 * 60 * 1000;
+
+export interface ImageRecognitionSnapshot {
+  imageHash: string;
+  promptVersion: string;
+  blocks: RecognizedImageBlock[];
+  width: number;
+  height: number;
+  providerId: string;
+  modelId: string;
+}
+
+export interface ImageTranslationCacheEntry extends ImageRecognitionSnapshot {
+  createdAt: number;
+}
 
 interface CacheDatabase extends Dexie {
   translations: EntityTable<CacheEntry, 'hash'>;
   request_logs: EntityTable<RequestLogEntry, 'id'>;
   daily_token_usage: EntityTable<DailyTokenUsageEntry, 'id'>;
+  image_translations: Table<ImageTranslationCacheEntry, [string, string]>;
 }
 
 const db = new Dexie(DB_NAME, { autoOpen: false }) as CacheDatabase;
@@ -30,12 +46,19 @@ db.version(3).stores({
   daily_token_usage: '++id, [providerId+modelId+date], date',
 });
 // v4: 移除 sourceLang 索引维度，清空旧缓存（hash 计算方式已变更）
-db.version(DB_VERSION).stores({
+db.version(4).stores({
   translations: 'hash, targetLang, createdAt',
   request_logs: '++id, [providerId+modelId], timestamp',
   daily_token_usage: '++id, [providerId+modelId+date], date',
 }).upgrade(tx => {
   return tx.table('translations').clear();
+});
+// v5: 新增图片识别缓存；不清理既有 translations / request_logs / daily_token_usage
+db.version(DB_VERSION).stores({
+  translations: 'hash, targetLang, createdAt',
+  request_logs: '++id, [providerId+modelId], timestamp',
+  daily_token_usage: '++id, [providerId+modelId+date], date',
+  image_translations: '[imageHash+promptVersion], createdAt',
 });
 
 let openPromise: Promise<CacheDatabase> | null = null;
@@ -108,6 +131,44 @@ export async function setCachedTranslation(
   });
 }
 
+/** 图片识别缓存键：同一图片内容 + 提示词版本在 TTL 内共享识别结果 */
+export function buildImageCacheKey(imageHash: string, promptVersion: string): [string, string] {
+  return [imageHash, promptVersion];
+}
+
+export function isImageCacheEntryExpired(
+  entry: Pick<ImageTranslationCacheEntry, 'createdAt'>,
+  now = Date.now()
+): boolean {
+  return now - entry.createdAt > TTL_MS;
+}
+
+export async function getCachedImageTranslation(
+  imageHash: string,
+  promptVersion: string
+): Promise<ImageTranslationCacheEntry | null> {
+  const dbInstance = await ensureDb();
+  const key = buildImageCacheKey(imageHash, promptVersion);
+  const entry = await dbInstance.image_translations.get(key);
+
+  if (!entry) return null;
+
+  if (isImageCacheEntryExpired(entry)) {
+    await dbInstance.image_translations.delete(key);
+    return null;
+  }
+
+  return entry;
+}
+
+export async function setCachedImageTranslation(entry: ImageRecognitionSnapshot): Promise<void> {
+  const dbInstance = await ensureDb();
+  await dbInstance.image_translations.put({
+    ...entry,
+    createdAt: Date.now(),
+  });
+}
+
 export async function clearExpiredCache(): Promise<number> {
   const dbInstance = await ensureDb();
   const cutoff = Date.now() - TTL_MS;
@@ -117,5 +178,15 @@ export async function clearExpiredCache(): Promise<number> {
     .toArray();
 
   await dbInstance.translations.bulkDelete(expired.map(e => e.hash));
-  return expired.length;
+
+  const expiredImages = await dbInstance.image_translations
+    .where('createdAt')
+    .below(cutoff)
+    .toArray();
+
+  await dbInstance.image_translations.bulkDelete(
+    expiredImages.map(e => buildImageCacheKey(e.imageHash, e.promptVersion))
+  );
+
+  return expired.length + expiredImages.length;
 }

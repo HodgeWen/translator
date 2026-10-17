@@ -1,3 +1,8 @@
+import type {
+  ImageSource,
+  RecognizedImageBlock,
+} from '@/lib/image-translate/types';
+
 // Language codes (ISO 639-1 or BCP 47)
 export type LangCode = string;
 
@@ -103,6 +108,21 @@ export interface TranslationResponse {
   usage?: TokenUsage;
 }
 
+// Image translation result: 识别块 + 逐块译文/跳过状态
+export interface ImageTranslationBlock extends RecognizedImageBlock {
+  translatedText?: string;
+  skipped: boolean;
+}
+
+export interface ImageTranslationResult {
+  blocks: ImageTranslationBlock[];
+  providerId: string;
+  modelId: string;
+  cached: boolean;
+  width: number;
+  height: number;
+}
+
 // Background message types
 interface BgTranslatePayload {
   text: string;
@@ -113,8 +133,11 @@ interface BgTranslatePayload {
   enablePolysemy?: boolean;
 }
 
+export type BgImageTranslatePayload = ImageSource & { targetLang: LangCode };
+
 export type BgMessage =
   | { type: 'TRANSLATE'; payload: BgTranslatePayload }
+  | { type: 'IMAGE_TRANSLATE'; payload: BgImageTranslatePayload }
   | { type: 'PING' };
 
 // 发往 content script 的消息类型（background 快捷键 / popup 经 chrome.tabs.sendMessage 下发）

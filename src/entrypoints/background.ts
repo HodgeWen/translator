@@ -2,6 +2,8 @@ import { defineBackground } from 'wxt/utils/define-background';
 import type { BackgroundDefinition } from 'wxt';
 import { translate } from '@/lib/api';
 import { clearExpiredCache } from '@/lib/cache';
+import { translateImage } from '@/lib/image-translate/pipeline';
+import { ImageTranslationError } from '@/lib/image-translate/types';
 import { importSettings } from '@/lib/storage';
 import type { BgMessage } from '@/types';
 
@@ -66,6 +68,12 @@ export default defineBackground(() => {
             break;
           }
 
+          case 'IMAGE_TRANSLATE': {
+            const result = await translateImage(message.payload);
+            sendResponse({ success: true, data: result });
+            break;
+          }
+
           case 'PING': {
             sendResponse({ success: true, data: 'pong' });
             break;
@@ -76,7 +84,12 @@ export default defineBackground(() => {
         }
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error);
-        sendResponse({ success: false, error: errorMsg });
+        // 图片翻译返回稳定错误码，入口据此映射用户文案；其它消息保持原响应形状。
+        if (error instanceof ImageTranslationError) {
+          sendResponse({ success: false, error: errorMsg, code: error.code });
+        } else {
+          sendResponse({ success: false, error: errorMsg });
+        }
       }
     })();
 

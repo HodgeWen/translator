@@ -116,8 +116,16 @@ async function callVisionModel(
   }
 }
 
-/** 识图入口：读取设置 → 构建识别队列 → 逐模型降级识别 */
-export async function recognizeImageText(imageDataUrl: string): Promise<VisionRecognitionResult> {
+export interface VisionRunContext {
+  queue: ProviderModel[];
+  timeout: number;
+}
+
+/**
+ * 读取设置并解析识图队列。无可用视觉模型时在拉图/识图之前就报错，
+ * 供 background 先做能力检查再决定是否取图。
+ */
+export async function resolveVisionRunContext(): Promise<VisionRunContext> {
   const settings = await getSettings();
   const activeService = settings.services.find(s => s.id === settings.selectedServiceId) || settings.services[0];
 
@@ -136,12 +144,22 @@ export async function recognizeImageText(imageDataUrl: string): Promise<VisionRe
     );
   }
 
+  return { queue, timeout: settings.requestTimeout };
+}
+
+/** 识图入口：可传入已解析的上下文，避免重复读设置并重复推进 pool 计数 */
+export async function recognizeImageText(
+  imageDataUrl: string,
+  context?: VisionRunContext
+): Promise<VisionRecognitionResult> {
+  const { queue, timeout } = context ?? (await resolveVisionRunContext());
+
   return runVisionQueue(queue, async (providerModel) => {
     const startedAt = Date.now();
     const { provider, model } = providerModel;
 
     try {
-      const { blocks, usage } = await callVisionModel(providerModel, imageDataUrl, settings.requestTimeout);
+      const { blocks, usage } = await callVisionModel(providerModel, imageDataUrl, timeout);
       recordRequestStat(provider.id, model.id, Date.now() - startedAt, true).catch(() => {});
       accumulateTokenUsage(provider.id, model.id, usage).catch(() => {});
       return { blocks, providerId: provider.id, modelId: model.id };
