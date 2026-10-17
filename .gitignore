@@ -121,7 +121,8 @@ dist
 # Superpowers AI coding tool artifacts
 .superpowers/
 
-# Agent files
-.agents/
+# Agent files（docs/ 与 scripts/ 需提交，只忽略 cooking 与本地技能缓存）
+.agents/cooking/
+.agents/skills/
 skills-lock.json
 
