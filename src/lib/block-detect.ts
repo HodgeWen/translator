@@ -59,6 +59,107 @@ const UI_ROLES = new Set([
 const DIRECT_TEXT_RATIO_THRESHOLD = 0.5;
 const MIN_TEXT_LENGTH = 5;
 
+// ─── 行内子树判定（inline-only 放行） ─────────────────────────────────
+// 背景：部分 SPA（X / Twitter 等）把正文整体包在 <span> 等行内元素里，
+// 灰名单容器的直接文本占比为 0 而被拒、正文完全没有翻译单元覆盖。
+// 放行规则：直接文本占比不足、但子树内只含行内元素（含嵌套）且文本达
+// 阈值时，容器本身就是段落单元。判定核心抽成纯函数，可脱离 DOM 单测。
+
+// Node.ELEMENT_NODE 的数值常量：helper 需在无 DOM 的测试环境（bun:test）运行，
+// 不能引用 Node 全局。
+const ELEMENT_NODE_TYPE = 1;
+
+/** 行内元素集合：这些标签（含嵌套）不破坏「容器即段落」的判定。 */
+export const INLINE_TAGS = new Set([
+  'SPAN', 'A', 'STRONG', 'B', 'EM', 'I', 'U', 'SMALL', 'ABBR', 'CITE', 'Q',
+  'MARK', 'SUB', 'SUP', 'TIME', 'CODE', 'BR', 'IMG', 'SVG', 'WBR',
+]);
+
+/** 行内子树节点数上限：超过视为大容器，退回灰名单规则，防遍历退化。 */
+export const INLINE_SUBTREE_MAX_NODES = 100;
+
+/** DOM 子节点的纯数据摘要：行内子树判定不依赖真实 DOM，可直接单测。 */
+export interface NodeSummary {
+  /** 1 = 元素节点，3 = 文本节点（与 DOM Node 常量一致） */
+  nodeType: number;
+  /** 元素节点的标签名（大写）；非元素节点省略 */
+  tagName?: string;
+  /** 元素节点的子节点摘要；叶子省略 */
+  children?: NodeSummary[];
+}
+
+/**
+ * 纯函数：判断一组子节点摘要构成的子树是否全部为行内节点。
+ * 文本节点不拦截；元素节点（含嵌套子树）必须在 INLINE_TAGS 中。
+ * 子树总节点数超过 maxNodes 时拒绝（防大容器退化）。
+ */
+export function isInlineOnlySubtree(
+  children: readonly NodeSummary[],
+  maxNodes: number = INLINE_SUBTREE_MAX_NODES,
+): boolean {
+  let count = 0;
+  return visitAll(children);
+
+  function visitAll(nodes: readonly NodeSummary[]): boolean {
+    for (const node of nodes) {
+      if (++count > maxNodes) return false;
+      if (node.nodeType === ELEMENT_NODE_TYPE) {
+        if (!node.tagName || !INLINE_TAGS.has(node.tagName)) return false;
+        if (!visitAll(node.children ?? [])) return false;
+      }
+    }
+    return true;
+  }
+}
+
+// 将元素的子节点摘要为纯数据；子树规模超过 maxNodes 时返回 null，
+// 避免为注定会被上限拒绝的大容器构建完整摘要。
+function summarizeChildNodes(el: HTMLElement, maxNodes: number): NodeSummary[] | null {
+  let budget = maxNodes;
+
+  const summarize = (node: Node): NodeSummary | null => {
+    budget -= 1;
+    if (budget < 0) return null;
+    if (node.nodeType === ELEMENT_NODE_TYPE) {
+      const children: NodeSummary[] = [];
+      for (const child of Array.from(node.childNodes)) {
+        const summary = summarize(child);
+        if (summary === null) return null;
+        children.push(summary);
+      }
+      return { nodeType: ELEMENT_NODE_TYPE, tagName: (node as Element).tagName, children };
+    }
+    return { nodeType: node.nodeType };
+  };
+
+  const result: NodeSummary[] = [];
+  for (const child of Array.from(el.childNodes)) {
+    const summary = summarize(child);
+    if (summary === null) return null;
+    result.push(summary);
+  }
+  return result;
+}
+
+// 「子树仅行内」的 DOM 判定：灰名单直接文本占比不足时的放行依据。
+// 预算与纯 helper 的上限一致，摘要构建成功后由纯 helper 复核标签集合。
+function isInlineOnlySubtreeContainer(el: HTMLElement): boolean {
+  const summary = summarizeChildNodes(el, INLINE_SUBTREE_MAX_NODES);
+  return summary !== null && isInlineOnlySubtree(summary);
+}
+
+/**
+ * 「灰名单 + 无直接文本 + 仅行内子元素」的容器（如 X 的推文正文 div）。
+ * 供块判定与悬停兜底共用，使这类容器可作为翻译单元 / 悬停目标。
+ */
+export function isInlineOnlyGrayContainer(el: HTMLElement): boolean {
+  return (
+    GRAYLIST_TAGS.has(el.tagName) &&
+    getDirectTextLength(el) === 0 &&
+    isInlineOnlySubtreeContainer(el)
+  );
+}
+
 const CANDIDATE_SELECTOR = [...WHITELIST_TAGS, ...GRAYLIST_TAGS]
   .map((tag) => tag.toLowerCase())
   .join(',');
@@ -187,7 +288,12 @@ export function isTranslatableBlock(
     const directLen = getDirectTextLength(el);
     const totalLen = text.length;
     if (totalLen === 0) return false;
-    if (directLen / totalLen < DIRECT_TEXT_RATIO_THRESHOLD) return false;
+    if (directLen / totalLen < DIRECT_TEXT_RATIO_THRESHOLD) {
+      // inline-only 放行：文本全在行内子元素里（如 X 的 tweetText）时，
+      // 子树仅含行内节点且规模受控 → 容器本身放行为翻译单元；否则维持
+      // 灰名单拒绝，把机会留给内部的白名单候选。
+      if (!isInlineOnlySubtreeContainer(el)) return false;
+    }
   }
 
   if (!relaxed && tag === 'LI' && isLinkHeavy(el)) return false;

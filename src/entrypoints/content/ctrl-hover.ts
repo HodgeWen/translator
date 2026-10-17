@@ -4,7 +4,8 @@ import {
   GRAYLIST_TAGS,
   HARD_EXCLUDE_TAGS,
   getDirectTextLength,
-  isVisible
+  isVisible,
+  isInlineOnlyGrayContainer
 } from '@/lib/block-detect';
 import { state, wrapperToOriginal, applySettingsToState } from './state';
 import { toggleElementDisplay } from './style-apply';
@@ -101,6 +102,14 @@ function findNearestTranslatableBlock(el: HTMLElement | null): HTMLElement | nul
           fallbackTarget = cur;
         }
       }
+    }
+
+    // 2.5 灰名单 + 仅行内子元素 + 无直接文本的容器（如 X 的推文正文 div）：
+    // 复用块判定的行内子树 helper，使这类容器同样可作为悬停目标；命中时
+    // 替换更内层的行内片段兜底，让悬停命中整段而非碎片，与整页翻译的
+    // 段落单元保持一致。结构判定自身受节点数上限约束，成本可控。
+    if (isInlineOnlyGrayContainer(cur)) {
+      fallbackTarget = cur;
     }
 
     cur = cur.parentElement;

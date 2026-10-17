@@ -8,9 +8,11 @@ export interface SiteRule {
 }
 
 import { githubRule } from './github';
+import { twitterRule } from './twitter';
 
 export const siteRules: SiteRule[] = [
   githubRule,
+  twitterRule,
 ];
 
 // 根据 URL 匹配活跃的网站规则
