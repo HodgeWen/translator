@@ -1,5 +1,6 @@
 import type { ElementState } from './state';
 import { state, wrapperToOriginal, mutationIgnoredNodes } from './state';
+import { snapshotChildren, detachChildren, restoreChildren } from './original-nodes';
 import type { InlineEncodedBlock } from '@/lib/inline-placeholder';
 import { decodeInline } from '@/lib/inline-placeholder';
 import type { TextNodeTemplate } from '@/lib/dom-text-replace';
@@ -99,16 +100,9 @@ function applyReplaceStyle(el: HTMLElement, render: TranslationRender): void {
   state.elementMap.set(el, { originalHTML, translatedText, status: 'translated', cloneEl: wrapper, showingOriginal: false });
 }
 
-function saveChildNodes(el: HTMLElement): DocumentFragment {
-  const frag = document.createDocumentFragment();
-  while (el.firstChild) frag.appendChild(el.firstChild);
-  return frag;
-}
-
 function restoreChildNodes(el: HTMLElement, elState: ElementState): void {
   if (elState.originalNodes) {
-    el.innerHTML = '';
-    el.appendChild(elState.originalNodes);
+    restoreChildren(el, elState.originalNodes);
   } else {
     el.innerHTML = elState.originalHTML;
   }
@@ -116,9 +110,9 @@ function restoreChildNodes(el: HTMLElement, elState: ElementState): void {
 
 function applyBilingualStyle(el: HTMLElement, translatedText: string, fragments: DocumentFragment[], styleTemplates: Element[]): void {
   const originalHTML = el.innerHTML;
-  const originalNodes = saveChildNodes(el);
-  // Restore original content first, then append bilingual elements
-  el.appendChild(originalNodes);
+  // 快照子节点引用，原节点原地保留在 el 中。不得保存 append 后会被移空的
+  // DocumentFragment（旧实现导致停止翻译时 append 空 fragment、段落被清空）
+  const originalNodes = snapshotChildren(el);
   const br = document.createElement('br');
   br.setAttribute('data-translator-br', 'true');
 
@@ -137,7 +131,8 @@ function applyBilingualStyle(el: HTMLElement, translatedText: string, fragments:
 function applyUnderlineStyle(el: HTMLElement, translatedText: string, fragments: DocumentFragment[], styleTemplates: Element[]): void {
   const originalHTML = el.innerHTML;
   const originalText = el.textContent?.trim() ?? '';
-  const originalNodes = saveChildNodes(el);
+  // 原节点摘除离树、由数组持有引用，wrapper 接管 el 内容
+  const originalNodes = detachChildren<ChildNode>(el);
 
   const wrapper = document.createElement('span');
   wrapper.setAttribute('data-translator-underline', 'true');

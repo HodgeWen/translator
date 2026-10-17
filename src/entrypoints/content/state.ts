@@ -4,7 +4,9 @@ import type { LangCode, DisplayStyle, GlobalSettings, TranslationLoadingTheme } 
 
 export interface ElementState {
   originalHTML: string;
-  originalNodes?: DocumentFragment;
+  // 原子节点引用（按原顺序）。以数组而非 DocumentFragment 保存：fragment 被
+  // append 后会移空自身，还原时只会拿到空集合（bilingual 停止清空的根因）
+  originalNodes?: ChildNode[];
   translatedText: string;
   status: 'idle' | 'pending' | 'translated' | 'error';
   cloneEl?: HTMLElement;
