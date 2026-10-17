@@ -56,6 +56,15 @@
   "popup_copied": {
     "message": "Copied to clipboard"
   },
+  "popup_translate_page": {
+    "message": "Translate Page"
+  },
+  "popup_stop_translation": {
+    "message": "Stop Translating"
+  },
+  "popup_page_translation_unavailable": {
+    "message": "Page translation is unavailable on this page"
+  },
   "options_title": {
     "message": "Translator Settings"
   },

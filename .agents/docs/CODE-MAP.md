@@ -8,7 +8,7 @@ translator/
 │   ├── entrypoints/              # 扩展入口（WXT 自动扫描生成 manifest）
 │   │   ├── background.ts         # Service Worker：消息路由、缓存清理 alarm、快捷键
 │   │   ├── content/              # 内容脚本：页面翻译流水线（段落识别、占位符、观察器、样式、划词/输入框翻译、SPA 检测）
-│   │   ├── popup/                # popup UI：快速翻译、历史记录
+│   │   ├── popup/                # popup UI：快速翻译、历史记录、页面翻译启停
 │   │   └── options/              # 设置页 UI 入口
 │   ├── components/
 │   │   ├── ui/                   # 基础组件（Button、Select、Textarea、Toast…）
@@ -32,7 +32,7 @@ translator/
 | --- | --- | --- | --- |
 | background | `src/entrypoints/background.ts` | 消息路由中枢、定时缓存清理、快捷键命令 | `background.ts` |
 | content 翻译流水线 | `src/entrypoints/content/` | 页面段落识别、批量翻译调度、显示样式、SPA 检测、划词/悬停/输入框翻译 | `index.ts` |
-| popup UI | `src/entrypoints/popup/` | 快速翻译与历史记录 | `main.tsx` |
+| popup UI | `src/entrypoints/popup/` | 快速翻译、历史记录、页面翻译启停（tabs 消息直达 content script） | `main.tsx` |
 | options UI | `src/entrypoints/options/` | 设置页全量配置 | `main.tsx` |
 | UI 组件 | `src/components/` | 基础组件 + 设置页/popup 分区组件 | `ui/`、`options/`、`popup/` |
 | 翻译 API | `src/lib/api.ts` + `src/lib/api/` | LLM 调用、模型队列降级、SSE 解析、翻译缓存读写 | `api.ts` |
@@ -41,7 +41,7 @@ translator/
 | 配置与存储 | `src/lib/storage.ts` + `src/lib/schema.ts` + `src/lib/crypto.ts` | chrome.storage.sync 读写、Zod 校验、加密导入导出 | `storage.ts` |
 | 缓存与统计 | `src/lib/cache.ts` + `src/lib/stats.ts` | IndexedDB 翻译缓存、请求日志与 token 用量 | `cache.ts` |
 | i18n | `src/lib/i18n.ts` + `public/_locales/` | 运行时 UI 语言切换、消息加载 | `i18n.ts` |
-| 语言检测 | `src/lib/lang-detect.ts` | franc / API 语言检测 | `lang-detect.ts` |
+| 语言检测 | `src/lib/lang-detect.ts` | franc / API 语言检测、翻译调度目标语言跳过判定 | `lang-detect.ts` |
 | hooks | `src/hooks/` | 暗色模式、toast | — |
 | 发版脚本 | `scripts/` | 版本 bump、tag、push、Release 校验 | `release.mjs` |
 
@@ -54,6 +54,7 @@ graph TD
     options[options UI] -->|lib/messaging| background
     content --> textproc[页面文本处理 block-detect / inline-placeholder / dom-text-replace / batch-protocol]
     content --> siterules[site-rules]
+    content --> langdetect[lang-detect]
     background --> api[翻译 API lib/api]
     popup --> uicomp[components ui/options/popup]
     options --> uicomp
@@ -68,6 +69,6 @@ graph TD
 
 ## 关键路径
 
-- **页面翻译**：content `index.ts` 段落识别（block-detect + site-rules）→ Intersection Observer（observer.ts）收集可视段落 → batch-protocol 批量拼接 → messaging 发给 background → `lib/api` 查缓存 / 按模型队列调用 LLM（SSE 流式）→ 译文回 content → inline-placeholder 还原 + dom-text-replace 写回 DOM + style-apply 应用四种显示样式；批量失败回落逐段翻译
+- **页面翻译**：content `index.ts` 段落识别（block-detect + site-rules）→ Intersection Observer（observer.ts）收集可视段落 → 目标语言跳过判定（lang-detect，已是目标语言的段落标记跳过）→ batch-protocol 批量拼接 → messaging 发给 background → `lib/api` 查缓存 / 按模型队列调用 LLM（SSE 流式）→ 译文回 content → inline-placeholder 还原 + dom-text-replace 写回 DOM + style-apply 应用四种显示样式；批量失败回落逐段翻译
 - **popup 快译**：popup `main.tsx` → sendMessage → background → `lib/api.translate()` → 展示结果
 - **配置生效**：options 修改 → `storage.ts`（Zod 校验）→ chrome.storage.sync → background / content 下次读取生效

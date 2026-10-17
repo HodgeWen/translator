@@ -11,7 +11,8 @@ import type {
   GlobalSettings,
   TranslationResponse,
   LangCode,
-  TranslationTone
+  TranslationTone,
+  ContentMessage
 } from '@/types'
 import { getSettings, saveSettings } from '@/lib/storage'
 import { sendBgMessage } from '@/lib/messaging'
@@ -19,7 +20,7 @@ import { detectLanguageLocal, isSameLanguage } from '@/lib/lang-detect'
 import { LANGUAGE_OPTIONS } from '@/lib/languages'
 import { t, setUILanguage } from '@/lib/i18n'
 import { useToast } from '@/hooks/use-toast'
-import { Send, Loader2, Settings, Layers } from 'lucide-react'
+import { Send, Loader2, Settings, Layers, Languages, Square } from 'lucide-react'
 import { LogoIcon } from '@/components/logo-icon'
 
 const TARGET_AUTO = 'auto' as const
@@ -52,6 +53,8 @@ function App() {
   const [currentTone, setCurrentTone] = useState<TranslationTone>('normal')
   const [targetLangPreview, setTargetLangPreview] = useState<LangCode>('zh-CN')
   const [manualTarget, setManualTarget] = useState<TargetSelection>(TARGET_AUTO)
+  // 页面翻译开关态由 popup 本地维护：点击即切换，成功送达 content script 后翻转
+  const [pageTranslating, setPageTranslating] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const detectSeqRef = useRef(0)
 
@@ -100,6 +103,25 @@ function App() {
       setCurrentTone(s.translationTone)
     } catch {
       showError(t('error_load_settings'))
+    }
+  }
+
+  const handleTogglePageTranslation = async () => {
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+      if (!tab?.id) {
+        showError(t('popup_page_translation_unavailable'))
+        return
+      }
+      const message: ContentMessage = {
+        type: pageTranslating ? 'STOP_TRANSLATION' : 'START_TRANSLATION'
+      }
+      // tabs.sendMessage 默认送达该 tab 的所有 frame，iframe 内同步生效
+      await chrome.tabs.sendMessage(tab.id, message)
+      setPageTranslating(!pageTranslating)
+    } catch {
+      // 内容脚本未注入（浏览器内置页面、扩展商店页等）
+      showError(t('popup_page_translation_unavailable'))
     }
   }
 
@@ -223,6 +245,20 @@ function App() {
           <span className="text-[10px] text-muted-foreground/60 font-mono">v{chrome.runtime.getManifest().version}</span>
         </div>
         <div className="flex items-center gap-1.5">
+          <Button
+            variant={pageTranslating ? 'outline' : 'secondary'}
+            size="sm"
+            className="h-7 shrink-0 gap-1 px-2.5 text-xs"
+            onClick={handleTogglePageTranslation}
+            title={pageTranslating ? t('popup_stop_translation') : t('popup_translate_page')}
+          >
+            {pageTranslating ? (
+              <Square className="fill-current text-red-500" />
+            ) : (
+              <Languages className="text-indigo-500" />
+            )}
+            {pageTranslating ? t('popup_stop_translation') : t('popup_translate_page')}
+          </Button>
           <Select
             value={currentTone}
             options={toneOptions}

@@ -56,6 +56,15 @@
   "popup_copied": {
     "message": "已复制到剪贴板"
   },
+  "popup_translate_page": {
+    "message": "翻译此页"
+  },
+  "popup_stop_translation": {
+    "message": "停止翻译"
+  },
+  "popup_page_translation_unavailable": {
+    "message": "当前页面无法使用页面翻译"
+  },
   "options_title": {
     "message": "翻译器设置"
   },

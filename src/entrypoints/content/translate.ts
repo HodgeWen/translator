@@ -4,6 +4,7 @@ import { encodeBatch, decodeBatch } from '@/lib/batch-protocol';
 import type { TextNodeTemplate } from '@/lib/dom-text-replace';
 import { assignTextNodeIds, createTextNodeTemplate } from '@/lib/dom-text-replace';
 import { sendBgMessage } from '@/lib/messaging';
+import { shouldSkipByLanguage } from '@/lib/lang-detect';
 import { state } from './state';
 import { applyTranslation } from './style-apply';
 
@@ -39,12 +40,28 @@ function markElementIdle(el: HTMLElement): void {
   });
 }
 
+// 取元素自身 lang 属性，缺失时沿最近 [lang] 祖先取值（closest 从自身开始匹配）。
+function getEffectiveLang(el: HTMLElement): string | null {
+  const tagged: Element | null = el.closest('[lang]');
+  return tagged?.getAttribute('lang') ?? null;
+}
+
+// 目标语言跳过：已是目标语言的元素标记 idle（进 elementMap，避免重复判定），
+// 不发 TRANSLATE 消息、不加 loading 态。
+function skipIfTargetLanguage(el: HTMLElement, text: string): boolean {
+  if (!shouldSkipByLanguage(getEffectiveLang(el), text, state.targetLang)) return false;
+  markElementIdle(el);
+  return true;
+}
+
 export async function translateSingleElement(el: HTMLElement, force = false, skipActiveCheck = false): Promise<void> {
   if (!force && state.elementMap.has(el)) return;
   if (el.hasAttribute('data-translator-pending')) return;
 
   const rawText = el.textContent?.trim();
   if (!rawText || rawText.length < 5) return;
+
+  if (skipIfTargetLanguage(el, rawText)) return;
 
   el.setAttribute('data-translator-pending', 'true');
   el.setAttribute('data-translator-theme', state.translationLoadingTheme);
@@ -385,12 +402,14 @@ async function flushAggregateQueue(): Promise<void> {
   const elements = Array.from(state.pendingAggregateElements);
   state.pendingAggregateElements.clear();
 
-  // Filter out already translated or pending elements
-  const eligible = elements.filter(el => {
-    if (state.elementMap.has(el)) return false;
-    if (el.hasAttribute('data-translator-pending')) return false;
-    return true;
-  });
+  // Filter out already translated or pending elements；目标语言命中的元素标记 idle 后排除
+  const eligible: HTMLElement[] = [];
+  for (const el of elements) {
+    if (state.elementMap.has(el)) continue;
+    if (el.hasAttribute('data-translator-pending')) continue;
+    if (skipIfTargetLanguage(el, el.textContent?.trim() || '')) continue;
+    eligible.push(el);
+  }
 
   if (eligible.length === 0) return;
 

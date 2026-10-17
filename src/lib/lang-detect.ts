@@ -107,3 +107,24 @@ export function isSameLanguage(
   const target = targetLang.toLowerCase().split('-')[0];
   return detected === target;
 }
+
+// CJK 语言前缀集合：无 [lang] 属性时的字符集兜底仅对这些目标语言启用，
+// 避免对拉丁等语言做字符集误判。
+const CJK_LANG_PREFIXES = new Set(['zh', 'ja', 'ko']);
+
+// 翻译调度前的目标语言跳过判定（纯函数，不调用 franc、不发网络请求）：
+// - langAttr 存在：按 BCP-47 前缀与 targetLang 比对，同语言则跳过；
+// - langAttr 缺失：仅当 targetLang 为 CJK 语言且文本命中 detectByCharset
+//   的字符集兜底判定（复用其阈值）时跳过。
+export function shouldSkipByLanguage(
+  langAttr: string | null,
+  text: string,
+  targetLang: LangCode
+): boolean {
+  if (langAttr) {
+    return isSameLanguage(langAttr, targetLang);
+  }
+  const target = targetLang.toLowerCase().split('-')[0];
+  if (!CJK_LANG_PREFIXES.has(target)) return false;
+  return isSameLanguage(detectByCharset(text), targetLang);
+}

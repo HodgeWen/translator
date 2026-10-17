@@ -114,6 +114,12 @@ export type BgMessage =
   | { type: 'TRANSLATE'; payload: BgTranslatePayload }
   | { type: 'PING' };
 
+// 发往 content script 的消息类型（background 快捷键 / popup 经 chrome.tabs.sendMessage 下发）
+export type ContentMessage =
+  | { type: 'TOGGLE_TRANSLATION' }
+  | { type: 'START_TRANSLATION' }
+  | { type: 'STOP_TRANSLATION' };
+
 export interface CustomTone {
   id: string;
   name: string;
