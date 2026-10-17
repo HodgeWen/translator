@@ -37,6 +37,12 @@ function cleanupDisconnectedEntries(): void {
     state.observer?.unobserve(el);
     state.pendingAggregateElements.delete(el);
   }
+
+  // shadow host 离开 DOM：对应 shadow root 的观察随之失效，清出注册表，
+  // 防止对已断开子树的条目滞留（迭代中删除当前项对 Set 是安全的）。
+  for (const shadow of observedShadowRoots) {
+    if (!shadow.host.isConnected) observedShadowRoots.delete(shadow);
+  }
 }
 
 // ─── Intersection Observer ──────────────────────────────────────────────
@@ -121,6 +127,27 @@ let mutationObserver: MutationObserver | null = null;
 let routeChangeTimer: number | null = null;
 let gcIntervalId: number | null = null;
 
+// 已注册观察的 open shadow root 注册表。MutationObserver 无法对单个目标取消
+// 观察，注册表仅用于：跳过重复注册、在 host 离开 DOM 后把对应条目清出
+// （观察关系随被观察节点一起被 GC，无需显式 disconnect）。
+const observedShadowRoots = new Set<ShadowRoot>();
+
+// 扫描 scope（含其 open shadow root 的宿主树）内尚未注册的 open shadow root，
+// 用同一 mutationObserver 注册观察。初始收集（collectCandidatesWithShadow）能穿透
+// shadow root，但 MutationObserver 只观察显式注册的目标；不在此注册的话，
+// shadow root 内后续插入的内容永远不会进入翻译队列。
+function observeShadowRootsIn(scope: ParentNode): void {
+  if (!mutationObserver) return;
+  const allElements = Array.from(scope.querySelectorAll('*')) as HTMLElement[];
+  for (const el of allElements) {
+    const shadow = el.shadowRoot;
+    if (shadow && !observedShadowRoots.has(shadow)) {
+      observedShadowRoots.add(shadow);
+      mutationObserver.observe(shadow, { childList: true, subtree: true, characterData: true });
+    }
+  }
+}
+
 function scheduleCleanupFlush(): void {
   if (cleanupFlushTimer !== null) return;
   cleanupFlushTimer = window.setTimeout(() => {
@@ -169,6 +196,8 @@ function flushMutationQueue(): void {
   for (const root of roots) {
     if (!root.isConnected) continue;
     newElements.push(...getTranslatableElements(root));
+    // 扫描中发现的 open shadow root 顺带注册观察（新插入的 Web Components 宿主）
+    observeShadowRootsIn(root);
   }
   for (const el of newElements) {
     if (!state.elementMap.has(el)) {
@@ -194,6 +223,11 @@ export function setupMutationObserver(): void {
 
     // 添加路径：仅入队 + 调度 flush，避免对每条 mutation 同步跑
     // querySelectorAll(BLOCK_SELECTOR) + getComputedStyle 兜底。
+    // 原地文本变更路径（characterData）：按「添加路径」入队其 parentElement，
+    // 复用同一 200ms 防抖 flush 重新收集（虚拟列表复用、实时更新场景）。
+    // 已翻译/已占位元素（data-translator-processed / data-translator-clone）
+    // 由 flush 内 collectBlocks → hasExcludedAncestor 拦截，已入 elementMap 的
+    // 元素也不会被重复 observe，不重复发请求。
     let added = false;
     for (const m of mutations) {
       m.addedNodes.forEach((node) => {
@@ -202,11 +236,18 @@ export function setupMutationObserver(): void {
           added = true;
         }
       });
+      if (m.type === 'characterData') {
+        const parent = m.target.parentElement;
+        if (parent) {
+          pendingMutationNodes.add(parent);
+          added = true;
+        }
+      }
     }
     if (added) scheduleMutationFlush();
   });
 
-  mutationObserver.observe(document.body, { childList: true, subtree: true });
+  mutationObserver.observe(document.body, { childList: true, subtree: true, characterData: true });
 }
 
 // ─── Start / Stop ───────────────────────────────────────────────────────
@@ -225,6 +266,9 @@ export function startTranslation(): void {
   if (!state.observer) {
     state.observer = createObserver();
   }
+
+  // 启动时对全页 open shadow root 注册观察，覆盖初始收集穿透过的 Web Components
+  observeShadowRootsIn(document);
 
   elements.forEach((el) => {
     state.observer!.observe(el);
@@ -247,6 +291,7 @@ export function stopTranslation(): void {
   state.observer = null;
   mutationObserver?.disconnect();
   mutationObserver = null;
+  observedShadowRoots.clear();
   if (gcIntervalId !== null) {
     window.clearInterval(gcIntervalId);
     gcIntervalId = null;
@@ -292,21 +337,25 @@ function handleRouteChange(): void {
   }, 500);
 }
 
+// URL 轮询间隔。内容脚本运行在 isolated world，页面主 world 的
+// history.pushState/replaceState 调用不会经过内容脚本的补丁（原补丁方案是死代码），
+// 改为不依赖 world 的机制：轻量 location.href 字符串比较轮询 + hashchange 监听。
+const URL_POLL_INTERVAL_MS = 500;
+
+let urlPollTimer: number | null = null;
+let lastHref = '';
+
 export function setupSPADetection(): void {
-  const originalPushState = history.pushState;
-  const originalReplaceState = history.replaceState;
+  // 幂等：配合 index.ts 的双重注入守卫，防重复注册定时器与监听
+  if (urlPollTimer !== null) return;
 
-  history.pushState = function (...args) {
-    originalPushState.apply(this, args);
-    window.dispatchEvent(new Event('translator-pushstate'));
-  };
-
-  history.replaceState = function (...args) {
-    originalReplaceState.apply(this, args);
-    window.dispatchEvent(new Event('translator-replacestate'));
-  };
-
+  lastHref = location.href;
+  // popstate / hashchange 是标准窗口事件，isolated world 同样能收到
   window.addEventListener('popstate', handleRouteChange);
-  window.addEventListener('translator-pushstate', handleRouteChange);
-  window.addEventListener('translator-replacestate', handleRouteChange);
+  window.addEventListener('hashchange', handleRouteChange);
+  urlPollTimer = window.setInterval(() => {
+    if (location.href === lastHref) return;
+    lastHref = location.href;
+    handleRouteChange();
+  }, URL_POLL_INTERVAL_MS);
 }

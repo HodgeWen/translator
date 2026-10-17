@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>P2 手动验证：Shadow DOM / 原地文本变更 / SPA 路由</title>
+  <style>
+    body { font: 14px/1.6 system-ui, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 16px; }
+    fieldset { margin: 16px 0; }
+    button { margin: 4px 8px 12px 0; }
+    code { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <h1>P2 手动验证页（observer 覆盖面）</h1>
+  <p>验证步骤见 <code>.agents/cooking/translate-fix-enhance/tasks/P2.md</code> 的「实现说明」。</p>
+
+  <fieldset>
+    <legend>1. open shadow root 内延迟插入段落</legend>
+    <button id="add-shadow">5 秒后向 shadow root 插入段落</button>
+    <div id="shadow-host"></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>2. 原地文本变更（characterData，不加/删节点）</legend>
+    <button id="grow">扩写未翻译段落（初始文本过短不是候选）</button>
+    <button id="mutate-done">原地改动已翻译段落的文本节点</button>
+    <p id="grow-target">Hi.</p>
+    <p id="stable-target">This stable paragraph is long enough to be translated right after activation.</p>
+  </fieldset>
+
+  <fieldset>
+    <legend>3. SPA 路由（主 world history API，isolated world 补丁捕获不到）</legend>
+    <button id="push-route">pushState 到 /route-b</button>
+    <button id="hash-route">hash 跳转到 #section-b</button>
+    <button id="go-back">history.back()</button>
+    <div id="route-view">
+      <p>Route A content: the quick brown fox jumps over the lazy dog near the river bank.</p>
+    </div>
+  </fieldset>
+
+  <script>
+    // 1. open shadow root：初始一段 + 延迟插入一段（模拟 Web Components 动态渲染）
+    const shadow = document.getElementById('shadow-host').attachShadow({ mode: 'open' });
+    shadow.innerHTML = '<p>Initial shadow paragraph that lives inside an open shadow root.</p>';
+    document.getElementById('add-shadow').addEventListener('click', () => {
+      setTimeout(() => {
+        const p = document.createElement('p');
+        p.textContent = 'Late shadow paragraph inserted five seconds after the click.';
+        shadow.appendChild(p);
+      }, 5000);
+    });
+
+    // 2. characterData：只改已有 Text 节点的 data，不触发 childList
+    const growNode = document.getElementById('grow-target').firstChild;
+    document.getElementById('grow').addEventListener('click', () => {
+      growNode.data = 'This short greeting was rewritten in place and now exceeds the minimum length.';
+    });
+    const stableEl = document.getElementById('stable-target');
+    const stableNode = stableEl.firstChild;
+    document.getElementById('mutate-done').addEventListener('click', () => {
+      // 原地改动仍挂在 DOM 上的原文文本节点（双语/下划线样式下原节点保留在原 el 内）
+      stableNode.data = stableNode.data + ' (mutated in place)';
+      // 兜底：若原 el 已被 wrapper 接管（原文/纯净样式），改写查询到的当前节点
+      const current = stableEl.isConnected ? stableEl.firstChild : null;
+      if (current && current !== stableNode) current.data = current.data + ' (mutated in place)';
+    });
+
+    // 3. SPA 路由：页面主 world 调用 pushState / hash 跳转 / 后退
+    document.getElementById('push-route').addEventListener('click', () => {
+      history.pushState({}, '', '/route-b');
+      document.getElementById('route-view').innerHTML =
+        '<p>Route B content: a second sentence arrived through client side routing.</p>';
+    });
+    document.getElementById('hash-route').addEventListener('click', () => {
+      location.hash = '#section-b';
+    });
+    document.getElementById('go-back').addEventListener('click', () => {
+      history.back();
+    });
+  </script>
+</body>
+</html>
