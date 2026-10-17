@@ -7,8 +7,8 @@ translator/
 ├── src/                          # 全部源码（WXT srcDir: 'src'）
 │   ├── entrypoints/              # 扩展入口（WXT 自动扫描生成 manifest）
 │   │   ├── background.ts         # Service Worker：消息路由、缓存清理 alarm、快捷键
-│   │   ├── content/              # 内容脚本：页面翻译流水线（段落识别、占位符、观察器、样式、划词/输入框翻译、SPA 检测）
-│   │   ├── popup/                # popup UI：快速翻译、历史记录、页面翻译启停
+│   │   ├── content/              # 内容脚本：页面翻译流水线（段落识别、占位符、观察器、样式、划词/输入框翻译、SPA 检测、图片翻译入口）
+│   │   ├── popup/                # popup UI：快速翻译、本地图片翻译、历史记录、页面翻译启停
 │   │   └── options/              # 设置页 UI 入口
 │   ├── components/
 │   │   ├── ui/                   # 基础组件（Button、Select、Textarea、Toast…）
@@ -32,8 +32,8 @@ translator/
 | 模块 | 路径 | 职责 | 主要入口 |
 | --- | --- | --- | --- |
 | background | `src/entrypoints/background.ts` | 消息路由中枢、定时缓存清理、快捷键命令 | `background.ts` |
-| content 翻译流水线 | `src/entrypoints/content/` | 页面段落识别、批量翻译调度、显示样式、SPA 检测、划词/悬停/输入框翻译 | `index.ts` |
-| popup UI | `src/entrypoints/popup/` | 快速翻译、历史记录、页面翻译启停（tabs 消息直达 content script） | `main.tsx` |
+| content 翻译流水线 | `src/entrypoints/content/` | 页面段落识别、批量翻译调度、显示样式、SPA 检测、划词/悬停/输入框翻译、图片翻译悬浮入口与加载/错误状态 | `index.ts` |
+| popup UI | `src/entrypoints/popup/` | 快速翻译、本地图片翻译、历史记录、页面翻译启停（tabs 消息直达 content script） | `main.tsx` |
 | options UI | `src/entrypoints/options/` | 设置页全量配置 | `main.tsx` |
 | UI 组件 | `src/components/` | 基础组件 + 设置页/popup 分区组件 | `ui/`、`options/`、`popup/` |
 | 翻译 API | `src/lib/api.ts` + `src/lib/api/` | LLM 调用、模型队列降级、SSE 解析、翻译缓存读写 | `api.ts` |

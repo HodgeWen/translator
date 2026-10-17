@@ -144,7 +144,8 @@ export type BgMessage =
 export type ContentMessage =
   | { type: 'TOGGLE_TRANSLATION' }
   | { type: 'START_TRANSLATION' }
-  | { type: 'STOP_TRANSLATION' };
+  | { type: 'STOP_TRANSLATION' }
+  | { type: 'TRANSLATE_IMAGE'; srcUrl: string };
 
 export interface CustomTone {
   id: string;

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>P4 手动验证：图片翻译网页入口</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+    }
+    body {
+      font: 14px/1.6 system-ui, -apple-system, 'Segoe UI', sans-serif;
+      margin: 0 auto;
+      max-width: 880px;
+      padding: 24px 20px 64px;
+    }
+    h1 {
+      font-size: 22px;
+      margin-bottom: 8px;
+    }
+    h2 {
+      font-size: 16px;
+      margin: 0 0 8px;
+    }
+    p.lead {
+      margin-top: 0;
+      opacity: 0.8;
+    }
+    table {
+      border-collapse: collapse;
+      margin: 16px 0 28px;
+      width: 100%;
+    }
+    th,
+    td {
+      border: 1px solid rgba(100, 116, 139, 0.35);
+      padding: 6px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: rgba(100, 116, 139, 0.12);
+      font-weight: 600;
+    }
+    section {
+      border-top: 1px solid rgba(100, 116, 139, 0.25);
+      padding: 20px 0;
+    }
+    figure {
+      margin: 0;
+    }
+    figcaption {
+      margin-top: 8px;
+      color: rgb(71 85 105);
+    }
+    .stage {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    img {
+      display: block;
+      border: 1px dashed rgba(100, 116, 139, 0.45);
+      background: rgb(241 245 249);
+    }
+    #large-data,
+    #large-blob {
+      width: 480px;
+      height: 360px;
+    }
+    #display-small {
+      width: 150px;
+      height: 112px;
+    }
+    #small-icon {
+      width: 32px;
+      height: 32px;
+    }
+    .css-background {
+      width: 420px;
+      height: 262px;
+      border: 1px dashed rgba(100, 116, 139, 0.45);
+      background-position: center;
+      background-size: cover;
+    }
+    canvas {
+      display: block;
+      border: 1px dashed rgba(100, 116, 139, 0.45);
+      background: rgb(241 245 249);
+    }
+    code {
+      background: rgba(100, 116, 139, 0.14);
+      border-radius: 3px;
+      padding: 0 4px;
+    }
+  </style>
+</head>
+<body>
+  <h1>P4 手动验证：图片翻译网页入口</h1>
+  <p class="lead">
+    本页自包含生成全部样例，不依赖外部资源。加载扩展构建产物后打开，按下方预期逐项核对悬浮「译」按钮、
+    200×200 CSS px 过滤、加载/错误状态与设置总开关。
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>样例</th>
+        <th>预期</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1. data URL 大图（480×360）</td>
+        <td>悬停显示「译」；点击后右上角按钮消失、左上角出现加载徽标；无识图模型时显示可点击重试的错误文案</td>
+      </tr>
+      <tr>
+        <td>2. blob URL 大图（480×360）</td>
+        <td>同 1，验证 blob: 在页面侧转 data URL 后仍可触发</td>
+      </tr>
+      <tr>
+        <td>3. 32×32 小图标</td>
+        <td>悬停不显示「译」</td>
+      </tr>
+      <tr>
+        <td>4. 800×600 图片、仅显示 150×112</td>
+        <td>悬停不显示「译」（按渲染尺寸过滤，而非原始像素）</td>
+      </tr>
+      <tr>
+        <td>5. CSS 背景图</td>
+        <td>悬停不显示「译」（非 &lt;img&gt;）</td>
+      </tr>
+      <tr>
+        <td>6. &lt;canvas&gt;</td>
+        <td>悬停不显示「译」</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>
+    http(s) 图片路径无法在本地单页复现，请在任意真实网页的大图上补测；设置页关闭「图片悬浮按钮」后，
+    所有页面的「译」按钮应立即消失（右键菜单留给 P5 验证）。
+  </p>
+
+  <section>
+    <h2>1. data URL 大图（canvas 生成，含 6 个已知英文文字框）</h2>
+    <figure>
+      <img id="large-data" alt="Generated quarterly report image (data URL)" />
+      <figcaption>
+        预期：悬停显示「译」；点击后出现加载状态。已知文字行：Quarterly Report 2026 /
+        Income grew by 18% this quarter / Operating costs stayed flat / Customer retention
+        reached 92% / Next review is scheduled for June / All figures are unaudited。
+      </figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>2. blob URL 大图（canvas 生成）</h2>
+    <figure>
+      <img id="large-blob" alt="Generated quarterly report image (blob URL)" />
+      <figcaption>预期：悬停显示「译」；点击后出现加载状态。</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>3. 小图标（32×32）</h2>
+    <figure>
+      <img id="small-icon" alt="Small icon" />
+      <figcaption>预期：悬停不显示「译」。</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>4. 大图小显示（原始 800×600，CSS 显示 150×112）</h2>
+    <figure>
+      <img id="display-small" alt="Large image rendered small" />
+      <figcaption>预期：悬停不显示「译」（渲染尺寸小于 200×200）。</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>5. CSS 背景图</h2>
+    <div id="css-background" class="css-background" role="img" aria-label="CSS background image"></div>
+    <p>预期：悬停不显示「译」。</p>
+  </section>
+
+  <section>
+    <h2>6. &lt;canvas&gt;</h2>
+    <canvas id="plain-canvas" width="480" height="360"></canvas>
+    <p>预期：悬停不显示「译」；P4 不把 canvas 视为图片入口。</p>
+  </section>
+
+  <script>
+    const TEXT_LINES = [
+      'Quarterly Report 2026',
+      'Income grew by 18% this quarter',
+      'Operating costs stayed flat',
+      'Customer retention reached 92%',
+      'Next review is scheduled for June',
+      'All figures are unaudited'
+    ];
+
+    function drawTextBox(context, text, x, baseline, font, paddingX, paddingY) {
+      context.font = font;
+      const textWidth = context.measureText(text).width;
+      const fontSize = Number(font.match(/(\d+)px/)[1]);
+      const top = baseline - fontSize - paddingY;
+      const height = fontSize + paddingY * 2;
+      context.fillStyle = '#eef2ff';
+      context.fillRect(x - paddingX, top, textWidth + paddingX * 2, height);
+      context.strokeStyle = '#c7d2fe';
+      context.lineWidth = 2;
+      context.strokeRect(x - paddingX, top, textWidth + paddingX * 2, height);
+      context.fillStyle = '#111827';
+      context.fillText(text, x, baseline);
+    }
+
+    function drawTextImage(canvas) {
+      const context = canvas.getContext('2d');
+      context.fillStyle = '#ffffff';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+
+      const titleFont = '600 44px system-ui, -apple-system, sans-serif';
+      const bodyFont = '400 30px system-ui, -apple-system, sans-serif';
+      drawTextBox(context, TEXT_LINES[0], 48, 100, titleFont, 14, 12);
+      TEXT_LINES.slice(1).forEach((line, index) => {
+        drawTextBox(context, line, 48, 190 + index * 70, bodyFont, 12, 9);
+      });
+      return canvas;
+    }
+
+    function createTextCanvas(width, height) {
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      return drawTextImage(canvas);
+    }
+
+    document.getElementById('large-data').src = createTextCanvas(800, 600).toDataURL('image/png');
+
+    const blobCanvas = createTextCanvas(800, 600);
+    blobCanvas.toBlob(
+      (blob) => {
+        if (blob) document.getElementById('large-blob').src = URL.createObjectURL(blob);
+      },
+      'image/jpeg',
+      0.92
+    );
+
+    document.getElementById('display-small').src = createTextCanvas(800, 600).toDataURL('image/png');
+
+    const iconSvg =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">' +
+      '<rect width="32" height="32" rx="6" fill="#2563eb"/>' +
+      '<path d="M9 22l5-13h4l5 13h-3.4l-1-3.1h-5.2l-1 3.1H9zm5.2-5.8h3.6L16 11.4l-1.8 4.8z" fill="#fff"/>' +
+      '</svg>';
+    document.getElementById('small-icon').src =
+      'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(iconSvg);
+
+    document.getElementById('css-background').style.backgroundImage =
+      'url(' + createTextCanvas(640, 400).toDataURL('image/png') + ')';
+
+    drawTextImage(document.getElementById('plain-canvas'));
+  </script>
+</body>
+</html>

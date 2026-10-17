@@ -161,3 +161,107 @@ textarea[data-translator-input-loading='true'],
   }
 }
 
+/* ─── 图片翻译：悬浮「译」按钮 ─────────────────────────────
+ *
+ * 固定定位的小按钮只覆盖图片右上角 32×32 区域，不拦截页面其它交互。
+ * all: revert 洗掉站点对 button 的继承样式，再显式声明外观。
+ */
+[data-translator-image-hover] {
+  all: revert;
+  position: fixed;
+  z-index: 2147483646;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 9999px;
+  background: rgba(15, 23, 42, 0.88);
+  color: #f8fafc;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: normal;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.35);
+  transition:
+    background-color 120ms ease,
+    transform 120ms ease;
+}
+
+[data-translator-image-hover]:hover {
+  background: rgba(37, 99, 235, 0.94);
+  transform: scale(1.06);
+}
+
+[data-translator-image-hover]:focus-visible {
+  outline: 2px solid rgba(96, 165, 250, 0.95);
+  outline-offset: 2px;
+}
+
+/* ─── 图片翻译：加载 / 错误状态徽标 ─────────────────────────
+ *
+ * 加载中 pointer-events: none，不挡图片点击；错误态可点击重试。
+ */
+[data-translator-image-status] {
+  all: revert;
+  position: fixed;
+  z-index: 2147483647;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: min(320px, calc(100vw - 16px));
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.9);
+  color: #f8fafc;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: normal;
+  pointer-events: none;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.35);
+}
+
+[data-translator-image-status-spinner] {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(248, 250, 252, 0.28);
+  border-top-color: #f8fafc;
+  border-radius: 9999px;
+  animation: translator-image-spin 0.8s linear infinite;
+}
+
+[data-translator-image-status-text] {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+[data-translator-image-status][data-state='error'] {
+  background: rgba(127, 29, 29, 0.95);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+[data-translator-image-status][data-state='error']:hover {
+  background: rgba(153, 27, 27, 0.97);
+}
+
+[data-translator-image-status][data-state='error'] [data-translator-image-status-spinner] {
+  display: none;
+}
+
+@keyframes translator-image-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
