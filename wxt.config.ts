@@ -19,7 +19,7 @@ export default defineConfig({
     description: '__MSG_extDescription__',
     default_locale: 'zh_CN',
     version: pkg.version,
-    permissions: ['storage', 'activeTab', 'alarms'],
+    permissions: ['storage', 'activeTab', 'alarms', 'contextMenus'],
     host_permissions: ['<all_urls>'],
     icons: {
       16: 'icon/16.png',
