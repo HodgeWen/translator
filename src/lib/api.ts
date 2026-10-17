@@ -31,14 +31,14 @@ export async function buildTranslationCachePartition(globalPrompt: string, extra
   return shortPromptHash(JSON.stringify([globalPrompt, extraPrompt ?? '', effectiveTone ?? '']));
 }
 
-class HttpError extends Error {
+export class HttpError extends Error {
   constructor(public status: number, message: string) {
     super(message);
     this.name = 'HttpError';
   }
 }
 
-function isProviderFatal(err: unknown): boolean {
+export function isProviderFatal(err: unknown): boolean {
   if (!(err instanceof HttpError)) return false;
   return err.status === 401 || err.status === 403 || err.status === 429;
 }
@@ -74,7 +74,7 @@ function extractTranslatedText(data: OpenAIChatResponse): string | null {
   );
 }
 
-function buildUrl(baseURL: string, query: Record<string, string>): string {
+export function buildUrl(baseURL: string, query: Record<string, string>): string {
   const url = new URL(baseURL);
   Object.entries(query).forEach(([key, value]) => {
     url.searchParams.set(key, value);
@@ -149,15 +149,20 @@ function buildBody(
     ...extraBody,
   };
 
-  if (provider.temperature !== undefined) body.temperature = provider.temperature;
-  if (provider.topP !== undefined) body.top_p = provider.topP;
-  if (provider.maxTokens !== undefined) body.max_tokens = provider.maxTokens;
-  if (provider.stream === true) body.stream = true;
+  applyProviderSampling(body, provider);
 
   return body;
 }
 
-function buildHeaders(provider: ProviderConfig): Record<string, string> {
+/** 把 provider 的采样/流式设置写入请求体（独立字段覆盖 body 中的同名键） */
+export function applyProviderSampling(body: Record<string, unknown>, provider: ProviderConfig): void {
+  if (provider.temperature !== undefined) body.temperature = provider.temperature;
+  if (provider.topP !== undefined) body.top_p = provider.topP;
+  if (provider.maxTokens !== undefined) body.max_tokens = provider.maxTokens;
+  if (provider.stream === true) body.stream = true;
+}
+
+export function buildHeaders(provider: ProviderConfig): Record<string, string> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     Accept: provider.stream === true ? 'text/event-stream' : 'application/json',
