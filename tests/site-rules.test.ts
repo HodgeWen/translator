@@ -32,4 +32,25 @@ describe('twitter site rule', () => {
     expect(twitterRule.excludeSelectors).toContain('[data-testid="app-text-transition-container"]')
     expect(twitterRule.excludeSelectors).toContain('time')
   })
+
+  test('排除选择器覆盖未登录（服务端渲染变体）的时间戳 / 用户名 / 互动数字', () => {
+    expect(twitterRule.excludeSelectors).toContain('div:has(> span > a[href*="/status/"])')
+    expect(twitterRule.excludeSelectors).toContain('div:has(> a.x-engagement-button)')
+    expect(twitterRule.excludeSelectors).toContain('a.x-engagement-button')
+    expect(twitterRule.excludeSelectors).toContain('div.font-bold.text-primary')
+    expect(twitterRule.excludeSelectors).toContain('div.x-middot-group')
+    expect(twitterRule.excludeSelectors).toContain('a.x-link')
+    expect(twitterRule.excludeSelectors).toContain('div:has(> a.x-link)')
+    expect(twitterRule.excludeSelectors).toContain('aside')
+    expect(twitterRule.excludeSelectors).toContain('h1.sr-only')
+  })
+
+  test('shouldExclude 拦截未登录变体的回复 li 单元（白名单标签，绕过灰名单校验）', () => {
+    // 模拟 li 摘要：shouldExclude 只应拦「自身是 li 且含 meta/互动锚点」的候选，
+    // 不影响内部正文 div 的收集
+    const liLike = { tagName: 'LI', querySelector: (sel: string) => (sel.includes('x-middot-group') ? {} : null) }
+    const divLike = { tagName: 'DIV', querySelector: () => null }
+    expect(twitterRule.shouldExclude?.(liLike as HTMLElement)).toBe(true)
+    expect(twitterRule.shouldExclude?.(divLike as HTMLElement)).toBe(false)
+  })
 })

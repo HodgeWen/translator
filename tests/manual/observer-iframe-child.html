@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>P6 手动验证：iframe 内段落（allFrames）</title>
+  <style>
+    body { font: 14px/1.6 system-ui, sans-serif; margin: 12px; }
+  </style>
+</head>
+<body>
+  <!-- 同源 iframe 子页面：验证 content script 以 allFrames 注入后 iframe 内段落可被翻译 -->
+  <p>This iframe paragraph lives in a same-origin child document served by the local static server.</p>
+  <p>A second paragraph inside the frame makes sure the whole frame document is collected, not just the first block.</p>
+</body>
+</html>

@@ -38,6 +38,11 @@
     </div>
   </fieldset>
 
+  <fieldset>
+    <legend>4. iframe 内段落（content script 以 allFrames 注入子文档）</legend>
+    <iframe src="observer-iframe-child.html" title="同源 iframe 子页面" style="width: 100%; height: 140px; border: 1px solid #ccc;"></iframe>
+  </fieldset>
+
   <script>
     // 1. open shadow root：初始一段 + 延迟插入一段（模拟 Web Components 动态渲染）
     const shadow = document.getElementById('shadow-host').attachShadow({ mode: 'open' });

@@ -3,7 +3,7 @@ export interface SiteRule {
   matches: (url: URL) => boolean;
   // 排除这些选择器匹配的元素及其后代
   excludeSelectors?: string[];
-  // 自定义排除逻辑
+  // 自定义排除逻辑：仅排除候选自身，后代候选仍独立判定（不同于 excludeSelectors 的祖先语义）
   shouldExclude?: (el: HTMLElement) => boolean;
 }
 

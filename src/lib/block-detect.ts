@@ -193,7 +193,9 @@ function hasExcludedAncestor(
         }
       }
       if (rule.shouldExclude?.(el)) {
-        excludedCache?.add(el);
+        // shouldExclude 语义为「仅排除候选自身」：不写入 excludedCache，后代
+        // 候选独立判定（如 X 未登录回复 li 整条排除，但其内的推文正文 div 仍
+        // 要独立成翻译单元）。这与 excludeSelectors 的 closest 祖先语义不同。
         return true;
       }
     }
@@ -271,6 +273,12 @@ export function isTranslatableBlock(
 
   const tag = el.tagName;
   if (HARD_EXCLUDE_TAGS.has(tag)) return false;
+
+  // 子树内已有翻译产物的容器不再作为翻译单元：首轮收集中这类父子候选由
+  // 「子夺权」去重抑制，但后续 wave（mutation flush / IO 再收集）时内层已带
+  // data-translator-processed，白名单祖先（如 X 未登录变体的回复 li）会绕过
+  // 去重被整块收集，把已翻译的正文与用户名/时间戳等 UI 混在一个单元里重译。
+  if (el.querySelector('[data-translator-processed], [data-translator-clone]')) return false;
 
   const isWhitelist = WHITELIST_TAGS.has(tag);
   const isGraylist = GRAYLIST_TAGS.has(tag);
