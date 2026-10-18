@@ -45,7 +45,7 @@ src/
 ## Installation
 
 ```bash
-bun install && bun build
+bun install && bun run build
 # chrome://extensions → Developer mode → Load unpacked → select .output/chrome-mv3
 ```
 
@@ -64,7 +64,7 @@ bun install && bun build
 
 ## Permissions
 
-`storage` `activeTab` `scripting` `alarms` `host_permissions: <all_urls>`
+`storage` `activeTab` `alarms` `contextMenus` `host_permissions: <all_urls>`
 
 ## Privacy
 

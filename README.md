@@ -45,7 +45,7 @@ src/
 ## 安装
 
 ```bash
-bun install && bun build
+bun install && bun run build
 # chrome://extensions → 开发者模式 → 加载已解压的扩展 → 选择 .output/chrome-mv3
 ```
 
@@ -64,7 +64,7 @@ bun install && bun build
 
 ## 权限
 
-`storage` `activeTab` `scripting` `alarms` `host_permissions: <all_urls>`
+`storage` `activeTab` `alarms` `contextMenus` `host_permissions: <all_urls>`
 
 ## 隐私
 

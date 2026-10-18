@@ -129,6 +129,20 @@ describe('layout helpers', () => {
     expect(dense).toBeLessThan(short);
     expect(dense).toBeGreaterThanOrEqual(10);
 
+    // 中文译文在原文行高内必须缩到单行，否则两行会被覆盖块裁掉半行。
+    const cjk = fitFontSize('本季度收入增长了18%。', 270, 30, {
+      minFontSize: 8,
+      maxFontSize: 40,
+      lineHeightRatio: 1.15,
+    });
+    const cjkShort = fitFontSize('季度报告', 270, 30, {
+      minFontSize: 8,
+      maxFontSize: 40,
+      lineHeightRatio: 1.15,
+    });
+    expect(cjk).toBeLessThan(cjkShort);
+    expect(cjk).toBeLessThanOrEqual(24);
+
     expect(fitFontSize('X', 0, 0)).toBe(10);
     expect(fitFontSize('X', 1000, 1000, { maxFontSize: 24 })).toBe(24);
   });

@@ -49,6 +49,8 @@ async function showHoverButton(image: HTMLImageElement): Promise<void> {
   if (token !== showToken || pendingImage !== image) return;
   pendingImage = null;
   if (!image.isConnected || !isImageHoverButtonEnabled()) return;
+  // 已翻译图片显示覆盖层与工具条；再叠一个悬浮按钮会遮住工具条并拦截点击。
+  if (getImageTranslateState(image)?.status === 'translated') return;
 
   const rect = image.getBoundingClientRect();
   if (!isImageLargeEnough(rect)) return;

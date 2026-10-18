@@ -60,6 +60,7 @@ graph TD
     content --> imagetranslate[image-translate 图片预处理/布局/识图编排]
     background --> api[翻译 API lib/api]
     background --> imagetranslate
+    api -->|vision 提示词/解析| imagetranslate
     imagetranslate --> api
     imagetranslate --> cache
     imagetranslate --> langdetect
@@ -69,6 +70,7 @@ graph TD
     api --> storage[storage + schema chrome.storage.sync]
     api --> langdetect[lang-detect]
     popup --> storage
+    popup -->|本地图片| imagetranslate
     options --> storage
     popup --> i18n[i18n]
     options --> i18n

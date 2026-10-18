@@ -56,7 +56,12 @@ export function boxToPercentRect(box: ImageBox): PercentRect {
   };
 }
 
-// 全角/宽字符按一个字号宽度估算，其余按 0.55 个字号估算，足以决定换行与字号。
+// 覆盖块有 2px 左右内边距；估算宽度时为实际可用宽度留出余量，避免浏览器字体
+// 比估算更宽时换成两行、再被 overflow:hidden 裁掉半行。
+const BLOCK_HORIZONTAL_PADDING = 4;
+const WIDTH_SAFETY_RATIO = 0.97;
+
+// 全角/宽字符按略大于一个字号的宽度估算，其余按 0.62 个字号估算，偏向保守。
 function isWideChar(char: string): boolean {
   const code = char.codePointAt(0) ?? 0;
   return (
@@ -73,7 +78,7 @@ function isWideChar(char: string): boolean {
 function estimateTextWidth(text: string, fontSize: number): number {
   let width = 0;
   for (const char of text) {
-    width += (isWideChar(char) ? 1 : 0.55) * fontSize;
+    width += (isWideChar(char) ? 1.02 : 0.62) * fontSize;
   }
   return width;
 }
@@ -103,8 +108,13 @@ export function fitFontSize(
     Math.min(maxFontSize, Math.max(minFontSize, boxHeight / lineHeightRatio))
   );
 
+  const availableWidth = Math.max(
+    1,
+    (boxWidth - BLOCK_HORIZONTAL_PADDING) * WIDTH_SAFETY_RATIO
+  );
+
   while (fontSize > minFontSize) {
-    const lines = Math.max(1, Math.ceil(estimateTextWidth(content, fontSize) / boxWidth));
+    const lines = Math.max(1, Math.ceil(estimateTextWidth(content, fontSize) / availableWidth));
     if (lines * fontSize * lineHeightRatio <= boxHeight) break;
     fontSize -= 1;
   }
