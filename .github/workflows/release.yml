@@ -196,8 +196,6 @@ jobs:
             echo
             echo "本次 Release 资源（点击 tag 下方的 Assets 获取）："
             echo "- Chrome 包：\`translator-extension-${NEW_VERSION}-chrome.zip\`"
-            echo "- Firefox 包：\`translator-extension-${NEW_VERSION}-firefox.zip\`"
-            echo "- Firefox 源码包（AMO 审核用）：\`translator-extension-${NEW_VERSION}-sources.zip\`"
             echo
 
             if [ -n "$COMPARE" ]; then
@@ -230,16 +228,12 @@ jobs:
       - name: Build Chrome zip
         run: bun run zip
 
-      - name: Build Firefox zip
-        run: bun run zip:firefox
-
       - name: Verify zip artifacts exist
         run: |
           set -euo pipefail
           shopt -s nullglob
           chrome=( .output/*-chrome.zip )
-          firefox=( .output/*-firefox.zip )
-          if [ ${#chrome[@]} -eq 0 ] || [ ${#firefox[@]} -eq 0 ]; then
+          if [ ${#chrome[@]} -eq 0 ]; then
             echo "::error::构建产物缺失"
             ls -la .output || true
             exit 1
@@ -253,8 +247,6 @@ jobs:
           name: extension-${{ steps.version.outputs.tag }}
           path: |
             .output/*-chrome.zip
-            .output/*-firefox.zip
-            .output/*-sources.zip
             RELEASE_NOTES.md
           if-no-files-found: error
           retention-days: 30
@@ -284,8 +276,6 @@ jobs:
           fail_on_unmatched_files: false
           files: |
             .output/*-chrome.zip
-            .output/*-firefox.zip
-            .output/*-sources.zip
 
       - name: Summary
         run: |
