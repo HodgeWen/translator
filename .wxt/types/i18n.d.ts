@@ -223,6 +223,30 @@ declare module "wxt/browser" {
       options?: GetMessageOptions,
     ): string;
     /**
+     * "翻译此页"
+     */
+    getMessage(
+      messageName: "popup_translate_page",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "停止翻译"
+     */
+    getMessage(
+      messageName: "popup_stop_translation",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "当前页面无法使用页面翻译"
+     */
+    getMessage(
+      messageName: "popup_page_translation_unavailable",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
      * "翻译器设置"
      */
     getMessage(
@@ -1904,8 +1928,224 @@ declare module "wxt/browser" {
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
+    /**
+     * "支持图片输入"
+     */
     getMessage(
-      messageName: "@@extension_id" | "@@ui_locale" | "@@bidi_dir" | "@@bidi_reversed_dir" | "@@bidi_start_edge" | "@@bidi_end_edge" | "extName" | "extDescription" | "command_toggle_desc" | "popup_provider" | "popup_model" | "popup_translate_to" | "popup_placeholder" | "popup_translating" | "popup_translate" | "popup_result" | "popup_error" | "popup_error_hint" | "popup_dismiss_error" | "popup_open_settings" | "popup_auto_detect_hint" | "popup_target_auto" | "popup_manual_override_hint" | "popup_copied" | "options_title" | "options_subtitle" | "options_saved" | "options_imported" | "tab_providers" | "tab_model_queue" | "tab_language" | "tab_display" | "tab_general" | "tab_backup_restore" | "tab_manual" | "btn_add_provider" | "title_add_provider" | "title_edit_provider" | "btn_save" | "btn_cancel" | "label_name" | "label_base_url" | "label_api_key" | "placeholder_api_key" | "hint_api_key" | "btn_show" | "btn_hide" | "label_headers" | "label_query_params" | "label_extra_body" | "label_models" | "label_model_id" | "label_display_name" | "btn_add_model" | "btn_edit" | "btn_delete" | "queue_description" | "label_timeout" | "label_ui_language" | "hint_ui_language" | "label_native_language" | "hint_native_language" | "label_second_language" | "hint_second_language" | "option_follow_native_language" | "label_input_translation_target_language" | "hint_input_translation_target_language" | "label_default_style" | "style_original" | "style_bilingual" | "style_underline" | "style_clean" | "style_original_desc" | "style_bilingual_desc" | "style_underline_desc" | "style_clean_desc" | "title_display_mode_settings" | "title_translation_loading_theme" | "theme_indigo" | "theme_indigo_desc" | "theme_aurora" | "theme_aurora_desc" | "theme_monochrome" | "theme_monochrome_desc" | "theme_cosmic" | "theme_cosmic_desc" | "title_translation_tone" | "label_translation_tone" | "tone_normal" | "tone_normal_desc" | "tone_technical" | "tone_technical_desc" | "tone_tech_forward" | "tone_tech_forward_desc" | "tone_humorous" | "tone_humorous_desc" | "tone_literary" | "tone_literary_desc" | "tone_formal" | "tone_formal_desc" | "tone_colloquial" | "tone_colloquial_desc" | "label_keyboard_shortcut" | "shortcut_hint" | "shortcut_unbound" | "title_shortcut_settings" | "label_hover_shortcut_key" | "label_input_shortcut_key" | "hint_single_key_shortcut" | "hint_input_shortcut_key" | "shortcut_key_control" | "shortcut_key_alt" | "shortcut_key_option" | "shortcut_key_shift" | "shortcut_key_command" | "shortcut_key_win" | "shortcut_key_space" | "shortcut_key_escape" | "label_input_loading_pulse_color" | "title_display_style_settings" | "title_input_loading_settings" | "label_input_loading_keyframe_0" | "label_input_loading_keyframe_1" | "label_input_loading_keyframe_2" | "error_invalid_hex_color" | "label_input_loading_pulse_duration" | "hint_input_loading_pulse_duration" | "label_input_loading_pulse_easing" | "hint_input_loading_pulse_easing" | "label_input_loading_preview" | "input_loading_preview_text" | "pulse_easing_linear" | "pulse_easing_ease_out" | "pulse_easing_spring" | "title_backup_restore" | "btn_export_settings" | "btn_import_settings" | "btn_reset_default" | "error_load_settings" | "error_save_failed" | "error_export_failed" | "error_import_failed" | "error_required_fields" | "error_translation_failed" | "error_unknown" | "new_provider" | "label_endpoint_url" | "label_api_key_optional" | "label_key" | "label_value" | "btn_add" | "label_provider_prompt" | "placeholder_provider_prompt" | "hint_provider_prompt" | "title_global_prompt" | "desc_global_prompt" | "hint_prompt_vars" | "title_aggregation" | "label_aggregate_enabled" | "desc_aggregate_enabled" | "label_max_paragraphs" | "label_max_text_length" | "label_max_concurrent" | "label_request_timeout" | "title_display_settings" | "label_sampling" | "label_temperature" | "label_top_p" | "label_max_tokens" | "label_top_p_enable" | "label_stream" | "hint_stream" | "hint_extra_body_override" | "hint_extra_body_examples" | "hint_temperature" | "hint_top_p" | "hint_max_tokens" | "hint_content_type_auto" | "badge_stream" | "label_export_passphrase" | "hint_export_passphrase" | "hint_export_passphrase_warn" | "label_import_passphrase" | "btn_import_confirm" | "btn_import_cancel" | "toast_export_encrypted_remember" | "error_import_decrypt_failed" | "error_import_passphrase_required" | "tab_load_balance" | "tab_services" | "tab_presets" | "title_load_balance" | "desc_load_balance" | "warn_no_lb_providers" | "label_weight" | "hint_load_balance" | "popup_load_balance" | "popup_load_balance_active" | "hint_model_order" | "btn_move_up" | "btn_move_down" | "lb_preferred_model" | "lb_model_default" | "title_request_settings" | "desc_request_settings" | "label_test_provider" | "hint_test_provider" | "btn_test" | "test_success" | "test_failed" | "popup_meta_show" | "popup_meta_hide" | "label_preset_urls" | "preset_urls_modal_title" | "preset_urls_modal_close" | "preset_urls_category_all" | "preset_urls_category_open" | "preset_urls_category_closed" | "preset_urls_category_gateway" | "btn_copy_url" | "btn_copied_url" | "btn_doc" | "tab_statistics" | "statistics_title" | "statistics_subtitle" | "statistics_response_time" | "statistics_response_time_desc" | "statistics_avg_response_time" | "statistics_failure_count" | "statistics_token_usage" | "statistics_token_usage_desc" | "statistics_no_data" | "statistics_no_data_hint" | "loading",
+      messageName: "label_supports_vision",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "勾选后该模型可用于识别图片中的文字；识图只会使用带此标记的模型。"
+     */
+    getMessage(
+      messageName: "hint_supports_vision",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "翻译此图片"
+     */
+    getMessage(
+      messageName: "menu_translate_image",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "译"
+     */
+    getMessage(
+      messageName: "image_hover_button_text",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "翻译图片文字"
+     */
+    getMessage(
+      messageName: "image_hover_button_title",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "图片悬浮按钮"
+     */
+    getMessage(
+      messageName: "label_image_hover_button",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "悬停较大网页图片时显示「译」按钮，右键菜单始终可用。仅 Chrome / Edge 等 Chromium 浏览器支持图片翻译。"
+     */
+    getMessage(
+      messageName: "hint_image_hover_button",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "正在识别图片文字..."
+     */
+    getMessage(
+      messageName: "image_translate_loading",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "正在翻译图片文字..."
+     */
+    getMessage(
+      messageName: "image_translate_translating",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "当前浏览器不支持图片翻译"
+     */
+    getMessage(
+      messageName: "image_translate_unsupported",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "没有可用的图片识图模型，请在设置中为模型勾选「支持图片输入」。"
+     */
+    getMessage(
+      messageName: "error_image_translate_no_vision_model",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "图片获取失败，请重试。"
+     */
+    getMessage(
+      messageName: "error_image_translate_fetch_failed",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "图片文字识别失败，请重试。"
+     */
+    getMessage(
+      messageName: "error_image_translate_recognize_failed",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "图片文字翻译失败，请重试。"
+     */
+    getMessage(
+      messageName: "error_image_translate_translate_failed",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "仅支持 PNG、JPEG、WebP 格式的图片。"
+     */
+    getMessage(
+      messageName: "error_image_invalid_format",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "图片过大：单张不能超过 20MB，最长边不能超过 16384 像素。"
+     */
+    getMessage(
+      messageName: "error_image_too_large",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "图片读取失败，文件可能已损坏。"
+     */
+    getMessage(
+      messageName: "error_image_load_failed",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "剪贴板中没有图片。"
+     */
+    getMessage(
+      messageName: "error_image_clipboard_empty",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "重试"
+     */
+    getMessage(
+      messageName: "btn_retry",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "原文"
+     */
+    getMessage(
+      messageName: "image_toolbar_original",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "译文"
+     */
+    getMessage(
+      messageName: "image_toolbar_translation",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "关闭"
+     */
+    getMessage(
+      messageName: "image_toolbar_close",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "图片翻译"
+     */
+    getMessage(
+      messageName: "popup_image_translate",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "选择图片"
+     */
+    getMessage(
+      messageName: "popup_image_select_file",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "拖拽图片到此处，或直接粘贴截图"
+     */
+    getMessage(
+      messageName: "popup_image_drop_hint",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "支持 PNG、JPEG、WebP，单张不超过 20MB"
+     */
+    getMessage(
+      messageName: "popup_image_file_types",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "重新选择"
+     */
+    getMessage(
+      messageName: "popup_image_replace",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    getMessage(
+      messageName: "@@extension_id" | "@@ui_locale" | "@@bidi_dir" | "@@bidi_reversed_dir" | "@@bidi_start_edge" | "@@bidi_end_edge" | "extName" | "extDescription" | "command_toggle_desc" | "popup_provider" | "popup_model" | "popup_translate_to" | "popup_placeholder" | "popup_translating" | "popup_translate" | "popup_result" | "popup_error" | "popup_error_hint" | "popup_dismiss_error" | "popup_open_settings" | "popup_auto_detect_hint" | "popup_target_auto" | "popup_manual_override_hint" | "popup_copied" | "popup_translate_page" | "popup_stop_translation" | "popup_page_translation_unavailable" | "options_title" | "options_subtitle" | "options_saved" | "options_imported" | "tab_providers" | "tab_model_queue" | "tab_language" | "tab_display" | "tab_general" | "tab_backup_restore" | "tab_manual" | "btn_add_provider" | "title_add_provider" | "title_edit_provider" | "btn_save" | "btn_cancel" | "label_name" | "label_base_url" | "label_api_key" | "placeholder_api_key" | "hint_api_key" | "btn_show" | "btn_hide" | "label_headers" | "label_query_params" | "label_extra_body" | "label_models" | "label_model_id" | "label_display_name" | "btn_add_model" | "btn_edit" | "btn_delete" | "queue_description" | "label_timeout" | "label_ui_language" | "hint_ui_language" | "label_native_language" | "hint_native_language" | "label_second_language" | "hint_second_language" | "option_follow_native_language" | "label_input_translation_target_language" | "hint_input_translation_target_language" | "label_default_style" | "style_original" | "style_bilingual" | "style_underline" | "style_clean" | "style_original_desc" | "style_bilingual_desc" | "style_underline_desc" | "style_clean_desc" | "title_display_mode_settings" | "title_translation_loading_theme" | "theme_indigo" | "theme_indigo_desc" | "theme_aurora" | "theme_aurora_desc" | "theme_monochrome" | "theme_monochrome_desc" | "theme_cosmic" | "theme_cosmic_desc" | "title_translation_tone" | "label_translation_tone" | "tone_normal" | "tone_normal_desc" | "tone_technical" | "tone_technical_desc" | "tone_tech_forward" | "tone_tech_forward_desc" | "tone_humorous" | "tone_humorous_desc" | "tone_literary" | "tone_literary_desc" | "tone_formal" | "tone_formal_desc" | "tone_colloquial" | "tone_colloquial_desc" | "label_keyboard_shortcut" | "shortcut_hint" | "shortcut_unbound" | "title_shortcut_settings" | "label_hover_shortcut_key" | "label_input_shortcut_key" | "hint_single_key_shortcut" | "hint_input_shortcut_key" | "shortcut_key_control" | "shortcut_key_alt" | "shortcut_key_option" | "shortcut_key_shift" | "shortcut_key_command" | "shortcut_key_win" | "shortcut_key_space" | "shortcut_key_escape" | "label_input_loading_pulse_color" | "title_display_style_settings" | "title_input_loading_settings" | "label_input_loading_keyframe_0" | "label_input_loading_keyframe_1" | "label_input_loading_keyframe_2" | "error_invalid_hex_color" | "label_input_loading_pulse_duration" | "hint_input_loading_pulse_duration" | "label_input_loading_pulse_easing" | "hint_input_loading_pulse_easing" | "label_input_loading_preview" | "input_loading_preview_text" | "pulse_easing_linear" | "pulse_easing_ease_out" | "pulse_easing_spring" | "title_backup_restore" | "btn_export_settings" | "btn_import_settings" | "btn_reset_default" | "error_load_settings" | "error_save_failed" | "error_export_failed" | "error_import_failed" | "error_required_fields" | "error_translation_failed" | "error_unknown" | "new_provider" | "label_endpoint_url" | "label_api_key_optional" | "label_key" | "label_value" | "btn_add" | "label_provider_prompt" | "placeholder_provider_prompt" | "hint_provider_prompt" | "title_global_prompt" | "desc_global_prompt" | "hint_prompt_vars" | "title_aggregation" | "label_aggregate_enabled" | "desc_aggregate_enabled" | "label_max_paragraphs" | "label_max_text_length" | "label_max_concurrent" | "label_request_timeout" | "title_display_settings" | "label_sampling" | "label_temperature" | "label_top_p" | "label_max_tokens" | "label_top_p_enable" | "label_stream" | "hint_stream" | "hint_extra_body_override" | "hint_extra_body_examples" | "hint_temperature" | "hint_top_p" | "hint_max_tokens" | "hint_content_type_auto" | "badge_stream" | "label_export_passphrase" | "hint_export_passphrase" | "hint_export_passphrase_warn" | "label_import_passphrase" | "btn_import_confirm" | "btn_import_cancel" | "toast_export_encrypted_remember" | "error_import_decrypt_failed" | "error_import_passphrase_required" | "tab_load_balance" | "tab_services" | "tab_presets" | "title_load_balance" | "desc_load_balance" | "warn_no_lb_providers" | "label_weight" | "hint_load_balance" | "popup_load_balance" | "popup_load_balance_active" | "hint_model_order" | "btn_move_up" | "btn_move_down" | "lb_preferred_model" | "lb_model_default" | "title_request_settings" | "desc_request_settings" | "label_test_provider" | "hint_test_provider" | "btn_test" | "test_success" | "test_failed" | "popup_meta_show" | "popup_meta_hide" | "label_preset_urls" | "preset_urls_modal_title" | "preset_urls_modal_close" | "preset_urls_category_all" | "preset_urls_category_open" | "preset_urls_category_closed" | "preset_urls_category_gateway" | "btn_copy_url" | "btn_copied_url" | "btn_doc" | "tab_statistics" | "statistics_title" | "statistics_subtitle" | "statistics_response_time" | "statistics_response_time_desc" | "statistics_avg_response_time" | "statistics_failure_count" | "statistics_token_usage" | "statistics_token_usage_desc" | "statistics_no_data" | "statistics_no_data_hint" | "loading" | "label_supports_vision" | "hint_supports_vision" | "menu_translate_image" | "image_hover_button_text" | "image_hover_button_title" | "label_image_hover_button" | "hint_image_hover_button" | "image_translate_loading" | "image_translate_translating" | "image_translate_unsupported" | "error_image_translate_no_vision_model" | "error_image_translate_fetch_failed" | "error_image_translate_recognize_failed" | "error_image_translate_translate_failed" | "error_image_invalid_format" | "error_image_too_large" | "error_image_load_failed" | "error_image_clipboard_empty" | "btn_retry" | "image_toolbar_original" | "image_toolbar_translation" | "image_toolbar_close" | "popup_image_translate" | "popup_image_select_file" | "popup_image_drop_hint" | "popup_image_file_types" | "popup_image_replace",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
