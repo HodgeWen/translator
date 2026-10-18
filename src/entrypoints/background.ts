@@ -12,9 +12,6 @@ const IMAGE_CONTEXT_MENU_ID = 'translate-image';
 
 // 右键菜单标题跟随浏览器 locale（AC15），不读设置页 UI 语言。
 function setupImageContextMenu(): void {
-  // 图片翻译入口仅 Chromium 构建提供，Firefox 不注册。
-  if (import.meta.env.FIREFOX) return;
-
   chrome.contextMenus.onClicked.addListener(onImageContextMenuClicked);
   chrome.contextMenus.removeAll(() => {
     // 扩展重载 / Service Worker 重启时清空旧菜单，忽略 removeAll 的 lastError。

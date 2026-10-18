@@ -99,9 +99,6 @@ export function hideImageHoverButton(): void {
 }
 
 export function setupImageHover(): void {
-  // 图片翻译入口仅 Chromium 构建提供；Firefox 不显示悬浮按钮。
-  if (import.meta.env.FIREFOX) return;
-
   document.addEventListener('mouseover', onMouseOver, true);
   document.addEventListener('mouseout', onMouseOut, true);
 }

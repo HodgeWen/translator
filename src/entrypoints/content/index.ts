@@ -20,8 +20,7 @@ function isValidPage(): boolean {
     !url.startsWith('devtools://') &&
     !url.startsWith('about:') &&
     !url.startsWith('edge://') &&
-    !url.startsWith('chrome-error://') &&
-    !url.startsWith('moz-extension://')
+    !url.startsWith('chrome-error://')
   )
 }
 

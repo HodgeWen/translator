@@ -211,8 +211,6 @@ export function showImageOverlay(
   image: HTMLImageElement,
   result: ImageTranslationResult
 ): void {
-  // 覆盖层仅 Chromium 构建提供；Firefox 不注入。
-  if (import.meta.env.FIREFOX) return;
   removeImageOverlay(image);
   if (!image.isConnected) return;
   if (!result.blocks.some(isOverlayBlockRenderable)) return;

@@ -28,7 +28,6 @@ import { LogoIcon } from '@/components/logo-icon'
 
 const TARGET_AUTO = 'auto' as const
 type TargetSelection = typeof TARGET_AUTO | LangCode
-const IMAGE_MODE_AVAILABLE = !import.meta.env.FIREFOX
 
 // 根据检测结果决定翻译方向：母语→第二语言，外语→母语
 function resolveAutoTargetLang(
@@ -349,40 +348,38 @@ function App() {
       </div>
 
       {/* Mode Switch */}
-      {IMAGE_MODE_AVAILABLE && (
-        <div className="px-4 pt-2">
-          <div className="flex gap-0.5 rounded-md bg-muted p-0.5">
-            <button
-              type="button"
-              aria-pressed={mode === 'text'}
-              onClick={() => setMode('text')}
-              className={cn(
-                'flex flex-1 items-center justify-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition-colors',
-                mode === 'text'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              <Languages className="h-3 w-3" />
-              {t('popup_translate')}
-            </button>
-            <button
-              type="button"
-              aria-pressed={mode === 'image'}
-              onClick={() => setMode('image')}
-              className={cn(
-                'flex flex-1 items-center justify-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition-colors',
-                mode === 'image'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              <ImageIcon className="h-3 w-3" />
-              {t('popup_image_translate')}
-            </button>
-          </div>
+      <div className="px-4 pt-2">
+        <div className="flex gap-0.5 rounded-md bg-muted p-0.5">
+          <button
+            type="button"
+            aria-pressed={mode === 'text'}
+            onClick={() => setMode('text')}
+            className={cn(
+              'flex flex-1 items-center justify-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition-colors',
+              mode === 'text'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <Languages className="h-3 w-3" />
+            {t('popup_translate')}
+          </button>
+          <button
+            type="button"
+            aria-pressed={mode === 'image'}
+            onClick={() => setMode('image')}
+            className={cn(
+              'flex flex-1 items-center justify-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition-colors',
+              mode === 'image'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <ImageIcon className="h-3 w-3" />
+            {t('popup_image_translate')}
+          </button>
         </div>
-      )}
+      </div>
 
       {/* Input Area */}
       <div className="px-4 py-2 flex-1 flex flex-col gap-2">
