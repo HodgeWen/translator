@@ -2,7 +2,7 @@
 
 ## 业务架构
 
-浏览器翻译扩展（Chrome 主目标、Firefox 兼容，manifest v3），给需要阅读外文页面的用户使用。核心域：
+浏览器翻译扩展（仅 Chrome / Chromium，manifest v3），给需要阅读外文页面的用户使用。核心域：
 
 - **多提供商 LLM 接入**：任意 OpenAI-compatible API（ baseURL + apiKey + modelQueue），翻译时按模型队列顺序尝试、失败自动降级到下一个模型
 - **页面翻译**：内容脚本识别页面段落，可视区域批量聚合翻译（单请求），失败回落逐段翻译；四种译文显示样式（双语/替换等）
@@ -25,7 +25,7 @@ WXT 扩展，`srcDir: 'src'`，WXT 自动扫描 `entrypoints/` 生成 manifest�
 
 关键集成：外部 LLM API（chat/completions，支持 SSE 流式，`lib/api/sse-consumer.ts`）；`chrome.i18n` + 运行时切换双轨（manifest 默认 `zh_CN`，`setUILanguage()` 从 `/_locales/{lang}/messages.json` 动态加载）。
 
-构建与发布：`bun dev` / `bun dev:firefox` 开发，`bun build` / `bun zip` 产出商店 zip；发版走 `scripts/release.mjs`（bump `package.json#version` → manifest.version 同步，中文约定式 commit + tag + push 触发 CI `.github/workflows/release.yml`），`scripts/verify-release.mjs` 校验 Release。开发浏览器为 Brave（`wxt.config.ts` webExt 配置）；开发模式注入根目录 `dev-settings.json` 供 background 自动导入。
+构建与发布：`bun run dev` 开发，`bun run build` / `bun run zip` 产出 Chrome 商店 zip；发版走 `scripts/release.mjs`（bump `package.json#version` → manifest.version 同步，中文约定式 commit + tag + push 触发 CI `.github/workflows/release.yml`，仅构建并发布 Chrome 包），`scripts/verify-release.mjs` 校验 Release。开发浏览器为 Brave（`wxt.config.ts` webExt 配置）；开发模式注入根目录 `dev-settings.json` 供 background 自动导入。
 
 ### 技术栈
 
