@@ -734,6 +734,15 @@
   "error_image_translate_recognize_failed": {
     "message": "图片文字识别失败，请重试。"
   },
+  "error_image_translate_vision_timeout": {
+    "message": "图片文字识别超时，请重试或改用响应更快的视觉模型。"
+  },
+  "error_image_translate_model_unsupported": {
+    "message": "当前模型不支持图片输入，请在设置中改选支持图片输入的模型。"
+  },
+  "error_image_translate_http_error": {
+    "message": "识图请求失败，请检查服务地址、密钥与模型配置。"
+  },
   "error_image_translate_translate_failed": {
     "message": "图片文字翻译失败，请重试。"
   },

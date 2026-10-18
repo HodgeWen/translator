@@ -734,6 +734,15 @@
   "error_image_translate_recognize_failed": {
     "message": "Couldn't recognize text in the image. Please try again."
   },
+  "error_image_translate_vision_timeout": {
+    "message": "Recognizing image text timed out. Retry or switch to a faster vision model."
+  },
+  "error_image_translate_model_unsupported": {
+    "message": "The selected model doesn't support image input. Pick a model marked \"Supports image input\" in settings."
+  },
+  "error_image_translate_http_error": {
+    "message": "The recognition request failed. Check the service URL, API key and model configuration."
+  },
   "error_image_translate_translate_failed": {
     "message": "Couldn't translate the recognized text. Please try again."
   },

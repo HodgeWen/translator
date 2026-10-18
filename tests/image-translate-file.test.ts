@@ -56,6 +56,15 @@ describe('local image error copy', () => {
       'error_image_translate_no_vision_model'
     )
     expect(imageTranslationErrorKey('IMAGE_DECODE_FAILED')).toBe('error_image_load_failed')
+    expect(imageTranslationErrorKey('VISION_TIMEOUT')).toBe(
+      'error_image_translate_vision_timeout'
+    )
+    expect(imageTranslationErrorKey('VISION_MODEL_UNSUPPORTED')).toBe(
+      'error_image_translate_model_unsupported'
+    )
+    expect(imageTranslationErrorKey('VISION_HTTP_ERROR')).toBe(
+      'error_image_translate_http_error'
+    )
     expect(imageTranslationErrorKey('TRANSLATION_ALL_FAILED')).toBe(
       'error_image_translate_translate_failed'
     )

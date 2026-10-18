@@ -126,6 +126,11 @@ describe('image translation error message mapping', () => {
     expect(imageErrorKey('IMAGE_FETCH_FAILED')).toBe('error_image_translate_fetch_failed');
     expect(imageErrorKey('IMAGE_DECODE_FAILED')).toBe('error_image_load_failed');
     expect(imageErrorKey('IMAGE_TOO_LARGE')).toBe('error_image_too_large');
+    expect(imageErrorKey('VISION_TIMEOUT')).toBe('error_image_translate_vision_timeout');
+    expect(imageErrorKey('VISION_MODEL_UNSUPPORTED')).toBe(
+      'error_image_translate_model_unsupported'
+    );
+    expect(imageErrorKey('VISION_HTTP_ERROR')).toBe('error_image_translate_http_error');
     expect(imageErrorKey('VISION_RECOGNITION_FAILED')).toBe(
       'error_image_translate_recognize_failed'
     );

@@ -44,6 +44,9 @@ const IMAGE_TRANSLATION_ERROR_KEYS: Record<string, string> = {
   IMAGE_FETCH_FAILED: 'error_image_translate_fetch_failed',
   IMAGE_DECODE_FAILED: 'error_image_load_failed',
   IMAGE_TOO_LARGE: 'error_image_too_large',
+  VISION_TIMEOUT: 'error_image_translate_vision_timeout',
+  VISION_MODEL_UNSUPPORTED: 'error_image_translate_model_unsupported',
+  VISION_HTTP_ERROR: 'error_image_translate_http_error',
   VISION_RECOGNITION_FAILED: 'error_image_translate_recognize_failed',
   TRANSLATION_ALL_FAILED: 'error_image_translate_translate_failed'
 }

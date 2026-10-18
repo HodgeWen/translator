@@ -1,6 +1,12 @@
-import { describe, expect, test } from 'bun:test';
+import { afterEach, describe, expect, test } from 'bun:test';
 import { HttpError } from '../src/lib/api';
-import { buildVisionBody, runVisionQueue } from '../src/lib/api/vision';
+import {
+  IMAGE_VISION_TIMEOUT_MS,
+  buildVisionBody,
+  callVisionModel,
+  runVisionQueue,
+} from '../src/lib/api/vision';
+import { DEFAULT_SETTINGS } from '../src/lib/storage';
 import type { ProviderModel } from '../src/lib/api/queue-builder';
 import {
   IMAGE_VISION_PROMPT_VERSION,
@@ -38,6 +44,31 @@ function catchError(promise: Promise<unknown>): Promise<unknown> {
     (error: unknown) => error
   );
 }
+
+const originalFetch = globalThis.fetch;
+
+type FetchHandler = (model: string, init?: RequestInit) => Response | Promise<Response>;
+
+/** 按请求体里的 model 分发响应，供 callVisionModel 的失败映射测试使用 */
+function stubFetch(handler: FetchHandler): void {
+  globalThis.fetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+    const body = JSON.parse(String(init?.body ?? '{}')) as { model?: string };
+    return handler(body.model ?? '', init);
+  }) as typeof fetch;
+}
+
+/** 永不返回的响应，直到 callVisionModel 的超时中止 signal */
+function pendingUntilAborted(init?: RequestInit): Promise<Response> {
+  return new Promise<Response>((_resolve, reject) => {
+    init?.signal?.addEventListener('abort', () =>
+      reject(new DOMException('The operation was aborted.', 'AbortError'))
+    );
+  });
+}
+
+afterEach(() => {
+  globalThis.fetch = originalFetch;
+});
 
 describe('vision prompt', () => {
   test('states an OCR-only, versioned contract', () => {
@@ -227,5 +258,166 @@ describe('vision queue fallback', () => {
     expect((error as ImageTranslationError).code).toBe('VISION_RECOGNITION_FAILED');
     expect((error as Error).message).toContain('p1/m1');
     expect((error as Error).message).toContain('p1/m2');
+  });
+});
+
+describe('vision request timeout', () => {
+  test('uses an independent timeout window between 45s and 120s', () => {
+    expect(IMAGE_VISION_TIMEOUT_MS).toBeGreaterThanOrEqual(45_000);
+    expect(IMAGE_VISION_TIMEOUT_MS).toBeLessThanOrEqual(120_000);
+    expect(IMAGE_VISION_TIMEOUT_MS).not.toBe(DEFAULT_SETTINGS.requestTimeout);
+  });
+
+  test('maps an aborted request to VISION_TIMEOUT with an injectable short timeout', async () => {
+    stubFetch((_model, init) => pendingUntilAborted(init));
+
+    const error = await catchError(
+      callVisionModel(providerModel('p1', 'm1'), IMAGE_DATA_URL, 5)
+    );
+
+    expect(error).toBeInstanceOf(ImageTranslationError);
+    expect((error as ImageTranslationError).code).toBe('VISION_TIMEOUT');
+    expect((error as Error).message).toContain('5ms');
+  });
+
+  test('maps a Request aborted failure to VISION_TIMEOUT', async () => {
+    stubFetch(() => {
+      throw new Error('Request aborted');
+    });
+
+    const error = await catchError(
+      callVisionModel(providerModel('p1', 'm1'), IMAGE_DATA_URL, 1_000)
+    );
+
+    expect((error as ImageTranslationError).code).toBe('VISION_TIMEOUT');
+  });
+});
+
+describe('vision HTTP failure classification', () => {
+  test('parses a successful non-streaming response', async () => {
+    stubFetch(
+      () =>
+        new Response(
+          JSON.stringify({
+            choices: [
+              { message: { content: '[{"text":"Hi","box":{"x":0,"y":0,"w":0.5,"h":0.2}}]' } },
+            ],
+            usage: { prompt_tokens: 3, completion_tokens: 4, total_tokens: 7 },
+          })
+        )
+    );
+
+    const { blocks, usage } = await callVisionModel(
+      providerModel('p1', 'm1'),
+      IMAGE_DATA_URL,
+      1_000
+    );
+
+    expect(blocks).toEqual([{ text: 'Hi', box: { x: 0, y: 0, w: 0.5, h: 0.2 } }]);
+    expect(usage).toEqual({ promptTokens: 3, completionTokens: 4, totalTokens: 7 });
+  });
+
+  test('maps 400/422 not-a-VLM and does-not-support-image bodies to VISION_MODEL_UNSUPPORTED', async () => {
+    const cases: Array<[number, string]> = [
+      [400, '{"error":"Model is not a VLM"}'],
+      [422, '{"error":"This model does not support image input"}'],
+      [400, '{"error":"unsupported vision input"}'],
+    ];
+
+    for (const [status, body] of cases) {
+      stubFetch(() => new Response(body, { status }));
+
+      const error = await catchError(
+        callVisionModel(providerModel('p1', 'm1'), IMAGE_DATA_URL, 1_000)
+      );
+
+      expect(error).toBeInstanceOf(HttpError);
+      expect((error as { code?: string }).code).toBe('VISION_MODEL_UNSUPPORTED');
+      expect((error as Error).message).toContain('HTTP ' + status);
+    }
+  });
+
+  test('maps other 400/401/403/429/500 responses to VISION_HTTP_ERROR', async () => {
+    for (const status of [400, 401, 403, 429, 500]) {
+      stubFetch(() => new Response('{"error":"request failed"}', { status }));
+
+      const error = await catchError(
+        callVisionModel(providerModel('p1', 'm1'), IMAGE_DATA_URL, 1_000)
+      );
+
+      expect(error).toBeInstanceOf(HttpError);
+      expect((error as { code?: string }).code).toBe('VISION_HTTP_ERROR');
+      expect((error as Error).message).toContain('HTTP ' + status + ':');
+      expect((error as Error).message).toContain('request failed');
+    }
+  });
+
+  test('truncates long HTTP error bodies but keeps status and detail', async () => {
+    const longBody = 'x'.repeat(500);
+    stubFetch(() => new Response(longBody, { status: 500 }));
+
+    const error = await catchError(
+      callVisionModel(providerModel('p1', 'm1'), IMAGE_DATA_URL, 1_000)
+    );
+
+    expect((error as Error).message).toContain('HTTP 500:');
+    expect((error as Error).message.length).toBeLessThan(longBody.length);
+    expect((error as Error).message).toContain('…');
+  });
+
+  test('still skips the remaining models of a provider on 401', async () => {
+    const calls: string[] = [];
+    stubFetch((model) =>
+      model === 'm1'
+        ? new Response('{"error":"invalid api key"}', { status: 401 })
+        : new Response(JSON.stringify({ choices: [{ message: { content: '[]' } }] }))
+    );
+
+    const result = await runVisionQueue(
+      queueOf(['p1', 'm1'], ['p1', 'm2'], ['p2', 'm3']),
+      async (pm) => {
+        calls.push(pm.provider.id + '/' + pm.model.id);
+        return callVisionModel(pm, IMAGE_DATA_URL, 1_000);
+      }
+    );
+
+    expect(calls).toEqual(['p1/m1', 'p2/m3']);
+    expect(result.blocks).toEqual([]);
+  });
+});
+
+describe('vision aggregate failure code', () => {
+  test('prefers VISION_MODEL_UNSUPPORTED over VISION_HTTP_ERROR', async () => {
+    stubFetch((model) =>
+      model === 'm1'
+        ? new Response('{"error":"boom"}', { status: 500 })
+        : new Response('{"error":"not a VLM"}', { status: 400 })
+    );
+
+    const error = await catchError(
+      runVisionQueue(queueOf(['p1', 'm1'], ['p1', 'm2']), (pm) =>
+        callVisionModel(pm, IMAGE_DATA_URL, 1_000)
+      )
+    );
+
+    expect(error).toBeInstanceOf(ImageTranslationError);
+    expect((error as ImageTranslationError).code).toBe('VISION_MODEL_UNSUPPORTED');
+  });
+
+  test('prefers VISION_TIMEOUT over every other failure code', async () => {
+    stubFetch((model, init) => {
+      if (model === 'm1') return new Response('{"error":"boom"}', { status: 500 });
+      if (model === 'm2') return new Response('{"error":"not a VLM"}', { status: 400 });
+      return pendingUntilAborted(init);
+    });
+
+    const error = await catchError(
+      runVisionQueue(queueOf(['p1', 'm1'], ['p1', 'm2'], ['p1', 'm3']), (pm) =>
+        callVisionModel(pm, IMAGE_DATA_URL, pm.model.id === 'm3' ? 5 : 1_000)
+      )
+    );
+
+    expect(error).toBeInstanceOf(ImageTranslationError);
+    expect((error as ImageTranslationError).code).toBe('VISION_TIMEOUT');
   });
 });

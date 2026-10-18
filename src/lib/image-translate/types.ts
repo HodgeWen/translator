@@ -37,6 +37,13 @@ export type ImageTranslationErrorCode =
   | 'IMAGE_FETCH_FAILED'
   | 'IMAGE_DECODE_FAILED'
   | 'IMAGE_TOO_LARGE'
+  /** 识图请求超时（独立于文本翻译的 requestTimeout） */
+  | 'VISION_TIMEOUT'
+  /** 识图失败且 HTTP 400/422 明确表示模型不接受图片输入 */
+  | 'VISION_MODEL_UNSUPPORTED'
+  /** 识图请求返回其它 HTTP 错误 */
+  | 'VISION_HTTP_ERROR'
+  /** 解析失败、空响应等未知识图失败的兜底码 */
   | 'VISION_RECOGNITION_FAILED'
   | 'TRANSLATION_ALL_FAILED';
 
