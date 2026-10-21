@@ -56,6 +56,7 @@ describe('local image error copy', () => {
       'error_image_translate_no_vision_model'
     )
     expect(imageTranslationErrorKey('IMAGE_DECODE_FAILED')).toBe('error_image_load_failed')
+    expect(imageTranslationErrorKey('NO_TEXT_IN_IMAGE')).toBe('error_image_no_text')
     expect(imageTranslationErrorKey('VISION_TIMEOUT')).toBe(
       'error_image_translate_vision_timeout'
     )
@@ -64,9 +65,6 @@ describe('local image error copy', () => {
     )
     expect(imageTranslationErrorKey('VISION_HTTP_ERROR')).toBe(
       'error_image_translate_http_error'
-    )
-    expect(imageTranslationErrorKey('TRANSLATION_ALL_FAILED')).toBe(
-      'error_image_translate_translate_failed'
     )
     expect(imageTranslationErrorKey(undefined)).toBe('error_translation_failed')
     expect(imageTranslationErrorKey('UNKNOWN')).toBe('error_translation_failed')

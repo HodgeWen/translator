@@ -7,10 +7,10 @@ import { useDarkMode } from '@/hooks/use-dark-mode'
 import { Toast } from '@/components/ui/toast'
 import { Select } from '@/components/ui/select'
 import { PopupTranslationResult } from '@/components/popup/translation-result'
-import { ImageTranslatePanel } from '@/components/popup/image-translate-panel'
 import type {
   GlobalSettings,
   TranslationResponse,
+  ImageTranslationResult,
   LangCode,
   TranslationTone,
   ContentMessage
@@ -18,16 +18,30 @@ import type {
 import { getSettings, saveSettings } from '@/lib/storage'
 import { sendBgMessage } from '@/lib/messaging'
 import { detectLanguageLocal, isSameLanguage } from '@/lib/lang-detect'
-import { resolveLocalImageTargetLang } from '@/lib/image-translate/local-image'
+import {
+  LOCAL_IMAGE_ACCEPT,
+  imageTranslationErrorKey,
+  localImageFileErrorKey,
+  readImageFileAsDataUrl,
+  resolveLocalImageTargetLang,
+  validateLocalImageFile
+} from '@/lib/image-translate/local-image'
+import { ImageTranslationError } from '@/lib/image-translate/types'
+import { BgMessageError } from '@/lib/messaging'
 import { LANGUAGE_OPTIONS } from '@/lib/languages'
 import { t, setUILanguage } from '@/lib/i18n'
 import { useToast } from '@/hooks/use-toast'
-import { cn } from '@/lib/utils'
-import { Send, Loader2, Settings, Layers, Languages, Square, ImageIcon } from 'lucide-react'
+import { Send, Loader2, Settings, Layers, Languages, Square, ImagePlus, X } from 'lucide-react'
 import { LogoIcon } from '@/components/logo-icon'
 
 const TARGET_AUTO = 'auto' as const
 type TargetSelection = typeof TARGET_AUTO | LangCode
+
+interface SelectedImage {
+  previewUrl: string
+  dataUrl: string
+  name: string
+}
 
 // 根据检测结果决定翻译方向：母语→第二语言，外语→母语
 function resolveAutoTargetLang(
@@ -58,7 +72,9 @@ function App() {
   const [manualTarget, setManualTarget] = useState<TargetSelection>(TARGET_AUTO)
   // 页面翻译开关态由 popup 本地维护：点击即切换，成功送达 content script 后翻转
   const [pageTranslating, setPageTranslating] = useState(false)
-  const [mode, setMode] = useState<'text' | 'image'>('text')
+  // 图片翻译与文本翻译共用输入框：粘贴/上传图片后暂存于此，翻译时优先于文本
+  const [image, setImage] = useState<SelectedImage | null>(null)
+  const imageInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const detectSeqRef = useRef(0)
 
@@ -67,13 +83,12 @@ function App() {
   }, [])
 
   useEffect(() => {
-    if (mode !== 'text') return
     const timer = setTimeout(() => {
       textareaRef.current?.focus()
     }, 30)
 
     return () => clearTimeout(timer)
-  }, [mode])
+  }, [])
 
   useDarkMode()
 
@@ -111,6 +126,79 @@ function App() {
     }
   }
 
+  // 图片被替换或清除时释放旧的 object URL
+  useEffect(() => {
+    if (!image) return
+    return () => {
+      URL.revokeObjectURL(image.previewUrl)
+    }
+  }, [image])
+
+  const showImageFailure = (failure: unknown) => {
+    if (failure instanceof BgMessageError || failure instanceof ImageTranslationError) {
+      showError(t(imageTranslationErrorKey(failure.code)))
+    } else {
+      showError(failure instanceof Error ? failure.message : t('error_translation_failed'))
+    }
+  }
+
+  const translateImageAndShow = async (dataUrl: string) => {
+    if (!settings) return
+    const targetLang = resolveLocalImageTargetLang(
+      manualTarget,
+      targetLangPreview,
+      settings.nativeLanguage
+    )
+    setTargetLangPreview(targetLang)
+    const response = await sendBgMessage<ImageTranslationResult>({
+      type: 'IMAGE_TRANSLATE',
+      payload: { dataUrl, targetLang }
+    })
+    const provider = settings.providers.find((p) => p.id === response.providerId)
+    const model = provider?.models.find((m) => m.id === response.modelId)
+    setResultMeta({
+      providerName: provider?.name ?? response.providerId,
+      modelName: model?.name ?? response.modelId
+    })
+    setResult(response.text)
+  }
+
+  const handleImageFile = async (file: File) => {
+    if (!settings) return
+    const validation = validateLocalImageFile(file)
+    if (validation) {
+      showError(t(localImageFileErrorKey(validation)))
+      return
+    }
+
+    setLoading(true)
+    setResult('')
+    setResultMeta(null)
+    try {
+      const dataUrl = await readImageFileAsDataUrl(file)
+      setInputText('')
+      setImage({ previewUrl: URL.createObjectURL(file), dataUrl, name: file.name })
+      await translateImageAndShow(dataUrl)
+    } catch (failure) {
+      showImageFailure(failure)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleImageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (file) void handleImageFile(file)
+  }
+
+  const clearImage = () => {
+    setImage(null)
+    setResult('')
+    setResultMeta(null)
+    if (imageInputRef.current) imageInputRef.current.value = ''
+  }
+
   const handleTogglePageTranslation = async () => {
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
@@ -138,6 +226,21 @@ function App() {
   }
 
   const handleTranslate = async (textOverride?: string) => {
+    // 有图片时优先翻译图片；粘贴文本带 textOverride 的场景仍走文本链路
+    if (!textOverride && image) {
+      setLoading(true)
+      setResult('')
+      setResultMeta(null)
+      try {
+        await translateImageAndShow(image.dataUrl)
+      } catch (failure) {
+        showImageFailure(failure)
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
+
     const text = textOverride ?? inputText
     if (!text.trim()) return
     if (!settings) return
@@ -186,6 +289,16 @@ function App() {
   }
 
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const clipboardItems = Array.from(e.clipboardData?.items ?? [])
+    const clipboardFile =
+      clipboardItems.find((item) => item.kind === 'file' && item.type.startsWith('image/'))?.getAsFile() ??
+      Array.from(e.clipboardData?.files ?? []).find((file) => file.type.startsWith('image/'))
+    if (clipboardFile) {
+      e.preventDefault()
+      void handleImageFile(clipboardFile)
+      return
+    }
+
     window.setTimeout(() => {
       const val = e.currentTarget.value
       if (val.trim()) handleTranslate(val)
@@ -347,91 +460,91 @@ function App() {
         </div>
       </div>
 
-      {/* Mode Switch */}
-      <div className="px-4 pt-2">
-        <div className="flex gap-0.5 rounded-md bg-muted p-0.5">
-          <button
-            type="button"
-            aria-pressed={mode === 'text'}
-            onClick={() => setMode('text')}
-            className={cn(
-              'flex flex-1 items-center justify-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition-colors',
-              mode === 'text'
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            <Languages className="h-3 w-3" />
-            {t('popup_translate')}
-          </button>
-          <button
-            type="button"
-            aria-pressed={mode === 'image'}
-            onClick={() => setMode('image')}
-            className={cn(
-              'flex flex-1 items-center justify-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition-colors',
-              mode === 'image'
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            <ImageIcon className="h-3 w-3" />
-            {t('popup_image_translate')}
-          </button>
-        </div>
-      </div>
-
       {/* Input Area */}
       <div className="px-4 py-2 flex-1 flex flex-col gap-2">
-        {mode === 'text' ? (
-          <>
-            <Textarea
-              ref={textareaRef}
-              autoFocus
-              placeholder={t('popup_placeholder')}
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              onPaste={handlePaste}
-              onKeyDown={handleKeyDown}
-              className="min-h-[80px] resize-none"
-            />
+        <input
+          ref={imageInputRef}
+          type="file"
+          accept={LOCAL_IMAGE_ACCEPT}
+          className="hidden"
+          onChange={handleImageInputChange}
+        />
 
-            <Button
-              onClick={() => handleTranslate()}
-              disabled={loading || !inputText.trim()}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+        <Textarea
+          ref={textareaRef}
+          autoFocus
+          placeholder={t('popup_placeholder')}
+          value={inputText}
+          onChange={(e) => {
+            setInputText(e.target.value)
+            // 输入文本即放弃已选图片，保持「一次只有一个翻译对象」
+            if (e.target.value) clearImage()
+          }}
+          onPaste={handlePaste}
+          onKeyDown={handleKeyDown}
+          className="min-h-[80px] resize-none"
+        />
+
+        {image && (
+          <div className="flex items-center gap-2 rounded-md border border-border bg-muted/20 px-2 py-1.5">
+            <img
+              src={image.previewUrl}
+              alt={image.name}
+              className="h-10 w-10 shrink-0 rounded object-cover"
+            />
+            <span className="min-w-0 flex-1 truncate text-[10px] text-muted-foreground">
+              {image.name}
+            </span>
+            <button
+              type="button"
+              onClick={clearImage}
+              aria-label={t('popup_image_remove')}
+              title={t('popup_image_remove')}
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
             >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {t('popup_translating')}
-                </>
-              ) : (
-                <>
-                  <Send className="mr-2 h-4 w-4" />
-                  {t('popup_translate')}
-                </>
-              )}
-            </Button>
-
-            <PopupTranslationResult
-              result={result}
-              onCopy={handleCopy}
-              providerName={resultMeta?.providerName}
-              modelName={resultMeta?.modelName}
-              usage={resultMeta?.usage}
-            />
-          </>
-        ) : (
-          <ImageTranslatePanel
-            targetLang={resolveLocalImageTargetLang(
-              manualTarget,
-              targetLangPreview,
-              settings.nativeLanguage
-            )}
-            onError={showError}
-          />
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
         )}
+
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-9 w-10 shrink-0"
+            onClick={() => imageInputRef.current?.click()}
+            disabled={loading}
+            title={t('popup_image_translate')}
+            aria-label={t('popup_image_translate')}
+          >
+            <ImagePlus className="h-4 w-4" />
+          </Button>
+          <Button
+            onClick={() => handleTranslate()}
+            disabled={loading || (!inputText.trim() && !image)}
+            className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {t('popup_translating')}
+              </>
+            ) : (
+              <>
+                <Send className="mr-2 h-4 w-4" />
+                {t('popup_translate')}
+              </>
+            )}
+          </Button>
+        </div>
+
+        <PopupTranslationResult
+          result={result}
+          onCopy={handleCopy}
+          providerName={resultMeta?.providerName}
+          modelName={resultMeta?.modelName}
+          usage={resultMeta?.usage}
+        />
       </div>
     </div>
   )

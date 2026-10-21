@@ -191,14 +191,15 @@ describe('image capability settings', () => {
     expect(JSON.stringify(parsed)).toContain('"supportsVision":true');
   });
 
-  test('defaults imageHoverButtonEnabled to true for legacy settings', () => {
-    const legacySettings: Record<string, unknown> = { ...DEFAULT_SETTINGS };
-    delete legacySettings.imageHoverButtonEnabled;
+  test('drops the removed imageHoverButtonEnabled key from legacy settings', () => {
+    const legacySettings: Record<string, unknown> = {
+      ...DEFAULT_SETTINGS,
+      imageHoverButtonEnabled: true,
+    };
 
     const parsed = globalSettingsSchema.parse(legacySettings);
 
-    expect(parsed.imageHoverButtonEnabled).toBe(true);
-    expect(DEFAULT_SETTINGS.imageHoverButtonEnabled).toBe(true);
+    expect('imageHoverButtonEnabled' in parsed).toBe(false);
   });
 });
 
@@ -207,14 +208,14 @@ describe('settings persistence', () => {
     const legacySettings: Record<string, unknown> = {
       ...DEFAULT_SETTINGS,
       providers: [provider('legacy', [{ id: 'm1', name: 'M1' }])],
+      imageHoverButtonEnabled: true,
     };
-    delete legacySettings.imageHoverButtonEnabled;
 
     await importSettings(JSON.stringify({ version: 1, settings: legacySettings }));
 
     const migrated = await getSettings();
     expect(migrated.providers[0].models[0].supportsVision).toBe(false);
-    expect(migrated.imageHoverButtonEnabled).toBe(true);
+    expect('imageHoverButtonEnabled' in migrated).toBe(false);
 
     const enabled: GlobalSettings = {
       ...migrated,
@@ -227,7 +228,7 @@ describe('settings persistence', () => {
 
     const exported = await exportSettings();
     expect(exported).toContain('"supportsVision": true');
-    expect(exported).toContain('"imageHoverButtonEnabled": true');
+    expect(exported).not.toContain('imageHoverButtonEnabled');
 
     await importSettings(exported);
 
@@ -250,34 +251,32 @@ describe('image translation locales', () => {
     expect(Object.keys(readMessages('zh_CN')).sort()).toEqual(Object.keys(readMessages('en')).sort());
   });
 
-  test('covers the image translation copy added by the spec', () => {
+  test('covers the image translation copy used by the popup flow', () => {
     const requiredKeys = [
       'label_supports_vision',
       'hint_supports_vision',
+      'error_image_translate_no_vision_model',
+      'error_image_translate_recognize_failed',
+      'error_image_translate_vision_timeout',
+      'error_image_translate_model_unsupported',
+      'error_image_translate_http_error',
+      'error_image_invalid_format',
+      'error_image_too_large',
+      'error_image_load_failed',
+      'error_image_no_text',
+      'popup_image_translate',
+      'popup_image_remove',
+    ];
+
+    const removedKeys = [
       'menu_translate_image',
       'image_hover_button_text',
       'image_hover_button_title',
       'label_image_hover_button',
       'hint_image_hover_button',
-      'image_translate_loading',
-      'image_translate_translating',
-      'image_translate_unsupported',
-      'error_image_translate_no_vision_model',
-      'error_image_translate_fetch_failed',
-      'error_image_translate_recognize_failed',
-      'error_image_translate_vision_timeout',
-      'error_image_translate_model_unsupported',
-      'error_image_translate_http_error',
-      'error_image_translate_translate_failed',
-      'error_image_invalid_format',
-      'error_image_too_large',
-      'error_image_load_failed',
-      'error_image_clipboard_empty',
-      'btn_retry',
       'image_toolbar_original',
       'image_toolbar_translation',
       'image_toolbar_close',
-      'popup_image_translate',
       'popup_image_select_file',
       'popup_image_drop_hint',
       'popup_image_file_types',
@@ -287,6 +286,7 @@ describe('image translation locales', () => {
     for (const lang of ['zh_CN', 'en']) {
       const keys = new Set(Object.keys(readMessages(lang)));
       expect(requiredKeys.filter((key) => !keys.has(key))).toEqual([]);
+      expect(removedKeys.filter((key) => keys.has(key))).toEqual([]);
     }
   });
 });

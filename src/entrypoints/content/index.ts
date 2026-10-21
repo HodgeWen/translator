@@ -6,7 +6,6 @@ import { toggleAllDisplay } from './style-apply'
 import { startTranslation, stopTranslation, setupSPADetection } from './observer'
 import { setupInputListeners } from './input-translate'
 import { setupCtrlHover } from './ctrl-hover'
-import { setupImageTranslate, triggerImageTranslationBySrcUrl } from './image-translate'
 import type { ContentMessage } from '@/types'
 import './styles.css'
 
@@ -123,15 +122,11 @@ export default defineContentScript({
         case 'STOP_TRANSLATION':
           stopPageTranslation()
           break
-        case 'TRANSLATE_IMAGE':
-          void triggerImageTranslationBySrcUrl(message.srcUrl)
-          break
       }
     })
 
     setupInputListeners()
     setupCtrlHover()
-    setupImageTranslate()
     setupSPADetection()
   }
 }) as ContentScriptDefinition

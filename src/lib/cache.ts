@@ -1,23 +1,21 @@
 import Dexie, { type EntityTable, type Table } from 'dexie';
 import type { CacheEntry, RequestLogEntry, DailyTokenUsageEntry } from '@/types';
-import type { RecognizedImageBlock } from '@/lib/image-translate/types';
 
 const DB_NAME = 'TranslatorCache';
-const DB_VERSION = 5; // v5: 新增图片识别缓存表；v4 移除 sourceLang 缓存维度
+const DB_VERSION = 6; // v6: 图片缓存改为按目标语言存整图译文；v5 为识别块缓存
 const TTL_DAYS = 7;
 const TTL_MS = TTL_DAYS * 24 * 60 * 60 * 1000;
 
-export interface ImageRecognitionSnapshot {
+export interface ImageTranslationSnapshot {
   imageHash: string;
   promptVersion: string;
-  blocks: RecognizedImageBlock[];
-  width: number;
-  height: number;
+  targetLang: string;
+  text: string;
   providerId: string;
   modelId: string;
 }
 
-export interface ImageTranslationCacheEntry extends ImageRecognitionSnapshot {
+export interface ImageTranslationCacheEntry extends ImageTranslationSnapshot {
   createdAt: number;
 }
 
@@ -25,7 +23,7 @@ interface CacheDatabase extends Dexie {
   translations: EntityTable<CacheEntry, 'hash'>;
   request_logs: EntityTable<RequestLogEntry, 'id'>;
   daily_token_usage: EntityTable<DailyTokenUsageEntry, 'id'>;
-  image_translations: Table<ImageTranslationCacheEntry, [string, string]>;
+  image_translations: Table<ImageTranslationCacheEntry, [string, string, string]>;
 }
 
 const db = new Dexie(DB_NAME, { autoOpen: false }) as CacheDatabase;
@@ -54,12 +52,21 @@ db.version(4).stores({
   return tx.table('translations').clear();
 });
 // v5: 新增图片识别缓存；不清理既有 translations / request_logs / daily_token_usage
-db.version(DB_VERSION).stores({
+db.version(5).stores({
   translations: 'hash, targetLang, createdAt',
   request_logs: '++id, [providerId+modelId], timestamp',
   daily_token_usage: '++id, [providerId+modelId+date], date',
   image_translations: '[imageHash+promptVersion], createdAt',
 });
+// v6: 图片缓存从「识别块」改为「按目标语言的整图译文」，旧条目结构不兼容，直接清空
+db.version(DB_VERSION)
+  .stores({
+    translations: 'hash, targetLang, createdAt',
+    request_logs: '++id, [providerId+modelId], timestamp',
+    daily_token_usage: '++id, [providerId+modelId+date], date',
+    image_translations: '[imageHash+promptVersion+targetLang], createdAt',
+  })
+  .upgrade(tx => tx.table('image_translations').clear());
 
 let openPromise: Promise<CacheDatabase> | null = null;
 
@@ -131,9 +138,13 @@ export async function setCachedTranslation(
   });
 }
 
-/** 图片识别缓存键：同一图片内容 + 提示词版本在 TTL 内共享识别结果 */
-export function buildImageCacheKey(imageHash: string, promptVersion: string): [string, string] {
-  return [imageHash, promptVersion];
+/** 图片译文缓存键：同一图片内容 + 提示词版本 + 目标语言在 TTL 内共享译文 */
+export function buildImageCacheKey(
+  imageHash: string,
+  promptVersion: string,
+  targetLang: string
+): [string, string, string] {
+  return [imageHash, promptVersion, targetLang];
 }
 
 export function isImageCacheEntryExpired(
@@ -145,10 +156,11 @@ export function isImageCacheEntryExpired(
 
 export async function getCachedImageTranslation(
   imageHash: string,
-  promptVersion: string
+  promptVersion: string,
+  targetLang: string
 ): Promise<ImageTranslationCacheEntry | null> {
   const dbInstance = await ensureDb();
-  const key = buildImageCacheKey(imageHash, promptVersion);
+  const key = buildImageCacheKey(imageHash, promptVersion, targetLang);
   const entry = await dbInstance.image_translations.get(key);
 
   if (!entry) return null;
@@ -161,7 +173,7 @@ export async function getCachedImageTranslation(
   return entry;
 }
 
-export async function setCachedImageTranslation(entry: ImageRecognitionSnapshot): Promise<void> {
+export async function setCachedImageTranslation(entry: ImageTranslationSnapshot): Promise<void> {
   const dbInstance = await ensureDb();
   await dbInstance.image_translations.put({
     ...entry,
@@ -185,7 +197,7 @@ export async function clearExpiredCache(): Promise<number> {
     .toArray();
 
   await dbInstance.image_translations.bulkDelete(
-    expiredImages.map(e => buildImageCacheKey(e.imageHash, e.promptVersion))
+    expiredImages.map(e => buildImageCacheKey(e.imageHash, e.promptVersion, e.targetLang))
   );
 
   return expired.length + expiredImages.length;

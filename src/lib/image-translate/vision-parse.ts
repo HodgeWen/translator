@@ -1,6 +1,6 @@
-import type { ImageBox, ImageTextBlock } from './types';
+import { ImageTranslationError } from './types';
 
-// 匹配 ```json ... ``` 或 ``` ... ``` 围栏，模型常把 JSON 数组包在 Markdown 代码块里。
+// 匹配 ```json ... ``` 或 ``` ... ``` 围栏，个别模型会把纯文本译文包进代码块里。
 const JSON_FENCE_PATTERN = /^```(?:json)?\s*\r?\n?([\s\S]*?)\r?\n?```$/i;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -23,86 +23,28 @@ function stripJsonFence(text: string): string {
   return match ? match[1].trim() : trimmed;
 }
 
-function readFiniteNumber(name: string, value: unknown): number {
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    throw new Error('Vision block box.' + name + ' is not a finite number');
+/**
+ * 解析视觉模型的直译响应：期望纯文本译文。
+ * 空响应按「图中没有可翻译文字」处理，与识图失败区分开。
+ */
+export function parseVisionText(content: unknown): string {
+  const text = stripJsonFence(extractContentText(content));
+  if (!text) {
+    throw new ImageTranslationError('NO_TEXT_IN_IMAGE', 'Image contains no readable text');
   }
-  return value;
+  return text;
 }
 
-function parseBox(value: unknown): ImageBox {
-  if (!isRecord(value)) {
-    throw new Error('Vision block box is missing');
-  }
-
-  const x = readFiniteNumber('x', value.x);
-  const y = readFiniteNumber('y', value.y);
-  const w = readFiniteNumber('w', value.w);
-  const h = readFiniteNumber('h', value.h);
-
-  if (x < 0 || y < 0) {
-    throw new Error('Vision block box starts outside the image');
-  }
-  if (w <= 0 || h <= 0) {
-    throw new Error('Vision block box has a non-positive size');
-  }
-  if (x + w > 1 || y + h > 1) {
-    throw new Error('Vision block box exceeds the image bounds');
-  }
-
-  return { x, y, w, h };
-}
-
-function parseBlock(value: unknown): ImageTextBlock | null {
-  if (!isRecord(value)) {
-    throw new Error('Vision block is not an object');
-  }
-  if (typeof value.text !== 'string') {
-    throw new Error('Vision block text is missing');
-  }
-
-  const text = value.text.trim();
-  if (!text) return null;
-
-  return { text, box: parseBox(value.box) };
-}
-
-/** 解析 message.content（字符串或文本片段数组）中的 JSON 数组 */
-export function parseVisionContent(content: unknown): ImageTextBlock[] {
-  const text = extractContentText(content);
-  if (!text.trim()) {
-    throw new Error('Empty vision response');
-  }
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(stripJsonFence(text));
-  } catch {
-    throw new Error('Vision response is not valid JSON');
-  }
-
-  if (!Array.isArray(parsed)) {
-    throw new Error('Vision response is not a JSON array');
-  }
-
-  const blocks: ImageTextBlock[] = [];
-  for (const item of parsed) {
-    const block = parseBlock(item);
-    if (block) blocks.push(block);
-  }
-  return blocks;
-}
-
-/** 从 OpenAI-compatible chat/completions 响应中解析识别块 */
-export function parseVisionResponse(response: unknown): ImageTextBlock[] {
+/** 从 OpenAI-compatible chat/completions 响应中解析译文文本 */
+export function parseVisionResponse(response: unknown): string {
   if (!isRecord(response) || !Array.isArray(response.choices)) {
-    throw new Error('Vision response has no choices');
+    throw new ImageTranslationError('VISION_RECOGNITION_FAILED', 'Vision response has no choices');
   }
 
   const choice = response.choices[0];
   if (!isRecord(choice) || !isRecord(choice.message)) {
-    throw new Error('Vision response has no message content');
+    throw new ImageTranslationError('VISION_RECOGNITION_FAILED', 'Vision response has no message content');
   }
 
-  return parseVisionContent(choice.message.content);
+  return parseVisionText(choice.message.content);
 }

@@ -5,43 +5,9 @@ import { clearExpiredCache } from '@/lib/cache';
 import { translateImage } from '@/lib/image-translate/pipeline';
 import { ImageTranslationError } from '@/lib/image-translate/types';
 import { importSettings } from '@/lib/storage';
-import type { BgMessage, ContentMessage } from '@/types';
+import type { BgMessage } from '@/types';
 
 const ALARM_NAME = 'cache-cleanup';
-const IMAGE_CONTEXT_MENU_ID = 'translate-image';
-
-// 右键菜单标题跟随浏览器 locale（AC15），不读设置页 UI 语言。
-function setupImageContextMenu(): void {
-  chrome.contextMenus.onClicked.addListener(onImageContextMenuClicked);
-  chrome.contextMenus.removeAll(() => {
-    // 扩展重载 / Service Worker 重启时清空旧菜单，忽略 removeAll 的 lastError。
-    void chrome.runtime.lastError;
-    chrome.contextMenus.create(
-      {
-        id: IMAGE_CONTEXT_MENU_ID,
-        title: chrome.i18n.getMessage('menu_translate_image') || '翻译此图片',
-        contexts: ['image']
-      },
-      () => {
-        // 菜单重建时可能残留同 id，忽略 create 的 lastError。
-        void chrome.runtime.lastError;
-      }
-    );
-  });
-}
-
-// 按 tab.id + frameId 定向到被点击图片所在 frame，避免多个 frame 重复处理。
-function onImageContextMenuClicked(
-  info: chrome.contextMenus.OnClickData,
-  tab?: chrome.tabs.Tab
-): void {
-  if (info.menuItemId !== IMAGE_CONTEXT_MENU_ID || !info.srcUrl || !tab?.id) return;
-
-  const message: ContentMessage = { type: 'TRANSLATE_IMAGE', srcUrl: info.srcUrl };
-  chrome.tabs.sendMessage(tab.id, message, { frameId: info.frameId ?? 0 }).catch(() => {
-    // 受限页面 / 未注入内容脚本时忽略
-  });
-}
 
 export default defineBackground(() => {
   // 开发模式下自动导入 dev-settings.json
@@ -69,9 +35,6 @@ export default defineBackground(() => {
       }
     }
   });
-
-  // 网页图片右键入口（仅 Chromium）
-  setupImageContextMenu();
 
   // Handle keyboard shortcut
   chrome.commands.onCommand.addListener(async (command) => {

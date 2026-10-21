@@ -1,4 +1,5 @@
 import type { LangCode } from '@/types'
+import { ImageTranslationError } from './types'
 import { MAX_IMAGE_BYTES } from './image-processing'
 
 /** popup 本地图片入口允许的 MIME 类型 */
@@ -41,14 +42,13 @@ export function localImageFileErrorKey(error: LocalImageFileError): string {
 // 后台图片链路返回的错误码 → popup 用户文案
 const IMAGE_TRANSLATION_ERROR_KEYS: Record<string, string> = {
   NO_VISION_MODEL: 'error_image_translate_no_vision_model',
-  IMAGE_FETCH_FAILED: 'error_image_translate_fetch_failed',
   IMAGE_DECODE_FAILED: 'error_image_load_failed',
   IMAGE_TOO_LARGE: 'error_image_too_large',
+  NO_TEXT_IN_IMAGE: 'error_image_no_text',
   VISION_TIMEOUT: 'error_image_translate_vision_timeout',
   VISION_MODEL_UNSUPPORTED: 'error_image_translate_model_unsupported',
   VISION_HTTP_ERROR: 'error_image_translate_http_error',
-  VISION_RECOGNITION_FAILED: 'error_image_translate_recognize_failed',
-  TRANSLATION_ALL_FAILED: 'error_image_translate_translate_failed'
+  VISION_RECOGNITION_FAILED: 'error_image_translate_recognize_failed'
 }
 
 /** 后台错误码 / 本地解码错误 → i18n key；未知错误回落到通用翻译失败 */
@@ -67,4 +67,22 @@ export function resolveLocalImageTargetLang(
 ): LangCode {
   if (manualTarget !== 'auto') return manualTarget
   return targetLangPreview || nativeLanguage
+}
+
+/** 把本地图片文件读成 data URL；读取失败按 IMAGE_DECODE_FAILED 报错 */
+export function readImageFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        resolve(reader.result)
+      } else {
+        reject(new ImageTranslationError('IMAGE_DECODE_FAILED', 'Image could not be read'))
+      }
+    }
+    reader.onerror = () => {
+      reject(new ImageTranslationError('IMAGE_DECODE_FAILED', 'Image could not be read'))
+    }
+    reader.readAsDataURL(file)
+  })
 }

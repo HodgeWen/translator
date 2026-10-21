@@ -1,15 +1,18 @@
-// 识图提示词：只做 OCR，保留原文语言，按阅读顺序输出归一化坐标。
-// 提示词语义变更时必须同步升版本号，否则按 (imageHash, promptVersion) 的识别缓存不会失效。
+// 图片直译提示词：视觉模型一次调用读出并翻译图中所有文字。
+// 提示词语义变更时必须同步升版本号，否则按 (imageHash, promptVersion, targetLang) 的缓存不会失效。
 
-export const IMAGE_VISION_PROMPT_VERSION = 'v1';
+export const IMAGE_VISION_PROMPT_VERSION = 'v4';
 
-export const IMAGE_VISION_SYSTEM_PROMPT = `You are an OCR engine. Extract only the text that is visibly present in the image. Do not translate, summarize, explain, or invent content. Keep every block in its original language and in natural reading order.`;
+export const IMAGE_TRANSLATE_SYSTEM_PROMPT = `You are an image text translator. Read every piece of visible text in the provided image and translate it. Do not describe the image, do not explain, and do not invent content that is not visibly written in it.`;
 
-export const IMAGE_VISION_USER_PROMPT = `Extract every visible text block from this image. Return ONLY a JSON array (no prose, no Markdown code fence) in exactly this shape:
-[{"text": "...", "box": {"x": 0, "y": 0, "w": 0, "h": 0}}]
+export function buildImageTranslateUserPrompt(targetLang: string): string {
+  return `Translate all visible text in this image into ${targetLang}.
 
 Rules:
-- "text" is the recognized original text, unchanged and untranslated. Do not merge unrelated lines into one block.
-- "box" is the bounding rectangle of the block relative to the original image, normalized to 0–1: x/y are the top-left corner, w/h are the width/height. All four values are numbers, with x >= 0, y >= 0, w > 0, h > 0, x + w <= 1 and y + h <= 1.
-- Output blocks in natural reading order (top to bottom, left to right).
-- Return [] when the image contains no readable text.`;
+- Output ONLY the translated text, no preamble, no notes, no Markdown formatting.
+- Keep the natural reading order (top to bottom, left to right) and use line breaks to separate distinct text regions.
+- Text that is already in ${targetLang} is kept as is.
+- Preserve numbers, URLs, code and proper nouns sensibly; do not transliterate what is normally kept in its original form.
+- Decorative text (watermarks, logos) may be skipped when it carries no meaning.
+- If the image contains no readable text, output nothing.`;
+}

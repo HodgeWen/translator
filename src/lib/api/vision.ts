@@ -4,13 +4,15 @@ import { consumeOpenAIStream } from './sse-consumer';
 import { buildVisionQueue, type ProviderModel } from './queue-builder';
 import { getSettings } from '../storage';
 import { recordRequestStat, accumulateTokenUsage } from '../stats';
-import { IMAGE_VISION_SYSTEM_PROMPT, IMAGE_VISION_USER_PROMPT } from '../image-translate/vision-prompt';
-import { parseVisionContent, parseVisionResponse } from '../image-translate/vision-parse';
+import {
+  IMAGE_TRANSLATE_SYSTEM_PROMPT,
+  buildImageTranslateUserPrompt,
+} from '../image-translate/vision-prompt';
+import { parseVisionText } from '../image-translate/vision-parse';
 import {
   ImageTranslationError,
-  type ImageTextBlock,
   type ImageTranslationErrorCode,
-  type VisionRecognitionResult,
+  type VisionTranslationResult,
 } from '../image-translate/types';
 
 interface VisionChatResponse {
@@ -23,7 +25,7 @@ interface VisionChatResponse {
 }
 
 /**
- * 识图独立超时：真实视觉模型识别一张图通常需要 5–17s，不能沿用文本请求的
+ * 识图独立超时：真实视觉模型翻译一张图通常需要 5–17s，不能沿用文本请求的
  * settings.requestTimeout（默认 30s，开发配置更短），否则慢模型会被提前中断。
  */
 export const IMAGE_VISION_TIMEOUT_MS = 60_000;
@@ -108,18 +110,22 @@ function aggregateVisionFailureCode(codes: ImageTranslationErrorCode[]): ImageTr
   return 'VISION_RECOGNITION_FAILED';
 }
 
-/** 构造 OpenAI-compatible 多模态识别请求体（system 提示 + user 文本/图片） */
-export function buildVisionBody(providerModel: ProviderModel, imageDataUrl: string): Record<string, unknown> {
+/** 构造 OpenAI-compatible 多模态直译请求体（system 提示 + user 文本/图片） */
+export function buildVisionBody(
+  providerModel: ProviderModel,
+  imageDataUrl: string,
+  targetLang: string
+): Record<string, unknown> {
   const { provider, model } = providerModel;
 
   const body: Record<string, unknown> = {
     model: model.id,
     messages: [
-      { role: 'system', content: IMAGE_VISION_SYSTEM_PROMPT },
+      { role: 'system', content: IMAGE_TRANSLATE_SYSTEM_PROMPT },
       {
         role: 'user',
         content: [
-          { type: 'text', text: IMAGE_VISION_USER_PROMPT },
+          { type: 'text', text: buildImageTranslateUserPrompt(targetLang) },
           { type: 'image_url', image_url: { url: imageDataUrl } },
         ],
       },
@@ -175,12 +181,15 @@ function toTokenUsage(raw: VisionChatResponse['usage']): TokenUsage | undefined 
   };
 }
 
-/** 单次识图请求；timeout 由调用方注入，测试可传短超时验证中止映射 */
-export async function callVisionModel(
+/**
+ * 识图请求的共享管线：发请求、超时/HTTP 错误映射、流式或整包响应取回消息内容。
+ * 具体提示词与解析由调用方决定。
+ */
+async function postVisionChat(
   providerModel: ProviderModel,
-  imageDataUrl: string,
+  body: Record<string, unknown>,
   timeout: number
-): Promise<{ blocks: ImageTextBlock[]; usage?: TokenUsage }> {
+): Promise<{ content: unknown; usage?: TokenUsage }> {
   const { provider } = providerModel;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -189,7 +198,7 @@ export async function callVisionModel(
     const response = await fetch(buildUrl(provider.baseURL, provider.query), {
       method: 'POST',
       headers: buildHeaders(provider),
-      body: JSON.stringify(buildVisionBody(providerModel, imageDataUrl)),
+      body: JSON.stringify(body),
       signal: controller.signal,
     });
 
@@ -200,11 +209,18 @@ export async function callVisionModel(
 
     if (provider.stream === true) {
       const { text } = await consumeOpenAIStream(response, controller.signal);
-      return { blocks: parseVisionContent(text) };
+      return { content: text };
     }
 
     const data = (await response.json()) as VisionChatResponse;
-    return { blocks: parseVisionResponse(data), usage: toTokenUsage(data.usage) };
+    const choice = data.choices?.[0];
+    if (!choice || typeof choice !== 'object' || !choice.message) {
+      throw new ImageTranslationError('VISION_RECOGNITION_FAILED', 'Vision response has no message content');
+    }
+    return {
+      content: choice.message.content,
+      usage: toTokenUsage(data.usage),
+    };
   } catch (error) {
     if (isAbortFailure(error, controller.signal)) throw visionTimeoutError(timeout);
     throw error;
@@ -213,13 +229,28 @@ export async function callVisionModel(
   }
 }
 
+/** 单次图片直译请求；timeout 由调用方注入，测试可传短超时验证中止映射 */
+export async function callVisionModel(
+  providerModel: ProviderModel,
+  imageDataUrl: string,
+  targetLang: string,
+  timeout: number
+): Promise<{ text: string; usage?: TokenUsage }> {
+  const { content, usage } = await postVisionChat(
+    providerModel,
+    buildVisionBody(providerModel, imageDataUrl, targetLang),
+    timeout
+  );
+  return { text: parseVisionText(content), usage };
+}
+
 export interface VisionRunContext {
   queue: ProviderModel[];
 }
 
 /**
- * 读取设置并解析识图队列。无可用视觉模型时在拉图/识图之前就报错，
- * 供 background 先做能力检查再决定是否取图。
+ * 读取设置并解析识图队列。无可用视觉模型时在解码图片之前就报错，
+ * 供 background 先做能力检查再决定是否处理图片。
  */
 export async function resolveVisionRunContext(): Promise<VisionRunContext> {
   const settings = await getSettings();
@@ -243,29 +274,45 @@ export async function resolveVisionRunContext(): Promise<VisionRunContext> {
   return { queue };
 }
 
-/** 识图入口：可传入已解析的上下文，避免重复读设置并重复推进 pool 计数 */
-export async function recognizeImageText(
+/** 队列内单次尝试的统计包装：成功/失败都记请求日志，token 用量仅成功时有 */
+async function attemptWithStats<T>(
+  providerModel: ProviderModel,
+  attempt: () => Promise<{ value: T; usage?: TokenUsage }>
+): Promise<T> {
+  const { provider, model } = providerModel;
+  const startedAt = Date.now();
+
+  try {
+    const { value, usage } = await attempt();
+    recordRequestStat(provider.id, model.id, Date.now() - startedAt, true).catch(() => {});
+    accumulateTokenUsage(provider.id, model.id, usage).catch(() => {});
+    return value;
+  } catch (error) {
+    recordRequestStat(provider.id, model.id, Date.now() - startedAt, false).catch(() => {});
+    throw error;
+  }
+}
+
+/** 图片直译入口：可传入已解析的上下文，避免重复读设置并重复推进 pool 计数 */
+export async function translateImageText(
   imageDataUrl: string,
+  targetLang: string,
   context?: VisionRunContext
-): Promise<VisionRecognitionResult> {
+): Promise<VisionTranslationResult> {
   const { queue } = context ?? (await resolveVisionRunContext());
 
-  return runVisionQueue(queue, async (providerModel) => {
-    const startedAt = Date.now();
-    const { provider, model } = providerModel;
-
-    try {
-      const { blocks, usage } = await callVisionModel(
+  return runVisionQueue(queue, (providerModel) =>
+    attemptWithStats(providerModel, async () => {
+      const { text, usage } = await callVisionModel(
         providerModel,
         imageDataUrl,
+        targetLang,
         IMAGE_VISION_TIMEOUT_MS
       );
-      recordRequestStat(provider.id, model.id, Date.now() - startedAt, true).catch(() => {});
-      accumulateTokenUsage(provider.id, model.id, usage).catch(() => {});
-      return { blocks, providerId: provider.id, modelId: model.id };
-    } catch (error) {
-      recordRequestStat(provider.id, model.id, Date.now() - startedAt, false).catch(() => {});
-      throw error;
-    }
-  });
+      return {
+        value: { text, providerId: providerModel.provider.id, modelId: providerModel.model.id },
+        usage,
+      };
+    })
+  );
 }

@@ -164,33 +164,6 @@ export function OptionsDisplaySettings({ settings, onSave }: OptionsDisplaySetti
             </div>
           )}
         </div>
-
-        <div className="flex items-center justify-between gap-4 border-t border-border pt-4">
-          <div>
-            <div className="text-sm font-medium">{t('label_image_hover_button')}</div>
-            <div className="text-xs text-muted-foreground mt-0.5">
-              {t('hint_image_hover_button')}
-            </div>
-          </div>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={draft.imageHoverButtonEnabled}
-            aria-label={t('label_image_hover_button')}
-            onClick={() => savePatch({ imageHoverButtonEnabled: !draft.imageHoverButtonEnabled })}
-            className={cn(
-              'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors',
-              draft.imageHoverButtonEnabled ? 'bg-indigo-500' : 'bg-muted'
-            )}
-          >
-            <span
-              className={cn(
-                'inline-block h-4 w-4 transform rounded-full bg-white transition-transform',
-                draft.imageHoverButtonEnabled ? 'translate-x-6' : 'translate-x-1'
-              )}
-            />
-          </button>
-        </div>
       </div>
 
       {/* 2. Loading Theme Settings Card */}

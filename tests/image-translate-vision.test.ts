@@ -10,13 +10,14 @@ import { DEFAULT_SETTINGS } from '../src/lib/storage';
 import type { ProviderModel } from '../src/lib/api/queue-builder';
 import {
   IMAGE_VISION_PROMPT_VERSION,
-  IMAGE_VISION_SYSTEM_PROMPT,
-  IMAGE_VISION_USER_PROMPT,
+  IMAGE_TRANSLATE_SYSTEM_PROMPT,
+  buildImageTranslateUserPrompt,
 } from '../src/lib/image-translate/vision-prompt';
-import { parseVisionContent, parseVisionResponse } from '../src/lib/image-translate/vision-parse';
+import { parseVisionText, parseVisionResponse } from '../src/lib/image-translate/vision-parse';
 import { ImageTranslationError } from '../src/lib/image-translate/types';
 
 const IMAGE_DATA_URL = 'data:image/png;base64,iVBORw0KGgo=';
+const TARGET_LANG = 'zh-CN';
 
 function providerModel(providerId: string, modelId: string): ProviderModel {
   return {
@@ -71,110 +72,66 @@ afterEach(() => {
 });
 
 describe('vision prompt', () => {
-  test('states an OCR-only, versioned contract', () => {
-    const prompt = IMAGE_VISION_SYSTEM_PROMPT + '\n' + IMAGE_VISION_USER_PROMPT;
+  test('states a versioned translation contract targeting the requested language', () => {
+    const prompt = IMAGE_TRANSLATE_SYSTEM_PROMPT + '\n' + buildImageTranslateUserPrompt(TARGET_LANG);
 
     expect(IMAGE_VISION_PROMPT_VERSION).toMatch(/^v\d+$/);
-    expect(prompt).toContain('OCR');
-    expect(prompt).toContain('JSON array');
-    expect(prompt).toContain('[]');
-    expect(prompt.toLowerCase()).toContain('original language');
-    expect(prompt.toLowerCase()).toContain('reading order');
-    expect(prompt.toLowerCase()).toContain('do not translate');
+    expect(prompt).toContain('translate');
+    expect(prompt).toContain(TARGET_LANG);
+    expect(prompt).toContain('ONLY the translated text');
+    expect(prompt).toContain('reading order');
+    expect(prompt).toContain('no readable text');
   });
 });
 
 describe('vision response parsing', () => {
-  test('parses a valid JSON array into normalized blocks', () => {
-    const blocks = parseVisionContent(
-      JSON.stringify([
-        { text: '  Hello world  ', box: { x: 0.1, y: 0.2, w: 0.5, h: 0.1 } },
-        { text: 'Second line', box: { x: 0, y: 0.4, w: 1, h: 0.2 } },
-      ])
-    );
-
-    expect(blocks).toEqual([
-      { text: 'Hello world', box: { x: 0.1, y: 0.2, w: 0.5, h: 0.1 } },
-      { text: 'Second line', box: { x: 0, y: 0.4, w: 1, h: 0.2 } },
-    ]);
+  test('returns the plain translated text trimmed', () => {
+    expect(parseVisionText('  你好，世界\n第二行  ')).toBe('你好，世界\n第二行');
   });
 
-  test('tolerates a Markdown json fence and surrounding whitespace', () => {
-    const content = '\n```json\n[{"text":"Fenced","box":{"x":0,"y":0,"w":0.25,"h":0.25}}]\n```\n';
-
-    const blocks = parseVisionResponse({ choices: [{ message: { content } }] });
-
-    expect(blocks).toEqual([{ text: 'Fenced', box: { x: 0, y: 0, w: 0.25, h: 0.25 } }]);
-    expect(parseVisionContent('```\n[]\n```')).toEqual([]);
+  test('tolerates a Markdown code fence and surrounding whitespace', () => {
+    expect(parseVisionText('\n```\n你好\n```\n')).toBe('你好');
+    expect(parseVisionText('```json\n"引用文本"\n```')).toBe('"引用文本"');
   });
 
   test('accepts content split into text fragments', () => {
     const content = [
-      { type: 'text', text: '[{"text":"A","box":{"x":0,"y":0,"w":0.2,"h":0.1}},' },
-      { type: 'text', text: '{"text":"B","box":{"x":0.2,"y":0.1,"w":0.2,"h":0.1}}]' },
+      { type: 'text', text: '第一段，' },
+      { type: 'text', text: '第二段。' },
     ];
 
-    expect(parseVisionContent(content).map((block) => block.text)).toEqual(['A', 'B']);
+    expect(parseVisionText(content)).toBe('第一段，第二段。');
   });
 
-  test('returns an empty array for an image without text', () => {
-    expect(parseVisionContent('[]')).toEqual([]);
-  });
-
-  test('drops empty and whitespace-only blocks', () => {
-    const blocks = parseVisionContent(
-      JSON.stringify([
-        { text: '   ', box: { x: 0, y: 0, w: 0.1, h: 0.1 } },
-        { text: '', box: { x: 0, y: 0.1, w: 0.1, h: 0.1 } },
-        { text: ' Kept ', box: { x: 0, y: 0.2, w: 0.1, h: 0.1 } },
-      ])
-    );
-
-    expect(blocks).toEqual([{ text: 'Kept', box: { x: 0, y: 0.2, w: 0.1, h: 0.1 } }]);
-  });
-
-  test('rejects out-of-bounds and non-positive boxes', () => {
-    const boxes = [
-      { x: -0.1, y: 0, w: 0.2, h: 0.1 },
-      { x: 0, y: -0.1, w: 0.2, h: 0.1 },
-      { x: 0, y: 0, w: 0, h: 0.1 },
-      { x: 0, y: 0, w: 0.2, h: 0 },
-      { x: 0.8, y: 0, w: 0.3, h: 0.1 },
-      { x: 0, y: 0.8, w: 0.1, h: 0.3 },
-    ];
-
-    for (const box of boxes) {
-      expect(() => parseVisionContent(JSON.stringify([{ text: 'x', box }]))).toThrow();
+  test('maps an empty response to NO_TEXT_IN_IMAGE', () => {
+    expect(() => parseVisionText('   ')).toThrow(ImageTranslationError);
+    try {
+      parseVisionText('');
+    } catch (error) {
+      expect((error as ImageTranslationError).code).toBe('NO_TEXT_IN_IMAGE');
     }
   });
 
-  test('rejects missing fields and non-finite numbers', () => {
-    expect(() =>
-      parseVisionContent(JSON.stringify([{ box: { x: 0, y: 0, w: 0.1, h: 0.1 } }]))
-    ).toThrow();
-    expect(() => parseVisionContent(JSON.stringify([{ text: 'x' }]))).toThrow();
-    expect(() =>
-      parseVisionContent('[{"text":"x","box":{"x":1e999,"y":0,"w":0.1,"h":0.1}}]')
-    ).toThrow();
-    expect(() => parseVisionContent(JSON.stringify(['not a block']))).toThrow();
+  test('parses a chat/completions response', () => {
+    const response = { choices: [{ message: { content: '整图译文' } }] };
+    expect(parseVisionResponse(response)).toBe('整图译文');
   });
 
-  test('rejects content that is not a JSON array', () => {
-    expect(() => parseVisionContent('not json')).toThrow('not valid JSON');
-    expect(() => parseVisionContent(JSON.stringify({ text: 'x' }))).toThrow('not a JSON array');
-    expect(() => parseVisionContent('   ')).toThrow('Empty vision response');
+  test('rejects responses without message content', () => {
+    expect(() => parseVisionResponse({})).toThrow('no choices');
+    expect(() => parseVisionResponse({ choices: [{}] })).toThrow('no message content');
   });
 });
 
 describe('vision request body', () => {
-  test('builds a multimodal chat body with prompt text and the image data URL', () => {
+  test('builds a multimodal chat body with the translate prompt and image data URL', () => {
     const target = providerModel('p1', 'vision-1');
     target.provider.body = { custom_field: 'kept', max_tokens: 1 };
     target.provider.temperature = 0.2;
     target.provider.maxTokens = 1024;
     target.provider.stream = true;
 
-    const body = buildVisionBody(target, IMAGE_DATA_URL);
+    const body = buildVisionBody(target, IMAGE_DATA_URL, TARGET_LANG);
     const messages = body.messages as Array<{ role: string; content: unknown }>;
 
     expect(body.model).toBe('vision-1');
@@ -182,11 +139,11 @@ describe('vision request body', () => {
     expect(body.temperature).toBe(0.2);
     expect(body.max_tokens).toBe(1024);
     expect(body.stream).toBe(true);
-    expect(messages[0]).toEqual({ role: 'system', content: IMAGE_VISION_SYSTEM_PROMPT });
+    expect(messages[0]).toEqual({ role: 'system', content: IMAGE_TRANSLATE_SYSTEM_PROMPT });
     expect(messages[1]).toEqual({
       role: 'user',
       content: [
-        { type: 'text', text: IMAGE_VISION_USER_PROMPT },
+        { type: 'text', text: buildImageTranslateUserPrompt(TARGET_LANG) },
         { type: 'image_url', image_url: { url: IMAGE_DATA_URL } },
       ],
     });
@@ -209,7 +166,7 @@ describe('vision queue fallback', () => {
     const calls: string[] = [];
     const result = await runVisionQueue(queueOf(['p1', 'm1'], ['p1', 'm2']), async (pm) => {
       calls.push(pm.model.id);
-      if (pm.model.id === 'm1') throw new Error('Vision response is not valid JSON');
+      if (pm.model.id === 'm1') throw new Error('Empty vision response');
       return 'ok';
     });
 
@@ -272,7 +229,7 @@ describe('vision request timeout', () => {
     stubFetch((_model, init) => pendingUntilAborted(init));
 
     const error = await catchError(
-      callVisionModel(providerModel('p1', 'm1'), IMAGE_DATA_URL, 5)
+      callVisionModel(providerModel('p1', 'm1'), IMAGE_DATA_URL, TARGET_LANG, 5)
     );
 
     expect(error).toBeInstanceOf(ImageTranslationError);
@@ -286,7 +243,7 @@ describe('vision request timeout', () => {
     });
 
     const error = await catchError(
-      callVisionModel(providerModel('p1', 'm1'), IMAGE_DATA_URL, 1_000)
+      callVisionModel(providerModel('p1', 'm1'), IMAGE_DATA_URL, TARGET_LANG, 1_000)
     );
 
     expect((error as ImageTranslationError).code).toBe('VISION_TIMEOUT');
@@ -299,21 +256,20 @@ describe('vision HTTP failure classification', () => {
       () =>
         new Response(
           JSON.stringify({
-            choices: [
-              { message: { content: '[{"text":"Hi","box":{"x":0,"y":0,"w":0.5,"h":0.2}}]' } },
-            ],
+            choices: [{ message: { content: '整图译文' } }],
             usage: { prompt_tokens: 3, completion_tokens: 4, total_tokens: 7 },
           })
         )
     );
 
-    const { blocks, usage } = await callVisionModel(
+    const { text, usage } = await callVisionModel(
       providerModel('p1', 'm1'),
       IMAGE_DATA_URL,
+      TARGET_LANG,
       1_000
     );
 
-    expect(blocks).toEqual([{ text: 'Hi', box: { x: 0, y: 0, w: 0.5, h: 0.2 } }]);
+    expect(text).toBe('整图译文');
     expect(usage).toEqual({ promptTokens: 3, completionTokens: 4, totalTokens: 7 });
   });
 
@@ -328,7 +284,7 @@ describe('vision HTTP failure classification', () => {
       stubFetch(() => new Response(body, { status }));
 
       const error = await catchError(
-        callVisionModel(providerModel('p1', 'm1'), IMAGE_DATA_URL, 1_000)
+        callVisionModel(providerModel('p1', 'm1'), IMAGE_DATA_URL, TARGET_LANG, 1_000)
       );
 
       expect(error).toBeInstanceOf(HttpError);
@@ -342,7 +298,7 @@ describe('vision HTTP failure classification', () => {
       stubFetch(() => new Response('{"error":"request failed"}', { status }));
 
       const error = await catchError(
-        callVisionModel(providerModel('p1', 'm1'), IMAGE_DATA_URL, 1_000)
+        callVisionModel(providerModel('p1', 'm1'), IMAGE_DATA_URL, TARGET_LANG, 1_000)
       );
 
       expect(error).toBeInstanceOf(HttpError);
@@ -357,7 +313,7 @@ describe('vision HTTP failure classification', () => {
     stubFetch(() => new Response(longBody, { status: 500 }));
 
     const error = await catchError(
-      callVisionModel(providerModel('p1', 'm1'), IMAGE_DATA_URL, 1_000)
+      callVisionModel(providerModel('p1', 'm1'), IMAGE_DATA_URL, TARGET_LANG, 1_000)
     );
 
     expect((error as Error).message).toContain('HTTP 500:');
@@ -370,19 +326,19 @@ describe('vision HTTP failure classification', () => {
     stubFetch((model) =>
       model === 'm1'
         ? new Response('{"error":"invalid api key"}', { status: 401 })
-        : new Response(JSON.stringify({ choices: [{ message: { content: '[]' } }] }))
+        : new Response(JSON.stringify({ choices: [{ message: { content: '译文' } }] }))
     );
 
     const result = await runVisionQueue(
       queueOf(['p1', 'm1'], ['p1', 'm2'], ['p2', 'm3']),
       async (pm) => {
         calls.push(pm.provider.id + '/' + pm.model.id);
-        return callVisionModel(pm, IMAGE_DATA_URL, 1_000);
+        return callVisionModel(pm, IMAGE_DATA_URL, TARGET_LANG, 1_000);
       }
     );
 
     expect(calls).toEqual(['p1/m1', 'p2/m3']);
-    expect(result.blocks).toEqual([]);
+    expect(result.text).toBe('译文');
   });
 });
 
@@ -396,7 +352,7 @@ describe('vision aggregate failure code', () => {
 
     const error = await catchError(
       runVisionQueue(queueOf(['p1', 'm1'], ['p1', 'm2']), (pm) =>
-        callVisionModel(pm, IMAGE_DATA_URL, 1_000)
+        callVisionModel(pm, IMAGE_DATA_URL, TARGET_LANG, 1_000)
       )
     );
 
@@ -413,7 +369,7 @@ describe('vision aggregate failure code', () => {
 
     const error = await catchError(
       runVisionQueue(queueOf(['p1', 'm1'], ['p1', 'm2'], ['p1', 'm3']), (pm) =>
-        callVisionModel(pm, IMAGE_DATA_URL, pm.model.id === 'm3' ? 5 : 1_000)
+        callVisionModel(pm, IMAGE_DATA_URL, TARGET_LANG, pm.model.id === 'm3' ? 5 : 1_000)
       )
     );
 

@@ -1,8 +1,3 @@
-import type {
-  ImageSource,
-  RecognizedImageBlock,
-} from '@/lib/image-translate/types';
-
 // Language codes (ISO 639-1 or BCP 47)
 export type LangCode = string;
 
@@ -53,7 +48,6 @@ export interface GlobalSettings {
   displayStyle: DisplayStyle;
   translationTone: TranslationTone;
   translationLoadingTheme: TranslationLoadingTheme;
-  imageHoverButtonEnabled: boolean;
   globalPrompt: string;
   shortcutKey: string;
   hoverShortcutKey: string;
@@ -108,19 +102,12 @@ export interface TranslationResponse {
   usage?: TokenUsage;
 }
 
-// Image translation result: 识别块 + 逐块译文/跳过状态
-export interface ImageTranslationBlock extends RecognizedImageBlock {
-  translatedText?: string;
-  skipped: boolean;
-}
-
+// Image translation result: 视觉模型整图直译的译文文本
 export interface ImageTranslationResult {
-  blocks: ImageTranslationBlock[];
+  text: string;
   providerId: string;
   modelId: string;
   cached: boolean;
-  width: number;
-  height: number;
 }
 
 // Background message types
@@ -133,7 +120,8 @@ interface BgTranslatePayload {
   enablePolysemy?: boolean;
 }
 
-export type BgImageTranslatePayload = ImageSource & { targetLang: LangCode };
+// popup 上传/粘贴的本地图片直译请求
+export type BgImageTranslatePayload = { dataUrl: string; targetLang: LangCode };
 
 export type BgMessage =
   | { type: 'TRANSLATE'; payload: BgTranslatePayload }
@@ -144,8 +132,7 @@ export type BgMessage =
 export type ContentMessage =
   | { type: 'TOGGLE_TRANSLATION' }
   | { type: 'START_TRANSLATION' }
-  | { type: 'STOP_TRANSLATION' }
-  | { type: 'TRANSLATE_IMAGE'; srcUrl: string };
+  | { type: 'STOP_TRANSLATION' };
 
 export interface CustomTone {
   id: string;
