@@ -2,7 +2,7 @@ import Dexie, { type EntityTable, type Table } from 'dexie';
 import type { CacheEntry, RequestLogEntry, DailyTokenUsageEntry } from '@/types';
 
 const DB_NAME = 'TranslatorCache';
-const DB_VERSION = 6; // v6: 图片缓存改为按目标语言存整图译文；v5 为识别块缓存
+const DB_VERSION = 7; // v7: 以新主键重建图片缓存表；v6 仅负责删除旧表
 const TTL_DAYS = 7;
 const TTL_MS = TTL_DAYS * 24 * 60 * 60 * 1000;
 
@@ -58,15 +58,19 @@ db.version(5).stores({
   daily_token_usage: '++id, [providerId+modelId+date], date',
   image_translations: '[imageHash+promptVersion], createdAt',
 });
-// v6: 图片缓存从「识别块」改为「按目标语言的整图译文」，旧条目结构不兼容，直接清空
-db.version(DB_VERSION)
-  .stores({
-    translations: 'hash, targetLang, createdAt',
-    request_logs: '++id, [providerId+modelId], timestamp',
-    daily_token_usage: '++id, [providerId+modelId+date], date',
-    image_translations: '[imageHash+promptVersion+targetLang], createdAt',
-  })
-  .upgrade(tx => tx.table('image_translations').clear());
+// v6: 原计划直接把图片缓存主键改为 [imageHash+promptVersion+targetLang]，但 Dexie
+// 不支持在升级中修改主键（会抛 "Not yet support for changing primary key"，导致整个
+// 数据库打不开）。因此 v6 只删除旧表，v7 再以新主键重建；旧图片缓存可丢弃。
+db.version(6).stores({
+  image_translations: null,
+});
+// v7: 以新主键重建图片缓存表
+db.version(DB_VERSION).stores({
+  translations: 'hash, targetLang, createdAt',
+  request_logs: '++id, [providerId+modelId], timestamp',
+  daily_token_usage: '++id, [providerId+modelId+date], date',
+  image_translations: '[imageHash+promptVersion+targetLang], createdAt',
+});
 
 let openPromise: Promise<CacheDatabase> | null = null;
 
