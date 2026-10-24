@@ -19,6 +19,8 @@ declare module '#imports' {
   export { fakeBrowser } from 'wxt/testing';
   export { CodeEditor } from '../src/components/code-editor';
   export { LogoIcon } from '../src/components/logo-icon';
-  export { useDarkMode } from '../src/hooks/use-dark-mode';
+  export { useCopyFeedback } from '../src/hooks/use-copy-feedback';
+  export { resolveDarkScheme, useDarkMode } from '../src/hooks/use-dark-mode';
+  export { useDebouncedSave } from '../src/hooks/use-debounced-save';
   export { useToast, ToastItem } from '../src/hooks/use-toast';
 }

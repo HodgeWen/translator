@@ -1,90 +1,798 @@
 {
-  "extName": {
-    "message": "星禾翻译",
-    "description": "Extension name"
+  "a11y_close_dialog": {
+    "message": "关闭对话框"
   },
-  "extDescription": {
-    "message": "一款基于大模型的现代化浏览器翻译扩展，兼容各种大模型服务商。",
-    "description": "Extension description"
+  "a11y_decrease": {
+    "message": "减少"
+  },
+  "a11y_dismiss_toast": {
+    "message": "关闭提示"
+  },
+  "a11y_increase": {
+    "message": "增加"
+  },
+  "a11y_toggle_off": {
+    "message": "已关闭，点击开启"
+  },
+  "a11y_toggle_on": {
+    "message": "已开启，点击关闭"
+  },
+  "badge_builtin_readonly": {
+    "message": "系统内置（只读）"
+  },
+  "badge_fallback_on": {
+    "message": "（开启自动降级）"
+  },
+  "badge_popup_polysemy": {
+    "message": "弹窗多义词"
+  },
+  "badge_service_in_use": {
+    "message": "当前使用中"
+  },
+  "badge_service_style": {
+    "message": "独立样式"
+  },
+  "badge_service_tone": {
+    "message": "独立语气"
+  },
+  "badge_stream": {
+    "message": "Stream"
+  },
+  "btn_add": {
+    "message": "添加"
+  },
+  "btn_add_model": {
+    "message": "添加模型"
+  },
+  "btn_add_pool_member": {
+    "message": "添加提供商-模型"
+  },
+  "btn_add_provider": {
+    "message": "添加服务商"
+  },
+  "btn_add_tone": {
+    "message": "添加风格语气"
+  },
+  "btn_cancel": {
+    "message": "取消"
+  },
+  "btn_copied_url": {
+    "message": "已复制!"
+  },
+  "btn_copy_url": {
+    "message": "复制"
+  },
+  "btn_create_now": {
+    "message": "立即新建"
+  },
+  "btn_delete": {
+    "message": "删除"
+  },
+  "btn_doc": {
+    "message": "官方文档"
+  },
+  "btn_edit": {
+    "message": "编辑"
+  },
+  "btn_export_settings": {
+    "message": "导出设置"
+  },
+  "btn_hide": {
+    "message": "隐藏"
+  },
+  "btn_import_cancel": {
+    "message": "取消"
+  },
+  "btn_import_confirm": {
+    "message": "确认导入"
+  },
+  "btn_import_settings": {
+    "message": "导入设置"
+  },
+  "btn_move_down": {
+    "message": "下移"
+  },
+  "btn_move_up": {
+    "message": "上移"
+  },
+  "btn_new_service": {
+    "message": "新建翻译服务"
+  },
+  "btn_reset_default": {
+    "message": "还原默认"
+  },
+  "btn_save": {
+    "message": "保存"
+  },
+  "btn_show": {
+    "message": "显示"
+  },
+  "btn_test": {
+    "message": "测试"
+  },
+  "color_scheme_dark": {
+    "message": "深色"
+  },
+  "color_scheme_light": {
+    "message": "浅色"
+  },
+  "color_scheme_system": {
+    "message": "跟随系统"
   },
   "command_toggle_desc": {
     "message": "切换页面翻译",
     "description": "Command description for toggle translation"
   },
-  "popup_provider": {
-    "message": "服务商"
+  "desc_aggregate_enabled": {
+    "message": "将多个段落合并为一个翻译请求，提高效率。"
   },
-  "popup_model": {
+  "desc_color_scheme": {
+    "message": "控制设置页与弹窗的明暗外观，不影响网页翻译结果。"
+  },
+  "desc_custom_tones": {
+    "message": "定义属于你个人的翻译语气风格，与系统内置语气一同可选。"
+  },
+  "desc_enable_polysemy": {
+    "message": "仅对弹窗短文本生效。输入为单词或短语时，额外给出词性、多义项对比与音标释义；网页翻译不会启用，避免污染页面结构。"
+  },
+  "desc_global_override_style": {
+    "message": "忽略服务内单独指定的样式，强制所有服务统一使用选中样式。"
+  },
+  "desc_global_override_tone": {
+    "message": "覆盖服务内指定的语气，统一使用选中的风格语气。"
+  },
+  "desc_global_prompt": {
+    "message": "该提示词用于所有服务商，除非被单独覆盖。"
+  },
+  "desc_load_balance": {
+    "message": "开启后，翻译请求将按权重自动分配到多个服务商，均衡使用配额。在 Popup 面板中可快速切换。"
+  },
+  "desc_model_fallback": {
+    "message": "首选模型响应失败时，尝试该服务商的其余模型作为备份。"
+  },
+  "desc_prompt_mode_append": {
+    "message": "留空则仅使用全局翻译提示词；填写后将追加到全局提示词之后，作为该服务的额外翻译指令。"
+  },
+  "desc_prompt_mode_override": {
+    "message": "留空则使用全局翻译提示词；填写后将完全替换全局提示词，仅使用此处内容作为该服务的系统提示词。"
+  },
+  "desc_request_settings": {
+    "message": "适用于所有翻译请求（包括聚合和非聚合翻译）。"
+  },
+  "desc_services_config": {
+    "message": "配置 Single（单服务商）或 Pool（翻译池）组合，作为主要的翻译通道。"
+  },
+  "desc_use_service_default_style": {
+    "message": "由各服务「高级配置」中单独指定的展示样式决定。"
+  },
+  "desc_use_service_default_tone": {
+    "message": "由当前所选翻译服务的「高级配置」指定语气。"
+  },
+  "empty_no_service_desc": {
+    "message": "请点击右上角新建一个翻译服务。"
+  },
+  "empty_no_service_title": {
+    "message": "未配置任何翻译服务"
+  },
+  "empty_no_tones": {
+    "message": "目前没有任何自定义语气风格。"
+  },
+  "error_all_models_failed": {
+    "message": "所有翻译模型均失败，请检查服务地址、密钥与网络。"
+  },
+  "error_empty_response": {
+    "message": "模型返回了空译文，请重试或更换模型。"
+  },
+  "error_export_failed": {
+    "message": "导出失败"
+  },
+  "error_image_invalid_format": {
+    "message": "仅支持 PNG、JPEG、WebP 格式的图片。"
+  },
+  "error_image_load_failed": {
+    "message": "图片读取失败，文件可能已损坏。"
+  },
+  "error_image_no_text": {
+    "message": "图片中没有检测到可翻译的文字。"
+  },
+  "error_image_too_large": {
+    "message": "图片过大：单张不能超过 20MB，最长边不能超过 16384 像素。"
+  },
+  "error_image_translate_http_error": {
+    "message": "识图请求失败，请检查服务地址、密钥与模型配置。"
+  },
+  "error_image_translate_model_unsupported": {
+    "message": "当前模型不支持图片输入，请在设置中改选支持图片输入的模型。"
+  },
+  "error_image_translate_no_vision_model": {
+    "message": "没有可用的图片翻译模型，请在设置中为模型勾选「支持图片输入」。"
+  },
+  "error_image_translate_recognize_failed": {
+    "message": "图片文字识别失败，请重试。"
+  },
+  "error_image_translate_vision_timeout": {
+    "message": "图片文字识别超时，请重试或改用响应更快的视觉模型。"
+  },
+  "error_import_decrypt_failed": {
+    "message": "解密失败：密钥错误或文件已损坏。"
+  },
+  "error_import_failed": {
+    "message": "导入失败"
+  },
+  "error_import_passphrase_required": {
+    "message": "该备份已加密，请输入密钥后再导入。"
+  },
+  "error_invalid_base_url": {
+    "message": "接口地址必须是完整 URL（需以 http:// 或 https:// 开头）"
+  },
+  "error_invalid_hex_color": {
+    "message": "请输入 #RGB、#RGBA、#RRGGBB 或 #RRGGBBAA 格式"
+  },
+  "error_invalid_import_version": {
+    "message": "备份文件版本高于当前扩展支持的版本，请先升级扩展。"
+  },
+  "error_load_settings": {
+    "message": "加载设置失败"
+  },
+  "error_no_active_service": {
+    "message": "没有可用的翻译服务，请先在设置中配置。"
+  },
+  "error_no_models": {
+    "message": "没有可用的翻译模型，请先在设置中配置服务商。"
+  },
+  "error_request_aborted": {
+    "message": "请求已取消。"
+  },
+  "error_required_fields": {
+    "message": "名称和接口地址为必填项"
+  },
+  "error_save_failed": {
+    "message": "保存失败"
+  },
+  "error_settings_quota_exceeded": {
+    "message": "设置超出浏览器同步存储配额，请减少服务商数量或改用更短的提示词后重试。"
+  },
+  "error_translation_failed": {
+    "message": "翻译失败"
+  },
+  "error_unknown": {
+    "message": "未知错误"
+  },
+  "extDescription": {
+    "message": "一款基于大模型的现代化浏览器翻译扩展，兼容各种大模型服务商。",
+    "description": "Extension description"
+  },
+  "extName": {
+    "message": "星禾翻译",
+    "description": "Extension name"
+  },
+  "hint_api_key": {
+    "message": "如果设置了 API Key，将自动发送 Authorization: Bearer 请求头。你也可以在自定义请求头中覆盖它。"
+  },
+  "hint_content_type_auto": {
+    "message": "Content-Type 由请求层自动注入，无需手动设置。"
+  },
+  "hint_export_passphrase": {
+    "message": "留空则导出明文 JSON。设置密钥后将以 AES-GCM 加密导出。密钥丢失后导出文件无法恢复。"
+  },
+  "hint_export_passphrase_warn": {
+    "message": "检测到 API Key，强烈建议设置加密密钥保护敏感信息。注意：密钥丢失后导出文件无法恢复。"
+  },
+  "hint_extra_body_override": {
+    "message": "与上方独立字段同名时以独立字段为准。"
+  },
+  "hint_input_loading_pulse_duration": {
+    "message": "单个动画循环时长，建议 800-1600"
+  },
+  "hint_input_loading_pulse_easing": {
+    "message": "控制关键帧之间的过渡节奏"
+  },
+  "hint_input_shortcut_key": {
+    "message": "连按三下翻译，再连按三下还原"
+  },
+  "hint_input_translation_target_language": {
+    "message": "输入框翻译通常是将母语翻译为外语，此处设置默认的目标语言。"
+  },
+  "hint_max_tokens": {
+    "message": "每次翻译最多生成的 token 数量（1 token ≈ 0.75 个英文词或 1~2 个汉字）。翻译结果被截断时可适当调大。"
+  },
+  "hint_model_order": {
+    "message": "模型顺序决定 fallback 优先级，排在前面的模型优先使用。"
+  },
+  "hint_native_language": {
+    "message": "你的母语。网页翻译和面板翻译默认以该语言为目标语言。"
+  },
+  "hint_prompt_vars": {
+    "message": "可用变量："
+  },
+  "hint_second_language": {
+    "message": "在面板翻译中，当输入文本为母语时，翻译为该语言。"
+  },
+  "hint_single_key_shortcut": {
+    "message": "只支持单键；默认 Ctrl"
+  },
+  "hint_stream": {
+    "message": "开启后将以 SSE 增量解析翻译结果。注意：长文本可能触发请求超时，可在通用设置中调高请求超时时间。"
+  },
+  "hint_supports_vision": {
+    "message": "勾选后该模型可用于翻译图片中的文字；图片翻译只会使用带此标记的模型。"
+  },
+  "hint_temperature": {
+    "message": "控制输出的随机性。值越低翻译越精准一致（推荐 0~0.3），值越高回答越有创造性。"
+  },
+  "hint_test_provider": {
+    "message": "使用随机语言的「你好」测试当前接口是否可用，结果将翻译成你的母语。"
+  },
+  "hint_top_p": {
+    "message": "核采样，控制候选词的多样性。1.0 考虑所有可能，较低值更保守。通常调 Temperature 就够了，无需同时修改此项。"
+  },
+  "hint_ui_language": {
+    "message": "控制扩展界面的显示语言"
+  },
+  "input_loading_preview_text": {
+    "message": "输入框翻译中..."
+  },
+  "label_aggregate_enabled": {
+    "message": "启用聚合翻译"
+  },
+  "label_api_key": {
+    "message": "API Key"
+  },
+  "label_base_url": {
+    "message": "接口地址"
+  },
+  "label_color_scheme": {
+    "message": "界面配色"
+  },
+  "label_display_name": {
+    "message": "显示名称"
+  },
+  "label_enable_polysemy": {
+    "message": "在弹窗翻译面板启用多义词词典式翻译"
+  },
+  "label_export_passphrase": {
+    "message": "加密密钥（可选）"
+  },
+  "label_extra_body": {
+    "message": "额外请求体 (JSON)"
+  },
+  "label_global_display_style": {
+    "message": "全局翻译展示样式"
+  },
+  "label_global_tone": {
+    "message": "全局翻译语气"
+  },
+  "label_headers": {
+    "message": "请求头"
+  },
+  "label_hover_shortcut_key": {
+    "message": "悬浮翻译快捷键"
+  },
+  "label_import_passphrase": {
+    "message": "导入密钥"
+  },
+  "label_input_loading_keyframe_0": {
+    "message": "0% 颜色"
+  },
+  "label_input_loading_keyframe_1": {
+    "message": "50% 颜色"
+  },
+  "label_input_loading_keyframe_2": {
+    "message": "100% 颜色"
+  },
+  "label_input_loading_preview": {
+    "message": "动画预览"
+  },
+  "label_input_loading_pulse_duration": {
+    "message": "输入框 loading 脉冲时长 (毫秒)"
+  },
+  "label_input_loading_pulse_easing": {
+    "message": "输入框 loading 动画方案"
+  },
+  "label_input_shortcut_key": {
+    "message": "输入框三连按快捷键"
+  },
+  "label_input_translation_target_language": {
+    "message": "输入框翻译目标语言"
+  },
+  "label_key": {
+    "message": "键"
+  },
+  "label_keyboard_shortcut": {
+    "message": "快捷键"
+  },
+  "label_max_concurrent": {
+    "message": "最大并发请求数"
+  },
+  "label_max_paragraphs": {
+    "message": "每次最大段落数"
+  },
+  "label_max_text_length": {
+    "message": "每次最大文本长度"
+  },
+  "label_max_tokens": {
+    "message": "Max Tokens"
+  },
+  "label_model_fallback": {
+    "message": "内部模型自动降级"
+  },
+  "label_model_id": {
+    "message": "模型 ID"
+  },
+  "label_model_inline": {
+    "message": "模型："
+  },
+  "label_models": {
     "message": "模型"
   },
-  "popup_translate_to": {
-    "message": "翻译成"
+  "label_name": {
+    "message": "名称"
   },
-  "popup_placeholder": {
-    "message": "输入要翻译的文本..."
+  "label_native_language": {
+    "message": "母语"
   },
-  "popup_translating": {
-    "message": "翻译中..."
+  "label_pool_members": {
+    "message": "翻译池提供商与模型组合"
   },
-  "popup_translate": {
-    "message": "翻译"
+  "label_pool_members_inline": {
+    "message": "组合成员："
   },
-  "popup_result": {
-    "message": "翻译结果"
+  "label_preset_urls": {
+    "message": "常见服务商地址"
   },
-  "popup_error": {
-    "message": "出错"
+  "label_prompt_append_tag": {
+    "message": "追加 Prompt"
   },
-  "popup_error_hint": {
-    "message": "点击查看详情"
+  "label_prompt_mode_append": {
+    "message": "追加到全局 Prompt"
   },
-  "popup_dismiss_error": {
-    "message": "关闭错误"
+  "label_prompt_mode_override": {
+    "message": "覆盖全局 Prompt"
   },
-  "popup_open_settings": {
-    "message": "打开设置"
+  "label_prompt_override_tag": {
+    "message": "覆盖 Prompt"
   },
-  "popup_auto_detect_hint": {
-    "message": "自动检测：母语→第二语言，外语→母语"
+  "label_provider_inline": {
+    "message": "服务商："
   },
-  "popup_target_auto": {
-    "message": "自动"
+  "label_query_params": {
+    "message": "查询参数"
   },
-  "popup_manual_override_hint": {
-    "message": "已手动选择（仅本次会话生效）"
+  "label_request_timeout": {
+    "message": "请求超时（毫秒）"
   },
-  "popup_copied": {
-    "message": "已复制到剪贴板"
+  "label_sampling": {
+    "message": "采样参数"
   },
-  "popup_translate_page": {
-    "message": "翻译此页"
+  "label_second_language": {
+    "message": "第二语言"
   },
-  "popup_stop_translation": {
-    "message": "停止翻译"
+  "label_service_default_style": {
+    "message": "服务默认展示样式"
   },
-  "popup_page_translation_unavailable": {
-    "message": "当前页面无法使用页面翻译"
+  "label_service_default_tone": {
+    "message": "服务默认翻译语气"
   },
-  "options_title": {
-    "message": "翻译器设置"
+  "label_service_name": {
+    "message": "服务名称"
   },
-  "options_subtitle": {
-    "message": "配置你的翻译服务商及偏好"
+  "label_service_prompt": {
+    "message": "自定义 Prompt"
   },
-  "options_saved": {
-    "message": "设置保存成功"
+  "label_service_type": {
+    "message": "服务类型"
+  },
+  "label_stream": {
+    "message": "流式响应"
+  },
+  "label_supports_vision": {
+    "message": "支持图片输入"
+  },
+  "label_temperature": {
+    "message": "Temperature"
+  },
+  "label_test_provider": {
+    "message": "连通性测试"
+  },
+  "label_tone_instruction": {
+    "message": "注入的 Prompt 指令（例如：Translate in Classical Chinese style…）"
+  },
+  "label_tone_name": {
+    "message": "风格名称（例如：学术风、文言文风）"
+  },
+  "label_top_p": {
+    "message": "Top P"
+  },
+  "label_top_p_enable": {
+    "message": "启用"
+  },
+  "label_translation_model": {
+    "message": "翻译模型"
+  },
+  "label_ui_language": {
+    "message": "界面语言"
+  },
+  "label_underlying_provider": {
+    "message": "底层服务商"
+  },
+  "label_use_first_model": {
+    "message": "使用默认第一个"
+  },
+  "label_use_personal_default": {
+    "message": "使用个人默认"
+  },
+  "label_value": {
+    "message": "值"
+  },
+  "label_weight": {
+    "message": "权重"
+  },
+  "loading": {
+    "message": "加载中..."
+  },
+  "new_provider": {
+    "message": "新服务商"
+  },
+  "option_follow_native_language": {
+    "message": "跟随母语"
+  },
+  "option_global_override": {
+    "message": "自定义全局覆盖"
+  },
+  "option_use_service_default": {
+    "message": "使用服务默认"
   },
   "options_imported": {
     "message": "设置导入成功"
   },
-  "tab_providers": {
-    "message": "服务商"
+  "options_subtitle": {
+    "message": "配置你的翻译服务商及偏好"
   },
-  "tab_model_queue": {
-    "message": "模型队列"
+  "options_title": {
+    "message": "翻译器设置"
   },
-  "tab_language": {
-    "message": "语言"
+  "placeholder_api_key": {
+    "message": "输入 API Key..."
+  },
+  "placeholder_tone_instruction": {
+    "message": "输入该风格翻译需要遵循的具体 Prompt 指导指令…"
+  },
+  "popup_auto_detect_hint": {
+    "message": "自动检测：母语→第二语言，外语→母语"
+  },
+  "popup_copied": {
+    "message": "已复制到剪贴板"
+  },
+  "popup_dismiss_error": {
+    "message": "关闭错误"
+  },
+  "popup_error_retry": {
+    "message": "重试"
+  },
+  "popup_image_remove": {
+    "message": "移除图片"
+  },
+  "popup_image_translate": {
+    "message": "图片翻译"
+  },
+  "popup_manual_override_hint": {
+    "message": "已手动选择（仅本次会话生效）"
+  },
+  "popup_meta_hide": {
+    "message": "收起详情"
+  },
+  "popup_meta_show": {
+    "message": "查看详情"
+  },
+  "popup_model": {
+    "message": "模型"
+  },
+  "popup_no_service_desc": {
+    "message": "请先在设置中添加服务商与翻译服务，然后即可在此翻译。"
+  },
+  "popup_no_service_title": {
+    "message": "尚未配置翻译服务"
+  },
+  "popup_open_settings": {
+    "message": "打开设置"
+  },
+  "popup_page_translation_unavailable": {
+    "message": "当前页面无法使用页面翻译"
+  },
+  "popup_placeholder": {
+    "message": "输入要翻译的文本..."
+  },
+  "popup_result": {
+    "message": "翻译结果"
+  },
+  "popup_select_service": {
+    "message": "选择翻译服务"
+  },
+  "popup_service_label": {
+    "message": "服务"
+  },
+  "popup_service_pool_tag": {
+    "message": "翻译池"
+  },
+  "popup_service_single_tag": {
+    "message": "单提供商"
+  },
+  "popup_stop_translation": {
+    "message": "停止翻译"
+  },
+  "popup_target_auto": {
+    "message": "自动"
+  },
+  "popup_translate": {
+    "message": "翻译"
+  },
+  "popup_translate_page": {
+    "message": "翻译此页"
+  },
+  "popup_translate_to": {
+    "message": "翻译成"
+  },
+  "popup_translating": {
+    "message": "翻译中..."
+  },
+  "preset_qualifier_aliyun": {
+    "message": "阿里云"
+  },
+  "preset_qualifier_baidu": {
+    "message": "百度"
+  },
+  "preset_qualifier_bytedance": {
+    "message": "字节跳动"
+  },
+  "preset_qualifier_compatible": {
+    "message": "兼容"
+  },
+  "preset_qualifier_lingyi": {
+    "message": "零一万物"
+  },
+  "preset_qualifier_local": {
+    "message": "本地部署"
+  },
+  "preset_qualifier_moonshot": {
+    "message": "月之暗面"
+  },
+  "preset_qualifier_official": {
+    "message": "官方"
+  },
+  "preset_qualifier_siliconflow": {
+    "message": "硅基流动"
+  },
+  "preset_qualifier_tencent": {
+    "message": "腾讯"
+  },
+  "preset_qualifier_zhipu": {
+    "message": "智谱 AI"
+  },
+  "preset_urls_category_all": {
+    "message": "全部"
+  },
+  "preset_urls_category_closed": {
+    "message": "闭源"
+  },
+  "preset_urls_category_gateway": {
+    "message": "聚合"
+  },
+  "preset_urls_category_open": {
+    "message": "开源"
+  },
+  "preset_urls_modal_close": {
+    "message": "关闭"
+  },
+  "preset_urls_modal_title": {
+    "message": "常见服务商接口地址快捷查询"
+  },
+  "pulse_easing_ease_out": {
+    "message": "先快后慢"
+  },
+  "pulse_easing_linear": {
+    "message": "线性"
+  },
+  "pulse_easing_spring": {
+    "message": "弹簧"
+  },
+  "service_type_pool": {
+    "message": "加权负载翻译池 (Pool)"
+  },
+  "service_type_single": {
+    "message": "单提供商服务 (Single)"
+  },
+  "settings_warnings_more": {
+    "message": "• 另有 {count} 条类似问题"
+  },
+  "settings_warnings_prefix": {
+    "message": "部分设置未能读取，已跳过以下条目（其余配置保持原样）："
+  },
+  "shortcut_hint": {
+    "message": "请在 chrome://extensions/shortcuts 中修改"
+  },
+  "shortcut_key_alt": {
+    "message": "Alt"
+  },
+  "shortcut_key_command": {
+    "message": "Command"
+  },
+  "shortcut_key_control": {
+    "message": "Ctrl"
+  },
+  "shortcut_key_escape": {
+    "message": "Esc"
+  },
+  "shortcut_key_option": {
+    "message": "Option"
+  },
+  "shortcut_key_shift": {
+    "message": "Shift"
+  },
+  "shortcut_key_space": {
+    "message": "空格"
+  },
+  "shortcut_key_win": {
+    "message": "Win"
+  },
+  "shortcut_unbound": {
+    "message": "未设置"
+  },
+  "statistics_avg_response_time": {
+    "message": "平均响应时间"
+  },
+  "statistics_failure_count": {
+    "message": "失败次数"
+  },
+  "statistics_no_data": {
+    "message": "暂无统计数据"
+  },
+  "statistics_no_data_hint": {
+    "message": "使用翻译功能后，统计数据将在此展示"
+  },
+  "statistics_response_time": {
+    "message": "最近 100 次请求统计"
+  },
+  "statistics_response_time_desc": {
+    "message": "各服务商/模型的平均响应时间与失败次数（基于最近 100 次请求）"
+  },
+  "statistics_subtitle": {
+    "message": "翻译请求性能与用量概览"
+  },
+  "statistics_title": {
+    "message": "使用统计"
+  },
+  "statistics_token_usage": {
+    "message": "当月 Token 消耗"
+  },
+  "statistics_token_usage_desc": {
+    "message": "按服务商和模型堆叠的 Token 用量（当月每日累加）"
+  },
+  "style_bilingual": {
+    "message": "双语对照"
+  },
+  "style_bilingual_desc": {
+    "message": "原文与译文同时显示"
+  },
+  "style_clean": {
+    "message": "纯净替换"
+  },
+  "style_clean_desc": {
+    "message": "无任何标记的纯净替换"
+  },
+  "style_original": {
+    "message": "原文替换"
+  },
+  "style_original_desc": {
+    "message": "替换文本但保留元素结构"
+  },
+  "style_underline": {
+    "message": "下划线"
+  },
+  "style_underline_desc": {
+    "message": "下划线译文，鼠标悬停显示原文"
+  },
+  "tab_backup_restore": {
+    "message": "备份与恢复"
   },
   "tab_display": {
     "message": "显示"
@@ -92,146 +800,29 @@
   "tab_general": {
     "message": "通用"
   },
-  "tab_backup_restore": {
-    "message": "备份与恢复"
+  "tab_language": {
+    "message": "语言"
   },
   "tab_manual": {
     "message": "使用手册"
   },
-  "btn_add_provider": {
-    "message": "添加服务商"
+  "tab_presets": {
+    "message": "提示词与风格"
   },
-  "title_add_provider": {
-    "message": "添加服务商"
+  "tab_providers": {
+    "message": "服务商"
   },
-  "title_edit_provider": {
-    "message": "编辑服务商"
+  "tab_services": {
+    "message": "翻译服务"
   },
-  "btn_save": {
-    "message": "保存"
+  "tab_statistics": {
+    "message": "统计"
   },
-  "btn_cancel": {
-    "message": "取消"
+  "test_failed": {
+    "message": "测试失败"
   },
-  "label_name": {
-    "message": "名称"
-  },
-  "label_base_url": {
-    "message": "接口地址"
-  },
-  "label_api_key": {
-    "message": "API Key"
-  },
-  "placeholder_api_key": {
-    "message": "输入 API Key..."
-  },
-  "hint_api_key": {
-    "message": "如果设置了 API Key，将自动发送 Authorization: Bearer 请求头。你也可以在自定义请求头中覆盖它。"
-  },
-  "btn_show": {
-    "message": "显示"
-  },
-  "btn_hide": {
-    "message": "隐藏"
-  },
-  "label_headers": {
-    "message": "请求头"
-  },
-  "label_query_params": {
-    "message": "查询参数"
-  },
-  "label_extra_body": {
-    "message": "额外请求体 (JSON)"
-  },
-  "label_models": {
-    "message": "模型"
-  },
-  "label_model_id": {
-    "message": "模型 ID"
-  },
-  "label_display_name": {
-    "message": "显示名称"
-  },
-  "btn_add_model": {
-    "message": "添加模型"
-  },
-  "btn_edit": {
-    "message": "编辑"
-  },
-  "btn_delete": {
-    "message": "删除"
-  },
-  "queue_description": {
-    "message": "模型按顺序尝试，若一个失败则自动使用下一个作为备用。"
-  },
-  "label_timeout": {
-    "message": "超时 (毫秒)"
-  },
-  "label_ui_language": {
-    "message": "界面语言"
-  },
-  "hint_ui_language": {
-    "message": "控制扩展界面的显示语言"
-  },
-  "label_native_language": {
-    "message": "母语"
-  },
-  "hint_native_language": {
-    "message": "你的母语。网页翻译和面板翻译默认以该语言为目标语言。"
-  },
-  "label_second_language": {
-    "message": "第二语言"
-  },
-  "hint_second_language": {
-    "message": "在面板翻译中，当输入文本为母语时，翻译为该语言。"
-  },
-  "option_follow_native_language": {
-    "message": "跟随母语"
-  },
-  "label_input_translation_target_language": {
-    "message": "输入框翻译目标语言"
-  },
-  "hint_input_translation_target_language": {
-    "message": "输入框翻译通常是将母语翻译为外语，此处设置默认的目标语言。"
-  },
-  "label_default_style": {
-    "message": "默认翻译样式"
-  },
-  "style_original": {
-    "message": "原文替换"
-  },
-  "style_bilingual": {
-    "message": "双语对照"
-  },
-  "style_underline": {
-    "message": "下划线"
-  },
-  "style_clean": {
-    "message": "纯净替换"
-  },
-  "style_original_desc": {
-    "message": "替换文本但保留元素结构"
-  },
-  "style_bilingual_desc": {
-    "message": "原文与译文同时显示"
-  },
-  "style_underline_desc": {
-    "message": "下划线译文，鼠标悬停显示原文"
-  },
-  "style_clean_desc": {
-    "message": "无任何标记的纯净替换"
-  },
-  "title_display_mode_settings": {
-    "message": "展示方式"
-  },
-  "title_translation_loading_theme": {
-    "message": "网页翻译加载主题"
-  },
-  "theme_indigo": {
-    "message": "薰衣草淡紫"
-  },
-  "theme_indigo_desc": {
-    "message": "柔和的淡紫色调，文字以脉冲方式渐隐渐现，温润克制"
+  "test_success": {
+    "message": "测试成功"
   },
   "theme_aurora": {
     "message": "鼠尾草青绿"
@@ -239,41 +830,101 @@
   "theme_aurora_desc": {
     "message": "柔和的青绿色调，文字以脉冲方式渐隐渐现，安静清新"
   },
-  "theme_monochrome": {
-    "message": "素净石墨灰"
-  },
-  "theme_monochrome_desc": {
-    "message": "无彩度纯透明度脉冲，极致沉浸无打扰"
-  },
   "theme_cosmic": {
     "message": "烟粉玫瑰"
   },
   "theme_cosmic_desc": {
     "message": "柔和的烟粉色调，文字以脉冲方式渐隐渐现，温暖而不张扬"
   },
+  "theme_indigo": {
+    "message": "薰衣草淡紫"
+  },
+  "theme_indigo_desc": {
+    "message": "柔和的淡紫色调，文字以脉冲方式渐隐渐现，温润克制"
+  },
+  "theme_monochrome": {
+    "message": "素净石墨灰"
+  },
+  "theme_monochrome_desc": {
+    "message": "无彩度纯透明度脉冲，极致沉浸无打扰"
+  },
+  "title_add_provider": {
+    "message": "添加服务商"
+  },
+  "title_add_service": {
+    "message": "添加翻译服务"
+  },
+  "title_add_tone": {
+    "message": "新建风格语气"
+  },
+  "title_aggregation": {
+    "message": "聚合翻译设置"
+  },
+  "title_backup_restore": {
+    "message": "备份与恢复"
+  },
+  "title_choose_global_style": {
+    "message": "选择自定义全局展示样式"
+  },
+  "title_choose_global_tone": {
+    "message": "选择自定义全局翻译语气"
+  },
+  "title_custom_tones": {
+    "message": "自定义语气风格"
+  },
+  "title_custom_tones_section": {
+    "message": "自定义语气"
+  },
+  "title_display_mode_settings": {
+    "message": "展示方式"
+  },
+  "title_edit_provider": {
+    "message": "编辑服务商"
+  },
+  "title_edit_service": {
+    "message": "编辑翻译服务"
+  },
+  "title_edit_tone": {
+    "message": "编辑风格语气"
+  },
+  "title_global_prompt": {
+    "message": "通用翻译提示词"
+  },
+  "title_input_loading_settings": {
+    "message": "输入框 loading"
+  },
+  "title_request_settings": {
+    "message": "请求设置"
+  },
+  "title_service_advanced": {
+    "message": "服务高级配置"
+  },
+  "title_services_config": {
+    "message": "翻译服务配置"
+  },
+  "title_shortcut_settings": {
+    "message": "快捷键设置"
+  },
+  "title_translation_loading_theme": {
+    "message": "网页翻译加载主题"
+  },
   "title_translation_tone": {
     "message": "翻译风格"
   },
-  "label_translation_tone": {
-    "message": "默认翻译风格"
+  "toast_export_encrypted_remember": {
+    "message": "已生成加密备份，请妥善保管密钥，丢失后无法恢复。"
   },
-  "tone_normal": {
-    "message": "正常"
+  "tone_colloquial": {
+    "message": "口语"
   },
-  "tone_normal_desc": {
-    "message": "自然中立的翻译风格"
+  "tone_colloquial_desc": {
+    "message": "日常口语化表达，地道自然"
   },
-  "tone_technical": {
-    "message": "技术向"
+  "tone_formal": {
+    "message": "正式"
   },
-  "tone_technical_desc": {
-    "message": "术语精确，句式紧凑，专业严谨"
-  },
-  "tone_tech_forward": {
-    "message": "科技前沿"
-  },
-  "tone_tech_forward_desc": {
-    "message": "新潮用语，极客感，充满活力"
+  "tone_formal_desc": {
+    "message": "庄重严谨，适合文档与正式场合"
   },
   "tone_humorous": {
     "message": "幽默"
@@ -287,451 +938,25 @@
   "tone_literary_desc": {
     "message": "辞藻优美，保留修辞与情感色彩"
   },
-  "tone_formal": {
-    "message": "正式"
+  "tone_no_extra_instruction": {
+    "message": "（无额外指令，使用默认自然翻译风格）"
   },
-  "tone_formal_desc": {
-    "message": "庄重严谨，适合文档与正式场合"
+  "tone_normal": {
+    "message": "正常"
   },
-  "tone_colloquial": {
-    "message": "口语"
+  "tone_normal_desc": {
+    "message": "自然中立的翻译风格"
   },
-  "tone_colloquial_desc": {
-    "message": "日常口语化表达，地道自然"
+  "tone_tech_forward": {
+    "message": "科技前沿"
   },
-  "label_keyboard_shortcut": {
-    "message": "快捷键"
+  "tone_tech_forward_desc": {
+    "message": "新潮用语，极客感，充满活力"
   },
-  "shortcut_hint": {
-    "message": "请在 chrome://extensions/shortcuts 中修改"
+  "tone_technical": {
+    "message": "技术向"
   },
-  "shortcut_unbound": {
-    "message": "未设置"
-  },
-  "title_shortcut_settings": {
-    "message": "快捷键设置"
-  },
-  "label_hover_shortcut_key": {
-    "message": "悬浮翻译快捷键"
-  },
-  "label_input_shortcut_key": {
-    "message": "输入框三连按快捷键"
-  },
-  "hint_single_key_shortcut": {
-    "message": "只支持单键；默认 Ctrl"
-  },
-  "hint_input_shortcut_key": {
-    "message": "连按三下翻译，再连按三下还原"
-  },
-  "shortcut_key_control": {
-    "message": "Ctrl"
-  },
-  "shortcut_key_alt": {
-    "message": "Alt"
-  },
-  "shortcut_key_option": {
-    "message": "Option"
-  },
-  "shortcut_key_shift": {
-    "message": "Shift"
-  },
-  "shortcut_key_command": {
-    "message": "Command"
-  },
-  "shortcut_key_win": {
-    "message": "Win"
-  },
-  "shortcut_key_space": {
-    "message": "空格"
-  },
-  "shortcut_key_escape": {
-    "message": "Esc"
-  },
-  "label_input_loading_pulse_color": {
-    "message": "输入框 loading 脉冲颜色"
-  },
-  "title_display_style_settings": {
-    "message": "翻译样式"
-  },
-  "title_input_loading_settings": {
-    "message": "输入框 loading"
-  },
-  "label_input_loading_keyframe_0": {
-    "message": "0% 颜色"
-  },
-  "label_input_loading_keyframe_1": {
-    "message": "50% 颜色"
-  },
-  "label_input_loading_keyframe_2": {
-    "message": "100% 颜色"
-  },
-  "error_invalid_hex_color": {
-    "message": "请输入 #RGB、#RGBA、#RRGGBB 或 #RRGGBBAA 格式"
-  },
-  "label_input_loading_pulse_duration": {
-    "message": "输入框 loading 脉冲时长 (毫秒)"
-  },
-  "hint_input_loading_pulse_duration": {
-    "message": "单个动画循环时长，建议 800-1600"
-  },
-  "label_input_loading_pulse_easing": {
-    "message": "输入框 loading 动画方案"
-  },
-  "hint_input_loading_pulse_easing": {
-    "message": "控制关键帧之间的过渡节奏"
-  },
-  "label_input_loading_preview": {
-    "message": "动画预览"
-  },
-  "input_loading_preview_text": {
-    "message": "输入框翻译中..."
-  },
-  "pulse_easing_linear": {
-    "message": "线性"
-  },
-  "pulse_easing_ease_out": {
-    "message": "先快后慢"
-  },
-  "pulse_easing_spring": {
-    "message": "弹簧"
-  },
-  "title_backup_restore": {
-    "message": "备份与恢复"
-  },
-  "btn_export_settings": {
-    "message": "导出设置"
-  },
-  "btn_import_settings": {
-    "message": "导入设置"
-  },
-  "btn_reset_default": {
-    "message": "还原默认"
-  },
-  "error_load_settings": {
-    "message": "加载设置失败"
-  },
-  "error_save_failed": {
-    "message": "保存失败"
-  },
-  "error_export_failed": {
-    "message": "导出失败"
-  },
-  "error_import_failed": {
-    "message": "导入失败"
-  },
-  "error_required_fields": {
-    "message": "名称和接口地址为必填项"
-  },
-  "error_translation_failed": {
-    "message": "翻译失败"
-  },
-  "error_unknown": {
-    "message": "未知错误"
-  },
-  "new_provider": {
-    "message": "新服务商"
-  },
-  "label_endpoint_url": {
-    "message": "接口地址"
-  },
-  "label_api_key_optional": {
-    "message": "API Key（可选）"
-  },
-  "label_key": {
-    "message": "键"
-  },
-  "label_value": {
-    "message": "值"
-  },
-  "btn_add": {
-    "message": "添加"
-  },
-  "label_provider_prompt": {
-    "message": "翻译提示词"
-  },
-  "placeholder_provider_prompt": {
-    "message": "留空以使用全局提示词..."
-  },
-  "hint_provider_prompt": {
-    "message": "自定义提示词，支持 {{targetLang}} 变量。原文通过 user 消息单独传递，无需在提示词中插入。"
-  },
-  "title_global_prompt": {
-    "message": "通用翻译提示词"
-  },
-  "desc_global_prompt": {
-    "message": "该提示词用于所有服务商，除非被单独覆盖。"
-  },
-  "hint_prompt_vars": {
-    "message": "可用变量："
-  },
-  "title_aggregation": {
-    "message": "聚合翻译设置"
-  },
-  "label_aggregate_enabled": {
-    "message": "启用聚合翻译"
-  },
-  "desc_aggregate_enabled": {
-    "message": "将多个段落合并为一个翻译请求，提高效率。"
-  },
-  "label_max_paragraphs": {
-    "message": "每次最大段落数"
-  },
-  "label_max_text_length": {
-    "message": "每次最大文本长度"
-  },
-  "label_max_concurrent": {
-    "message": "最大并发请求数"
-  },
-  "label_request_timeout": {
-    "message": "请求超时（毫秒）"
-  },
-  "title_display_settings": {
-    "message": "显示设置"
-  },
-  "label_sampling": {
-    "message": "采样参数"
-  },
-  "label_temperature": {
-    "message": "Temperature"
-  },
-  "label_top_p": {
-    "message": "Top P"
-  },
-  "label_max_tokens": {
-    "message": "Max Tokens"
-  },
-  "label_top_p_enable": {
-    "message": "启用"
-  },
-  "label_stream": {
-    "message": "流式响应"
-  },
-  "hint_stream": {
-    "message": "开启后将以 SSE 增量解析翻译结果。注意：长文本可能触发请求超时，可在通用设置中调高请求超时时间。"
-  },
-  "hint_extra_body_override": {
-    "message": "与上方独立字段同名时以独立字段为准。"
-  },
-  "hint_extra_body_examples": {
-    "message": "常用字段：\n• reasoning_effort (OpenAI): \"none\" / \"low\" / \"medium\" / \"high\"，设为 \"none\" 关闭推理\n• enable_thinking (Anthropic Claude): false，关闭扩展思考"
-  },
-  "hint_temperature": {
-    "message": "控制输出的随机性。值越低翻译越精准一致（推荐 0~0.3），值越高回答越有创造性。"
-  },
-  "hint_top_p": {
-    "message": "核采样，控制候选词的多样性。1.0 考虑所有可能，较低值更保守。通常调 Temperature 就够了，无需同时修改此项。"
-  },
-  "hint_max_tokens": {
-    "message": "每次翻译最多生成的 token 数量（1 token ≈ 0.75 个英文词或 1~2 个汉字）。翻译结果被截断时可适当调大。"
-  },
-  "hint_content_type_auto": {
-    "message": "Content-Type 由请求层自动注入，无需手动设置。"
-  },
-  "badge_stream": {
-    "message": "Stream"
-  },
-  "label_export_passphrase": {
-    "message": "加密密钥（可选）"
-  },
-  "hint_export_passphrase": {
-    "message": "留空则导出明文 JSON。设置密钥后将以 AES-GCM 加密导出。密钥丢失后导出文件无法恢复。"
-  },
-  "hint_export_passphrase_warn": {
-    "message": "检测到 API Key，强烈建议设置加密密钥保护敏感信息。注意：密钥丢失后导出文件无法恢复。"
-  },
-  "label_import_passphrase": {
-    "message": "导入密钥"
-  },
-  "btn_import_confirm": {
-    "message": "确认导入"
-  },
-  "btn_import_cancel": {
-    "message": "取消"
-  },
-  "toast_export_encrypted_remember": {
-    "message": "已生成加密备份，请妥善保管密钥，丢失后无法恢复。"
-  },
-  "error_import_decrypt_failed": {
-    "message": "解密失败：密钥错误或文件已损坏。"
-  },
-  "error_import_passphrase_required": {
-    "message": "该备份已加密，请输入密钥后再导入。"
-  },
-  "tab_load_balance": {
-    "message": "负载均衡"
-  },
-  "tab_services": {
-    "message": "翻译服务"
-  },
-  "tab_presets": {
-    "message": "提示词与风格"
-  },
-  "title_load_balance": {
-    "message": "负载均衡"
-  },
-  "desc_load_balance": {
-    "message": "开启后，翻译请求将按权重自动分配到多个服务商，均衡使用配额。在 Popup 面板中可快速切换。"
-  },
-  "warn_no_lb_providers": {
-    "message": "请先勾选至少一个参与负载均衡的服务商。"
-  },
-  "label_weight": {
-    "message": "权重"
-  },
-  "hint_load_balance": {
-    "message": "请求按权重比例分配到各服务商。某个服务商失败时自动切换到下一个。"
-  },
-  "popup_load_balance": {
-    "message": "负载均衡模式"
-  },
-  "popup_load_balance_active": {
-    "message": "负载均衡已开启 — 请求将自动分配到多个服务商"
-  },
-  "hint_model_order": {
-    "message": "模型顺序决定 fallback 优先级，排在前面的模型优先使用。"
-  },
-  "btn_move_up": {
-    "message": "上移"
-  },
-  "btn_move_down": {
-    "message": "下移"
-  },
-  "lb_preferred_model": {
-    "message": "优先模型"
-  },
-  "lb_model_default": {
-    "message": "按配置顺序"
-  },
-  "title_request_settings": {
-    "message": "请求设置"
-  },
-  "desc_request_settings": {
-    "message": "适用于所有翻译请求（包括聚合和非聚合翻译）。"
-  },
-  "label_test_provider": {
-    "message": "连通性测试"
-  },
-  "hint_test_provider": {
-    "message": "使用随机语言的「你好」测试当前接口是否可用，结果将翻译成你的母语。"
-  },
-  "btn_test": {
-    "message": "测试"
-  },
-  "test_success": {
-    "message": "测试成功"
-  },
-  "test_failed": {
-    "message": "测试失败"
-  },
-  "popup_meta_show": {
-    "message": "查看详情"
-  },
-  "popup_meta_hide": {
-    "message": "收起详情"
-  },
-  "label_preset_urls": {
-    "message": "常见服务商地址"
-  },
-  "preset_urls_modal_title": {
-    "message": "常见服务商接口地址快捷查询"
-  },
-  "preset_urls_modal_close": {
-    "message": "关闭"
-  },
-  "preset_urls_category_all": {
-    "message": "全部"
-  },
-  "preset_urls_category_open": {
-    "message": "开源"
-  },
-  "preset_urls_category_closed": {
-    "message": "闭源"
-  },
-  "preset_urls_category_gateway": {
-    "message": "聚合"
-  },
-  "btn_copy_url": {
-    "message": "复制"
-  },
-  "btn_copied_url": {
-    "message": "已复制!"
-  },
-  "btn_doc": {
-    "message": "官方文档"
-  },
-  "tab_statistics": {
-    "message": "统计"
-  },
-  "statistics_title": {
-    "message": "使用统计"
-  },
-  "statistics_subtitle": {
-    "message": "翻译请求性能与用量概览"
-  },
-  "statistics_response_time": {
-    "message": "最近 100 次请求统计"
-  },
-  "statistics_response_time_desc": {
-    "message": "各服务商/模型的平均响应时间与失败次数（基于最近 100 次请求）"
-  },
-  "statistics_avg_response_time": {
-    "message": "平均响应时间"
-  },
-  "statistics_failure_count": {
-    "message": "失败次数"
-  },
-  "statistics_token_usage": {
-    "message": "当月 Token 消耗"
-  },
-  "statistics_token_usage_desc": {
-    "message": "按服务商和模型堆叠的 Token 用量（当月每日累加）"
-  },
-  "statistics_no_data": {
-    "message": "暂无统计数据"
-  },
-  "statistics_no_data_hint": {
-    "message": "使用翻译功能后，统计数据将在此展示"
-  },
-  "loading": {
-    "message": "加载中..."
-  },
-  "label_supports_vision": {
-    "message": "支持图片输入"
-  },
-  "hint_supports_vision": {
-    "message": "勾选后该模型可用于翻译图片中的文字；图片翻译只会使用带此标记的模型。"
-  },
-  "error_image_translate_no_vision_model": {
-    "message": "没有可用的图片翻译模型，请在设置中为模型勾选「支持图片输入」。"
-  },
-  "error_image_translate_recognize_failed": {
-    "message": "图片文字识别失败，请重试。"
-  },
-  "error_image_translate_vision_timeout": {
-    "message": "图片文字识别超时，请重试或改用响应更快的视觉模型。"
-  },
-  "error_image_translate_model_unsupported": {
-    "message": "当前模型不支持图片输入，请在设置中改选支持图片输入的模型。"
-  },
-  "error_image_translate_http_error": {
-    "message": "识图请求失败，请检查服务地址、密钥与模型配置。"
-  },
-  "error_image_invalid_format": {
-    "message": "仅支持 PNG、JPEG、WebP 格式的图片。"
-  },
-  "error_image_too_large": {
-    "message": "图片过大：单张不能超过 20MB，最长边不能超过 16384 像素。"
-  },
-  "error_image_load_failed": {
-    "message": "图片读取失败，文件可能已损坏。"
-  },
-  "error_image_no_text": {
-    "message": "图片中没有检测到可翻译的文字。"
-  },
-  "popup_image_translate": {
-    "message": "图片翻译"
-  },
-  "popup_image_remove": {
-    "message": "移除图片"
+  "tone_technical_desc": {
+    "message": "术语精确，句式紧凑，专业严谨"
   }
 }

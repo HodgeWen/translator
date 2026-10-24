@@ -28,7 +28,7 @@
 ## 数据与存储
 
 - 配置读写走 `src/lib/storage.ts`，结构以 `src/lib/schema.ts` 的 Zod schema 为准；改配置结构必须同步 schema
-- IndexedDB 表结构集中在 `src/lib/cache.ts`；翻译缓存键为 `(textHash, sourceLang, targetLang)`
+- IndexedDB 表结构集中在 `src/lib/cache.ts`；翻译缓存键为 `(textHash, targetLang, promptSalt)`
 
 ## 版本与发布
 

@@ -6,22 +6,22 @@
 
 - **多提供商 LLM 接入**：任意 OpenAI-compatible API（ baseURL + apiKey + modelQueue），翻译时按模型队列顺序尝试、失败自动降级到下一个模型
 - **页面翻译**：内容脚本识别页面段落，可视区域批量聚合翻译（单请求），失败回落逐段翻译；四种译文显示样式（双语/替换等）
-- **popup 快速翻译**：弹出窗口手动输入翻译，含历史记录；输入框可直接粘贴图片或经底部按钮上传，视觉模型整图直译并以纯文本展示译文
+- **popup 快速翻译**：弹出窗口手动输入翻译；输入框可直接粘贴图片或经底部按钮上传，视觉模型整图直译并以纯文本展示译文
 - **设置页**：提供商、模型队列、语言、显示、统计等全量配置，支持导入/导出（AES-GCM 加密）
-- **翻译缓存与统计**：按 `(textHash, sourceLang, targetLang)` 缓存译文；请求日志与 token 用量统计（chart.js 图表展示）
+- **翻译缓存与统计**：按 `(textHash, targetLang, promptSalt)` 缓存译文（`sourceLang` 维度已在 v4 移除）；请求日志与 token 用量统计（chart.js 图表展示）
 
 ## 技术架构
 
 WXT 扩展，`srcDir: 'src'`，WXT 自动扫描 `entrypoints/` 生成 manifest。四个运行边界：
 
-- **background**（Service Worker）：消息路由中枢。内容脚本 / popup / options 通过 `chrome.runtime.sendMessage`（封装在 `lib/messaging.ts`）与它通信；它统一调用 `translate()` / `detectLanguage()`，并负责每日 alarm 清理过期缓存、注册快捷键（Alt+W toggle-translate）
-- **content**（内容脚本）：页面翻译流水线——段落识别（`block-detect`）、行内富文本占位符（`inline-placeholder`，`#N#` / `<sN>` 标记）、Intersection Observer 收集可视段落、批量拼接协议（`batch-protocol`）、DOM 回写（`dom-text-replace` + `style-apply`）、SPA 变化检测、划词/悬停翻译（`ctrl-hover`）、输入框翻译（`input-translate`）、站点特化规则（`site-rules/`）
-- **popup / options**（React UI）：popup 快速翻译与历史；options 全量设置
+- **background**（Service Worker）：消息路由中枢。内容脚本 / popup / options 通过 `chrome.runtime.sendMessage`（封装在 `lib/messaging.ts`）与它通信；它统一调用 `translate()` / `translateImage()`，并负责每日 alarm 清理过期缓存、注册快捷键（Alt+W toggle-translate）
+- **content**（内容脚本）：页面翻译流水线——段落识别（`block-detect`）、行内富文本占位符（`inline-placeholder`，`#N#` / `<sN>` 标记）、Intersection Observer 收集可视段落、批量拼接协议（`batch-protocol`）、DOM 原地回写（`style-apply`：保留原元素、只替换子节点）、SPA 变化检测、Ctrl+悬停翻译（`ctrl-hover`）、输入框翻译（`input-translate`）、站点特化规则（`site-rules/`）
+- **popup / options**（React UI）：popup 快速翻译；options 全量设置
 
 数据存储：
 
-- 配置 → `chrome.storage.sync`（`lib/storage.ts`，Zod schema 校验，导入/导出走 `lib/crypto.ts` AES-GCM）
-- 翻译缓存、请求日志、token 统计 → IndexedDB（Dexie，`lib/cache.ts` / `lib/stats.ts`）
+- 配置 → `chrome.storage.sync`（`lib/storage.ts` 公开 API，分片布局与配额预检在 `lib/storage-shards.ts`、provider 归一化与悬空引用诊断在 `lib/storage-normalize.ts`；Zod schema 校验，导入/导出走 `lib/crypto.ts` AES-GCM）
+- 翻译缓存、请求日志、token 统计 → IndexedDB（Dexie，`lib/cache.ts` / `lib/stats.ts`；库版本 v8，统计表带 `providerId` 与复合索引，支持按 provider 清理与按 timestamp 裁剪）
 
 关键集成：外部 LLM API（chat/completions，支持 SSE 流式，`lib/api/sse-consumer.ts`）；`chrome.i18n` + 运行时切换双轨（manifest 默认 `zh_CN`，`setUILanguage()` 从 `/_locales/{lang}/messages.json` 动态加载）。
 

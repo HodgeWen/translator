@@ -73,22 +73,322 @@ declare module "wxt/browser" {
       options?: GetMessageOptions,
     ): string;
     /**
-     * Extension name
-     *
-     * "星禾翻译"
+     * "关闭对话框"
      */
     getMessage(
-      messageName: "extName",
+      messageName: "a11y_close_dialog",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * Extension description
-     *
-     * "一款基于大模型的现代化浏览器翻译扩展，兼容各种大模型服务商。"
+     * "减少"
      */
     getMessage(
-      messageName: "extDescription",
+      messageName: "a11y_decrease",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "关闭提示"
+     */
+    getMessage(
+      messageName: "a11y_dismiss_toast",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "增加"
+     */
+    getMessage(
+      messageName: "a11y_increase",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "已关闭，点击开启"
+     */
+    getMessage(
+      messageName: "a11y_toggle_off",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "已开启，点击关闭"
+     */
+    getMessage(
+      messageName: "a11y_toggle_on",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "系统内置（只读）"
+     */
+    getMessage(
+      messageName: "badge_builtin_readonly",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "（开启自动降级）"
+     */
+    getMessage(
+      messageName: "badge_fallback_on",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "弹窗多义词"
+     */
+    getMessage(
+      messageName: "badge_popup_polysemy",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "当前使用中"
+     */
+    getMessage(
+      messageName: "badge_service_in_use",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "独立样式"
+     */
+    getMessage(
+      messageName: "badge_service_style",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "独立语气"
+     */
+    getMessage(
+      messageName: "badge_service_tone",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "Stream"
+     */
+    getMessage(
+      messageName: "badge_stream",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "添加"
+     */
+    getMessage(
+      messageName: "btn_add",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "添加模型"
+     */
+    getMessage(
+      messageName: "btn_add_model",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "添加提供商-模型"
+     */
+    getMessage(
+      messageName: "btn_add_pool_member",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "添加服务商"
+     */
+    getMessage(
+      messageName: "btn_add_provider",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "添加风格语气"
+     */
+    getMessage(
+      messageName: "btn_add_tone",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "取消"
+     */
+    getMessage(
+      messageName: "btn_cancel",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "已复制!"
+     */
+    getMessage(
+      messageName: "btn_copied_url",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "复制"
+     */
+    getMessage(
+      messageName: "btn_copy_url",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "立即新建"
+     */
+    getMessage(
+      messageName: "btn_create_now",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "删除"
+     */
+    getMessage(
+      messageName: "btn_delete",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "官方文档"
+     */
+    getMessage(
+      messageName: "btn_doc",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "编辑"
+     */
+    getMessage(
+      messageName: "btn_edit",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "导出设置"
+     */
+    getMessage(
+      messageName: "btn_export_settings",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "隐藏"
+     */
+    getMessage(
+      messageName: "btn_hide",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "取消"
+     */
+    getMessage(
+      messageName: "btn_import_cancel",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "确认导入"
+     */
+    getMessage(
+      messageName: "btn_import_confirm",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "导入设置"
+     */
+    getMessage(
+      messageName: "btn_import_settings",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "下移"
+     */
+    getMessage(
+      messageName: "btn_move_down",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "上移"
+     */
+    getMessage(
+      messageName: "btn_move_up",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "新建翻译服务"
+     */
+    getMessage(
+      messageName: "btn_new_service",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "还原默认"
+     */
+    getMessage(
+      messageName: "btn_reset_default",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "保存"
+     */
+    getMessage(
+      messageName: "btn_save",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "显示"
+     */
+    getMessage(
+      messageName: "btn_show",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "测试"
+     */
+    getMessage(
+      messageName: "btn_test",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "深色"
+     */
+    getMessage(
+      messageName: "color_scheme_dark",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "浅色"
+     */
+    getMessage(
+      messageName: "color_scheme_light",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "跟随系统"
+     */
+    getMessage(
+      messageName: "color_scheme_system",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
@@ -103,10 +403,798 @@ declare module "wxt/browser" {
       options?: GetMessageOptions,
     ): string;
     /**
-     * "服务商"
+     * "将多个段落合并为一个翻译请求，提高效率。"
      */
     getMessage(
-      messageName: "popup_provider",
+      messageName: "desc_aggregate_enabled",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "控制设置页与弹窗的明暗外观，不影响网页翻译结果。"
+     */
+    getMessage(
+      messageName: "desc_color_scheme",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "定义属于你个人的翻译语气风格，与系统内置语气一同可选。"
+     */
+    getMessage(
+      messageName: "desc_custom_tones",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "仅对弹窗短文本生效。输入为单词或短语时，额外给出词性、多义项对比与音标释义；网页翻译不会启用，避免污染页面结构。"
+     */
+    getMessage(
+      messageName: "desc_enable_polysemy",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "忽略服务内单独指定的样式，强制所有服务统一使用选中样式。"
+     */
+    getMessage(
+      messageName: "desc_global_override_style",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "覆盖服务内指定的语气，统一使用选中的风格语气。"
+     */
+    getMessage(
+      messageName: "desc_global_override_tone",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "该提示词用于所有服务商，除非被单独覆盖。"
+     */
+    getMessage(
+      messageName: "desc_global_prompt",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "开启后，翻译请求将按权重自动分配到多个服务商，均衡使用配额。在 Popup 面板中可快速切换。"
+     */
+    getMessage(
+      messageName: "desc_load_balance",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "首选模型响应失败时，尝试该服务商的其余模型作为备份。"
+     */
+    getMessage(
+      messageName: "desc_model_fallback",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "留空则仅使用全局翻译提示词；填写后将追加到全局提示词之后，作为该服务的额外翻译指令。"
+     */
+    getMessage(
+      messageName: "desc_prompt_mode_append",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "留空则使用全局翻译提示词；填写后将完全替换全局提示词，仅使用此处内容作为该服务的系统提示词。"
+     */
+    getMessage(
+      messageName: "desc_prompt_mode_override",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "适用于所有翻译请求（包括聚合和非聚合翻译）。"
+     */
+    getMessage(
+      messageName: "desc_request_settings",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "配置 Single（单服务商）或 Pool（翻译池）组合，作为主要的翻译通道。"
+     */
+    getMessage(
+      messageName: "desc_services_config",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "由各服务「高级配置」中单独指定的展示样式决定。"
+     */
+    getMessage(
+      messageName: "desc_use_service_default_style",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "由当前所选翻译服务的「高级配置」指定语气。"
+     */
+    getMessage(
+      messageName: "desc_use_service_default_tone",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "请点击右上角新建一个翻译服务。"
+     */
+    getMessage(
+      messageName: "empty_no_service_desc",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "未配置任何翻译服务"
+     */
+    getMessage(
+      messageName: "empty_no_service_title",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "目前没有任何自定义语气风格。"
+     */
+    getMessage(
+      messageName: "empty_no_tones",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "所有翻译模型均失败，请检查服务地址、密钥与网络。"
+     */
+    getMessage(
+      messageName: "error_all_models_failed",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "模型返回了空译文，请重试或更换模型。"
+     */
+    getMessage(
+      messageName: "error_empty_response",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "导出失败"
+     */
+    getMessage(
+      messageName: "error_export_failed",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "仅支持 PNG、JPEG、WebP 格式的图片。"
+     */
+    getMessage(
+      messageName: "error_image_invalid_format",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "图片读取失败，文件可能已损坏。"
+     */
+    getMessage(
+      messageName: "error_image_load_failed",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "图片中没有检测到可翻译的文字。"
+     */
+    getMessage(
+      messageName: "error_image_no_text",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "图片过大：单张不能超过 20MB，最长边不能超过 16384 像素。"
+     */
+    getMessage(
+      messageName: "error_image_too_large",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "识图请求失败，请检查服务地址、密钥与模型配置。"
+     */
+    getMessage(
+      messageName: "error_image_translate_http_error",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "当前模型不支持图片输入，请在设置中改选支持图片输入的模型。"
+     */
+    getMessage(
+      messageName: "error_image_translate_model_unsupported",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "没有可用的图片翻译模型，请在设置中为模型勾选「支持图片输入」。"
+     */
+    getMessage(
+      messageName: "error_image_translate_no_vision_model",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "图片文字识别失败，请重试。"
+     */
+    getMessage(
+      messageName: "error_image_translate_recognize_failed",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "图片文字识别超时，请重试或改用响应更快的视觉模型。"
+     */
+    getMessage(
+      messageName: "error_image_translate_vision_timeout",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "解密失败：密钥错误或文件已损坏。"
+     */
+    getMessage(
+      messageName: "error_import_decrypt_failed",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "导入失败"
+     */
+    getMessage(
+      messageName: "error_import_failed",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "该备份已加密，请输入密钥后再导入。"
+     */
+    getMessage(
+      messageName: "error_import_passphrase_required",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "接口地址必须是完整 URL（需以 http:// 或 https:// 开头）"
+     */
+    getMessage(
+      messageName: "error_invalid_base_url",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "请输入 #RGB、#RGBA、#RRGGBB 或 #RRGGBBAA 格式"
+     */
+    getMessage(
+      messageName: "error_invalid_hex_color",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "备份文件版本高于当前扩展支持的版本，请先升级扩展。"
+     */
+    getMessage(
+      messageName: "error_invalid_import_version",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "加载设置失败"
+     */
+    getMessage(
+      messageName: "error_load_settings",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "没有可用的翻译服务，请先在设置中配置。"
+     */
+    getMessage(
+      messageName: "error_no_active_service",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "没有可用的翻译模型，请先在设置中配置服务商。"
+     */
+    getMessage(
+      messageName: "error_no_models",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "请求已取消。"
+     */
+    getMessage(
+      messageName: "error_request_aborted",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "名称和接口地址为必填项"
+     */
+    getMessage(
+      messageName: "error_required_fields",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "保存失败"
+     */
+    getMessage(
+      messageName: "error_save_failed",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "设置超出浏览器同步存储配额，请减少服务商数量或改用更短的提示词后重试。"
+     */
+    getMessage(
+      messageName: "error_settings_quota_exceeded",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "翻译失败"
+     */
+    getMessage(
+      messageName: "error_translation_failed",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "未知错误"
+     */
+    getMessage(
+      messageName: "error_unknown",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * Extension description
+     *
+     * "一款基于大模型的现代化浏览器翻译扩展，兼容各种大模型服务商。"
+     */
+    getMessage(
+      messageName: "extDescription",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * Extension name
+     *
+     * "星禾翻译"
+     */
+    getMessage(
+      messageName: "extName",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "如果设置了 API Key，将自动发送 Authorization: Bearer 请求头。你也可以在自定义请求头中覆盖它。"
+     */
+    getMessage(
+      messageName: "hint_api_key",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "Content-Type 由请求层自动注入，无需手动设置。"
+     */
+    getMessage(
+      messageName: "hint_content_type_auto",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "留空则导出明文 JSON。设置密钥后将以 AES-GCM 加密导出。密钥丢失后导出文件无法恢复。"
+     */
+    getMessage(
+      messageName: "hint_export_passphrase",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "检测到 API Key，强烈建议设置加密密钥保护敏感信息。注意：密钥丢失后导出文件无法恢复。"
+     */
+    getMessage(
+      messageName: "hint_export_passphrase_warn",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "与上方独立字段同名时以独立字段为准。"
+     */
+    getMessage(
+      messageName: "hint_extra_body_override",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "单个动画循环时长，建议 800-1600"
+     */
+    getMessage(
+      messageName: "hint_input_loading_pulse_duration",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "控制关键帧之间的过渡节奏"
+     */
+    getMessage(
+      messageName: "hint_input_loading_pulse_easing",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "连按三下翻译，再连按三下还原"
+     */
+    getMessage(
+      messageName: "hint_input_shortcut_key",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "输入框翻译通常是将母语翻译为外语，此处设置默认的目标语言。"
+     */
+    getMessage(
+      messageName: "hint_input_translation_target_language",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "每次翻译最多生成的 token 数量（1 token ≈ 0.75 个英文词或 1~2 个汉字）。翻译结果被截断时可适当调大。"
+     */
+    getMessage(
+      messageName: "hint_max_tokens",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "模型顺序决定 fallback 优先级，排在前面的模型优先使用。"
+     */
+    getMessage(
+      messageName: "hint_model_order",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "你的母语。网页翻译和面板翻译默认以该语言为目标语言。"
+     */
+    getMessage(
+      messageName: "hint_native_language",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "可用变量："
+     */
+    getMessage(
+      messageName: "hint_prompt_vars",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "在面板翻译中，当输入文本为母语时，翻译为该语言。"
+     */
+    getMessage(
+      messageName: "hint_second_language",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "只支持单键；默认 Ctrl"
+     */
+    getMessage(
+      messageName: "hint_single_key_shortcut",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "开启后将以 SSE 增量解析翻译结果。注意：长文本可能触发请求超时，可在通用设置中调高请求超时时间。"
+     */
+    getMessage(
+      messageName: "hint_stream",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "勾选后该模型可用于翻译图片中的文字；图片翻译只会使用带此标记的模型。"
+     */
+    getMessage(
+      messageName: "hint_supports_vision",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "控制输出的随机性。值越低翻译越精准一致（推荐 0~0.3），值越高回答越有创造性。"
+     */
+    getMessage(
+      messageName: "hint_temperature",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "使用随机语言的「你好」测试当前接口是否可用，结果将翻译成你的母语。"
+     */
+    getMessage(
+      messageName: "hint_test_provider",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "核采样，控制候选词的多样性。1.0 考虑所有可能，较低值更保守。通常调 Temperature 就够了，无需同时修改此项。"
+     */
+    getMessage(
+      messageName: "hint_top_p",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "控制扩展界面的显示语言"
+     */
+    getMessage(
+      messageName: "hint_ui_language",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "输入框翻译中..."
+     */
+    getMessage(
+      messageName: "input_loading_preview_text",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "启用聚合翻译"
+     */
+    getMessage(
+      messageName: "label_aggregate_enabled",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "API Key"
+     */
+    getMessage(
+      messageName: "label_api_key",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "接口地址"
+     */
+    getMessage(
+      messageName: "label_base_url",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "界面配色"
+     */
+    getMessage(
+      messageName: "label_color_scheme",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "显示名称"
+     */
+    getMessage(
+      messageName: "label_display_name",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "在弹窗翻译面板启用多义词词典式翻译"
+     */
+    getMessage(
+      messageName: "label_enable_polysemy",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "加密密钥（可选）"
+     */
+    getMessage(
+      messageName: "label_export_passphrase",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "额外请求体 (JSON)"
+     */
+    getMessage(
+      messageName: "label_extra_body",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "全局翻译展示样式"
+     */
+    getMessage(
+      messageName: "label_global_display_style",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "全局翻译语气"
+     */
+    getMessage(
+      messageName: "label_global_tone",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "请求头"
+     */
+    getMessage(
+      messageName: "label_headers",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "悬浮翻译快捷键"
+     */
+    getMessage(
+      messageName: "label_hover_shortcut_key",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "导入密钥"
+     */
+    getMessage(
+      messageName: "label_import_passphrase",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "0% 颜色"
+     */
+    getMessage(
+      messageName: "label_input_loading_keyframe_0",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "50% 颜色"
+     */
+    getMessage(
+      messageName: "label_input_loading_keyframe_1",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "100% 颜色"
+     */
+    getMessage(
+      messageName: "label_input_loading_keyframe_2",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "动画预览"
+     */
+    getMessage(
+      messageName: "label_input_loading_preview",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "输入框 loading 脉冲时长 (毫秒)"
+     */
+    getMessage(
+      messageName: "label_input_loading_pulse_duration",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "输入框 loading 动画方案"
+     */
+    getMessage(
+      messageName: "label_input_loading_pulse_easing",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "输入框三连按快捷键"
+     */
+    getMessage(
+      messageName: "label_input_shortcut_key",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "输入框翻译目标语言"
+     */
+    getMessage(
+      messageName: "label_input_translation_target_language",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "键"
+     */
+    getMessage(
+      messageName: "label_key",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "快捷键"
+     */
+    getMessage(
+      messageName: "label_keyboard_shortcut",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "最大并发请求数"
+     */
+    getMessage(
+      messageName: "label_max_concurrent",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "每次最大段落数"
+     */
+    getMessage(
+      messageName: "label_max_paragraphs",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "每次最大文本长度"
+     */
+    getMessage(
+      messageName: "label_max_text_length",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "Max Tokens"
+     */
+    getMessage(
+      messageName: "label_max_tokens",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "内部模型自动降级"
+     */
+    getMessage(
+      messageName: "label_model_fallback",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "模型 ID"
+     */
+    getMessage(
+      messageName: "label_model_id",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "模型："
+     */
+    getMessage(
+      messageName: "label_model_inline",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
@@ -114,159 +1202,319 @@ declare module "wxt/browser" {
      * "模型"
      */
     getMessage(
-      messageName: "popup_model",
+      messageName: "label_models",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "翻译成"
+     * "名称"
      */
     getMessage(
-      messageName: "popup_translate_to",
+      messageName: "label_name",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "输入要翻译的文本..."
+     * "母语"
      */
     getMessage(
-      messageName: "popup_placeholder",
+      messageName: "label_native_language",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "翻译中..."
+     * "翻译池提供商与模型组合"
      */
     getMessage(
-      messageName: "popup_translating",
+      messageName: "label_pool_members",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "翻译"
+     * "组合成员："
      */
     getMessage(
-      messageName: "popup_translate",
+      messageName: "label_pool_members_inline",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "翻译结果"
+     * "常见服务商地址"
      */
     getMessage(
-      messageName: "popup_result",
+      messageName: "label_preset_urls",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "出错"
+     * "追加 Prompt"
      */
     getMessage(
-      messageName: "popup_error",
+      messageName: "label_prompt_append_tag",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "点击查看详情"
+     * "追加到全局 Prompt"
      */
     getMessage(
-      messageName: "popup_error_hint",
+      messageName: "label_prompt_mode_append",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "关闭错误"
+     * "覆盖全局 Prompt"
      */
     getMessage(
-      messageName: "popup_dismiss_error",
+      messageName: "label_prompt_mode_override",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "打开设置"
+     * "覆盖 Prompt"
      */
     getMessage(
-      messageName: "popup_open_settings",
+      messageName: "label_prompt_override_tag",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "自动检测：母语→第二语言，外语→母语"
+     * "服务商："
      */
     getMessage(
-      messageName: "popup_auto_detect_hint",
+      messageName: "label_provider_inline",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "自动"
+     * "查询参数"
      */
     getMessage(
-      messageName: "popup_target_auto",
+      messageName: "label_query_params",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "已手动选择（仅本次会话生效）"
+     * "请求超时（毫秒）"
      */
     getMessage(
-      messageName: "popup_manual_override_hint",
+      messageName: "label_request_timeout",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "已复制到剪贴板"
+     * "采样参数"
      */
     getMessage(
-      messageName: "popup_copied",
+      messageName: "label_sampling",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "翻译此页"
+     * "第二语言"
      */
     getMessage(
-      messageName: "popup_translate_page",
+      messageName: "label_second_language",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "停止翻译"
+     * "服务默认展示样式"
      */
     getMessage(
-      messageName: "popup_stop_translation",
+      messageName: "label_service_default_style",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "当前页面无法使用页面翻译"
+     * "服务默认翻译语气"
      */
     getMessage(
-      messageName: "popup_page_translation_unavailable",
+      messageName: "label_service_default_tone",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "翻译器设置"
+     * "服务名称"
      */
     getMessage(
-      messageName: "options_title",
+      messageName: "label_service_name",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "配置你的翻译服务商及偏好"
+     * "自定义 Prompt"
      */
     getMessage(
-      messageName: "options_subtitle",
+      messageName: "label_service_prompt",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "设置保存成功"
+     * "服务类型"
      */
     getMessage(
-      messageName: "options_saved",
+      messageName: "label_service_type",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "流式响应"
+     */
+    getMessage(
+      messageName: "label_stream",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "支持图片输入"
+     */
+    getMessage(
+      messageName: "label_supports_vision",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "Temperature"
+     */
+    getMessage(
+      messageName: "label_temperature",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "连通性测试"
+     */
+    getMessage(
+      messageName: "label_test_provider",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "注入的 Prompt 指令（例如：Translate in Classical Chinese style…）"
+     */
+    getMessage(
+      messageName: "label_tone_instruction",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "风格名称（例如：学术风、文言文风）"
+     */
+    getMessage(
+      messageName: "label_tone_name",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "Top P"
+     */
+    getMessage(
+      messageName: "label_top_p",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "启用"
+     */
+    getMessage(
+      messageName: "label_top_p_enable",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "翻译模型"
+     */
+    getMessage(
+      messageName: "label_translation_model",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "界面语言"
+     */
+    getMessage(
+      messageName: "label_ui_language",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "底层服务商"
+     */
+    getMessage(
+      messageName: "label_underlying_provider",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "使用默认第一个"
+     */
+    getMessage(
+      messageName: "label_use_first_model",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "使用个人默认"
+     */
+    getMessage(
+      messageName: "label_use_personal_default",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "值"
+     */
+    getMessage(
+      messageName: "label_value",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "权重"
+     */
+    getMessage(
+      messageName: "label_weight",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "加载中..."
+     */
+    getMessage(
+      messageName: "loading",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "新服务商"
+     */
+    getMessage(
+      messageName: "new_provider",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "跟随母语"
+     */
+    getMessage(
+      messageName: "option_follow_native_language",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "自定义全局覆盖"
+     */
+    getMessage(
+      messageName: "option_global_override",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "使用服务默认"
+     */
+    getMessage(
+      messageName: "option_use_service_default",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
@@ -279,26 +1527,666 @@ declare module "wxt/browser" {
       options?: GetMessageOptions,
     ): string;
     /**
-     * "服务商"
+     * "配置你的翻译服务商及偏好"
      */
     getMessage(
-      messageName: "tab_providers",
+      messageName: "options_subtitle",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "模型队列"
+     * "翻译器设置"
      */
     getMessage(
-      messageName: "tab_model_queue",
+      messageName: "options_title",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "语言"
+     * "输入 API Key..."
      */
     getMessage(
-      messageName: "tab_language",
+      messageName: "placeholder_api_key",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "输入该风格翻译需要遵循的具体 Prompt 指导指令…"
+     */
+    getMessage(
+      messageName: "placeholder_tone_instruction",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "自动检测：母语→第二语言，外语→母语"
+     */
+    getMessage(
+      messageName: "popup_auto_detect_hint",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "已复制到剪贴板"
+     */
+    getMessage(
+      messageName: "popup_copied",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "关闭错误"
+     */
+    getMessage(
+      messageName: "popup_dismiss_error",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "重试"
+     */
+    getMessage(
+      messageName: "popup_error_retry",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "移除图片"
+     */
+    getMessage(
+      messageName: "popup_image_remove",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "图片翻译"
+     */
+    getMessage(
+      messageName: "popup_image_translate",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "已手动选择（仅本次会话生效）"
+     */
+    getMessage(
+      messageName: "popup_manual_override_hint",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "收起详情"
+     */
+    getMessage(
+      messageName: "popup_meta_hide",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "查看详情"
+     */
+    getMessage(
+      messageName: "popup_meta_show",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "模型"
+     */
+    getMessage(
+      messageName: "popup_model",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "请先在设置中添加服务商与翻译服务，然后即可在此翻译。"
+     */
+    getMessage(
+      messageName: "popup_no_service_desc",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "尚未配置翻译服务"
+     */
+    getMessage(
+      messageName: "popup_no_service_title",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "打开设置"
+     */
+    getMessage(
+      messageName: "popup_open_settings",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "当前页面无法使用页面翻译"
+     */
+    getMessage(
+      messageName: "popup_page_translation_unavailable",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "输入要翻译的文本..."
+     */
+    getMessage(
+      messageName: "popup_placeholder",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "翻译结果"
+     */
+    getMessage(
+      messageName: "popup_result",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "选择翻译服务"
+     */
+    getMessage(
+      messageName: "popup_select_service",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "服务"
+     */
+    getMessage(
+      messageName: "popup_service_label",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "翻译池"
+     */
+    getMessage(
+      messageName: "popup_service_pool_tag",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "单提供商"
+     */
+    getMessage(
+      messageName: "popup_service_single_tag",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "停止翻译"
+     */
+    getMessage(
+      messageName: "popup_stop_translation",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "自动"
+     */
+    getMessage(
+      messageName: "popup_target_auto",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "翻译"
+     */
+    getMessage(
+      messageName: "popup_translate",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "翻译此页"
+     */
+    getMessage(
+      messageName: "popup_translate_page",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "翻译成"
+     */
+    getMessage(
+      messageName: "popup_translate_to",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "翻译中..."
+     */
+    getMessage(
+      messageName: "popup_translating",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "阿里云"
+     */
+    getMessage(
+      messageName: "preset_qualifier_aliyun",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "百度"
+     */
+    getMessage(
+      messageName: "preset_qualifier_baidu",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "字节跳动"
+     */
+    getMessage(
+      messageName: "preset_qualifier_bytedance",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "兼容"
+     */
+    getMessage(
+      messageName: "preset_qualifier_compatible",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "零一万物"
+     */
+    getMessage(
+      messageName: "preset_qualifier_lingyi",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "本地部署"
+     */
+    getMessage(
+      messageName: "preset_qualifier_local",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "月之暗面"
+     */
+    getMessage(
+      messageName: "preset_qualifier_moonshot",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "官方"
+     */
+    getMessage(
+      messageName: "preset_qualifier_official",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "硅基流动"
+     */
+    getMessage(
+      messageName: "preset_qualifier_siliconflow",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "腾讯"
+     */
+    getMessage(
+      messageName: "preset_qualifier_tencent",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "智谱 AI"
+     */
+    getMessage(
+      messageName: "preset_qualifier_zhipu",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "全部"
+     */
+    getMessage(
+      messageName: "preset_urls_category_all",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "闭源"
+     */
+    getMessage(
+      messageName: "preset_urls_category_closed",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "聚合"
+     */
+    getMessage(
+      messageName: "preset_urls_category_gateway",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "开源"
+     */
+    getMessage(
+      messageName: "preset_urls_category_open",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "关闭"
+     */
+    getMessage(
+      messageName: "preset_urls_modal_close",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "常见服务商接口地址快捷查询"
+     */
+    getMessage(
+      messageName: "preset_urls_modal_title",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "先快后慢"
+     */
+    getMessage(
+      messageName: "pulse_easing_ease_out",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "线性"
+     */
+    getMessage(
+      messageName: "pulse_easing_linear",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "弹簧"
+     */
+    getMessage(
+      messageName: "pulse_easing_spring",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "加权负载翻译池 (Pool)"
+     */
+    getMessage(
+      messageName: "service_type_pool",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "单提供商服务 (Single)"
+     */
+    getMessage(
+      messageName: "service_type_single",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "• 另有 {count} 条类似问题"
+     */
+    getMessage(
+      messageName: "settings_warnings_more",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "部分设置未能读取，已跳过以下条目（其余配置保持原样）："
+     */
+    getMessage(
+      messageName: "settings_warnings_prefix",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "请在 chrome://extensions/shortcuts 中修改"
+     */
+    getMessage(
+      messageName: "shortcut_hint",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "Alt"
+     */
+    getMessage(
+      messageName: "shortcut_key_alt",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "Command"
+     */
+    getMessage(
+      messageName: "shortcut_key_command",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "Ctrl"
+     */
+    getMessage(
+      messageName: "shortcut_key_control",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "Esc"
+     */
+    getMessage(
+      messageName: "shortcut_key_escape",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "Option"
+     */
+    getMessage(
+      messageName: "shortcut_key_option",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "Shift"
+     */
+    getMessage(
+      messageName: "shortcut_key_shift",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "空格"
+     */
+    getMessage(
+      messageName: "shortcut_key_space",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "Win"
+     */
+    getMessage(
+      messageName: "shortcut_key_win",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "未设置"
+     */
+    getMessage(
+      messageName: "shortcut_unbound",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "平均响应时间"
+     */
+    getMessage(
+      messageName: "statistics_avg_response_time",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "失败次数"
+     */
+    getMessage(
+      messageName: "statistics_failure_count",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "暂无统计数据"
+     */
+    getMessage(
+      messageName: "statistics_no_data",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "使用翻译功能后，统计数据将在此展示"
+     */
+    getMessage(
+      messageName: "statistics_no_data_hint",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "最近 100 次请求统计"
+     */
+    getMessage(
+      messageName: "statistics_response_time",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "各服务商/模型的平均响应时间与失败次数（基于最近 100 次请求）"
+     */
+    getMessage(
+      messageName: "statistics_response_time_desc",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "翻译请求性能与用量概览"
+     */
+    getMessage(
+      messageName: "statistics_subtitle",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "使用统计"
+     */
+    getMessage(
+      messageName: "statistics_title",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "当月 Token 消耗"
+     */
+    getMessage(
+      messageName: "statistics_token_usage",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "按服务商和模型堆叠的 Token 用量（当月每日累加）"
+     */
+    getMessage(
+      messageName: "statistics_token_usage_desc",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "双语对照"
+     */
+    getMessage(
+      messageName: "style_bilingual",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "原文与译文同时显示"
+     */
+    getMessage(
+      messageName: "style_bilingual_desc",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "纯净替换"
+     */
+    getMessage(
+      messageName: "style_clean",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "无任何标记的纯净替换"
+     */
+    getMessage(
+      messageName: "style_clean_desc",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "原文替换"
+     */
+    getMessage(
+      messageName: "style_original",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "替换文本但保留元素结构"
+     */
+    getMessage(
+      messageName: "style_original_desc",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "下划线"
+     */
+    getMessage(
+      messageName: "style_underline",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "下划线译文，鼠标悬停显示原文"
+     */
+    getMessage(
+      messageName: "style_underline_desc",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "备份与恢复"
+     */
+    getMessage(
+      messageName: "tab_backup_restore",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
@@ -319,10 +2207,10 @@ declare module "wxt/browser" {
       options?: GetMessageOptions,
     ): string;
     /**
-     * "备份与恢复"
+     * "语言"
      */
     getMessage(
-      messageName: "tab_backup_restore",
+      messageName: "tab_language",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
@@ -335,362 +2223,50 @@ declare module "wxt/browser" {
       options?: GetMessageOptions,
     ): string;
     /**
-     * "添加服务商"
+     * "提示词与风格"
      */
     getMessage(
-      messageName: "btn_add_provider",
+      messageName: "tab_presets",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "添加服务商"
+     * "服务商"
      */
     getMessage(
-      messageName: "title_add_provider",
+      messageName: "tab_providers",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "编辑服务商"
+     * "翻译服务"
      */
     getMessage(
-      messageName: "title_edit_provider",
+      messageName: "tab_services",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "保存"
+     * "统计"
      */
     getMessage(
-      messageName: "btn_save",
+      messageName: "tab_statistics",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "取消"
+     * "测试失败"
      */
     getMessage(
-      messageName: "btn_cancel",
+      messageName: "test_failed",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "名称"
+     * "测试成功"
      */
     getMessage(
-      messageName: "label_name",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "接口地址"
-     */
-    getMessage(
-      messageName: "label_base_url",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "API Key"
-     */
-    getMessage(
-      messageName: "label_api_key",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "输入 API Key..."
-     */
-    getMessage(
-      messageName: "placeholder_api_key",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "如果设置了 API Key，将自动发送 Authorization: Bearer 请求头。你也可以在自定义请求头中覆盖它。"
-     */
-    getMessage(
-      messageName: "hint_api_key",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "显示"
-     */
-    getMessage(
-      messageName: "btn_show",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "隐藏"
-     */
-    getMessage(
-      messageName: "btn_hide",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "请求头"
-     */
-    getMessage(
-      messageName: "label_headers",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "查询参数"
-     */
-    getMessage(
-      messageName: "label_query_params",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "额外请求体 (JSON)"
-     */
-    getMessage(
-      messageName: "label_extra_body",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "模型"
-     */
-    getMessage(
-      messageName: "label_models",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "模型 ID"
-     */
-    getMessage(
-      messageName: "label_model_id",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "显示名称"
-     */
-    getMessage(
-      messageName: "label_display_name",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "添加模型"
-     */
-    getMessage(
-      messageName: "btn_add_model",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "编辑"
-     */
-    getMessage(
-      messageName: "btn_edit",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "删除"
-     */
-    getMessage(
-      messageName: "btn_delete",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "模型按顺序尝试，若一个失败则自动使用下一个作为备用。"
-     */
-    getMessage(
-      messageName: "queue_description",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "超时 (毫秒)"
-     */
-    getMessage(
-      messageName: "label_timeout",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "界面语言"
-     */
-    getMessage(
-      messageName: "label_ui_language",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "控制扩展界面的显示语言"
-     */
-    getMessage(
-      messageName: "hint_ui_language",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "母语"
-     */
-    getMessage(
-      messageName: "label_native_language",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "你的母语。网页翻译和面板翻译默认以该语言为目标语言。"
-     */
-    getMessage(
-      messageName: "hint_native_language",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "第二语言"
-     */
-    getMessage(
-      messageName: "label_second_language",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "在面板翻译中，当输入文本为母语时，翻译为该语言。"
-     */
-    getMessage(
-      messageName: "hint_second_language",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "跟随母语"
-     */
-    getMessage(
-      messageName: "option_follow_native_language",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "输入框翻译目标语言"
-     */
-    getMessage(
-      messageName: "label_input_translation_target_language",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "输入框翻译通常是将母语翻译为外语，此处设置默认的目标语言。"
-     */
-    getMessage(
-      messageName: "hint_input_translation_target_language",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "默认翻译样式"
-     */
-    getMessage(
-      messageName: "label_default_style",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "原文替换"
-     */
-    getMessage(
-      messageName: "style_original",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "双语对照"
-     */
-    getMessage(
-      messageName: "style_bilingual",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "下划线"
-     */
-    getMessage(
-      messageName: "style_underline",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "纯净替换"
-     */
-    getMessage(
-      messageName: "style_clean",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "替换文本但保留元素结构"
-     */
-    getMessage(
-      messageName: "style_original_desc",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "原文与译文同时显示"
-     */
-    getMessage(
-      messageName: "style_bilingual_desc",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "下划线译文，鼠标悬停显示原文"
-     */
-    getMessage(
-      messageName: "style_underline_desc",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "无任何标记的纯净替换"
-     */
-    getMessage(
-      messageName: "style_clean_desc",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "展示方式"
-     */
-    getMessage(
-      messageName: "title_display_mode_settings",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "网页翻译加载主题"
-     */
-    getMessage(
-      messageName: "title_translation_loading_theme",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "薰衣草淡紫"
-     */
-    getMessage(
-      messageName: "theme_indigo",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "柔和的淡紫色调，文字以脉冲方式渐隐渐现，温润克制"
-     */
-    getMessage(
-      messageName: "theme_indigo_desc",
+      messageName: "test_success",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
@@ -711,22 +2287,6 @@ declare module "wxt/browser" {
       options?: GetMessageOptions,
     ): string;
     /**
-     * "素净石墨灰"
-     */
-    getMessage(
-      messageName: "theme_monochrome",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "无彩度纯透明度脉冲，极致沉浸无打扰"
-     */
-    getMessage(
-      messageName: "theme_monochrome_desc",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
      * "烟粉玫瑰"
      */
     getMessage(
@@ -743,6 +2303,198 @@ declare module "wxt/browser" {
       options?: GetMessageOptions,
     ): string;
     /**
+     * "薰衣草淡紫"
+     */
+    getMessage(
+      messageName: "theme_indigo",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "柔和的淡紫色调，文字以脉冲方式渐隐渐现，温润克制"
+     */
+    getMessage(
+      messageName: "theme_indigo_desc",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "素净石墨灰"
+     */
+    getMessage(
+      messageName: "theme_monochrome",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "无彩度纯透明度脉冲，极致沉浸无打扰"
+     */
+    getMessage(
+      messageName: "theme_monochrome_desc",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "添加服务商"
+     */
+    getMessage(
+      messageName: "title_add_provider",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "添加翻译服务"
+     */
+    getMessage(
+      messageName: "title_add_service",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "新建风格语气"
+     */
+    getMessage(
+      messageName: "title_add_tone",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "聚合翻译设置"
+     */
+    getMessage(
+      messageName: "title_aggregation",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "备份与恢复"
+     */
+    getMessage(
+      messageName: "title_backup_restore",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "选择自定义全局展示样式"
+     */
+    getMessage(
+      messageName: "title_choose_global_style",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "选择自定义全局翻译语气"
+     */
+    getMessage(
+      messageName: "title_choose_global_tone",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "自定义语气风格"
+     */
+    getMessage(
+      messageName: "title_custom_tones",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "自定义语气"
+     */
+    getMessage(
+      messageName: "title_custom_tones_section",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "展示方式"
+     */
+    getMessage(
+      messageName: "title_display_mode_settings",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "编辑服务商"
+     */
+    getMessage(
+      messageName: "title_edit_provider",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "编辑翻译服务"
+     */
+    getMessage(
+      messageName: "title_edit_service",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "编辑风格语气"
+     */
+    getMessage(
+      messageName: "title_edit_tone",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "通用翻译提示词"
+     */
+    getMessage(
+      messageName: "title_global_prompt",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "输入框 loading"
+     */
+    getMessage(
+      messageName: "title_input_loading_settings",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "请求设置"
+     */
+    getMessage(
+      messageName: "title_request_settings",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "服务高级配置"
+     */
+    getMessage(
+      messageName: "title_service_advanced",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "翻译服务配置"
+     */
+    getMessage(
+      messageName: "title_services_config",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "快捷键设置"
+     */
+    getMessage(
+      messageName: "title_shortcut_settings",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
+     * "网页翻译加载主题"
+     */
+    getMessage(
+      messageName: "title_translation_loading_theme",
+      substitutions?: string | string[],
+      options?: GetMessageOptions,
+    ): string;
+    /**
      * "翻译风格"
      */
     getMessage(
@@ -751,58 +2503,42 @@ declare module "wxt/browser" {
       options?: GetMessageOptions,
     ): string;
     /**
-     * "默认翻译风格"
+     * "已生成加密备份，请妥善保管密钥，丢失后无法恢复。"
      */
     getMessage(
-      messageName: "label_translation_tone",
+      messageName: "toast_export_encrypted_remember",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "正常"
+     * "口语"
      */
     getMessage(
-      messageName: "tone_normal",
+      messageName: "tone_colloquial",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "自然中立的翻译风格"
+     * "日常口语化表达，地道自然"
      */
     getMessage(
-      messageName: "tone_normal_desc",
+      messageName: "tone_colloquial_desc",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "技术向"
+     * "正式"
      */
     getMessage(
-      messageName: "tone_technical",
+      messageName: "tone_formal",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "术语精确，句式紧凑，专业严谨"
+     * "庄重严谨，适合文档与正式场合"
      */
     getMessage(
-      messageName: "tone_technical_desc",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "科技前沿"
-     */
-    getMessage(
-      messageName: "tone_tech_forward",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "新潮用语，极客感，充满活力"
-     */
-    getMessage(
-      messageName: "tone_tech_forward_desc",
+      messageName: "tone_formal_desc",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
@@ -839,1201 +2575,63 @@ declare module "wxt/browser" {
       options?: GetMessageOptions,
     ): string;
     /**
-     * "正式"
+     * "（无额外指令，使用默认自然翻译风格）"
      */
     getMessage(
-      messageName: "tone_formal",
+      messageName: "tone_no_extra_instruction",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "庄重严谨，适合文档与正式场合"
+     * "正常"
      */
     getMessage(
-      messageName: "tone_formal_desc",
+      messageName: "tone_normal",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "口语"
+     * "自然中立的翻译风格"
      */
     getMessage(
-      messageName: "tone_colloquial",
+      messageName: "tone_normal_desc",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "日常口语化表达，地道自然"
+     * "科技前沿"
      */
     getMessage(
-      messageName: "tone_colloquial_desc",
+      messageName: "tone_tech_forward",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "快捷键"
+     * "新潮用语，极客感，充满活力"
      */
     getMessage(
-      messageName: "label_keyboard_shortcut",
+      messageName: "tone_tech_forward_desc",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "请在 chrome://extensions/shortcuts 中修改"
+     * "技术向"
      */
     getMessage(
-      messageName: "shortcut_hint",
+      messageName: "tone_technical",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
     /**
-     * "未设置"
+     * "术语精确，句式紧凑，专业严谨"
      */
     getMessage(
-      messageName: "shortcut_unbound",
+      messageName: "tone_technical_desc",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;
-    /**
-     * "快捷键设置"
-     */
-    getMessage(
-      messageName: "title_shortcut_settings",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "悬浮翻译快捷键"
-     */
-    getMessage(
-      messageName: "label_hover_shortcut_key",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "输入框三连按快捷键"
-     */
-    getMessage(
-      messageName: "label_input_shortcut_key",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "只支持单键；默认 Ctrl"
-     */
-    getMessage(
-      messageName: "hint_single_key_shortcut",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "连按三下翻译，再连按三下还原"
-     */
-    getMessage(
-      messageName: "hint_input_shortcut_key",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "Ctrl"
-     */
-    getMessage(
-      messageName: "shortcut_key_control",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "Alt"
-     */
-    getMessage(
-      messageName: "shortcut_key_alt",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "Option"
-     */
-    getMessage(
-      messageName: "shortcut_key_option",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "Shift"
-     */
-    getMessage(
-      messageName: "shortcut_key_shift",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "Command"
-     */
-    getMessage(
-      messageName: "shortcut_key_command",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "Win"
-     */
-    getMessage(
-      messageName: "shortcut_key_win",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "空格"
-     */
-    getMessage(
-      messageName: "shortcut_key_space",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "Esc"
-     */
-    getMessage(
-      messageName: "shortcut_key_escape",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "输入框 loading 脉冲颜色"
-     */
-    getMessage(
-      messageName: "label_input_loading_pulse_color",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "翻译样式"
-     */
-    getMessage(
-      messageName: "title_display_style_settings",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "输入框 loading"
-     */
-    getMessage(
-      messageName: "title_input_loading_settings",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "0% 颜色"
-     */
-    getMessage(
-      messageName: "label_input_loading_keyframe_0",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "50% 颜色"
-     */
-    getMessage(
-      messageName: "label_input_loading_keyframe_1",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "100% 颜色"
-     */
-    getMessage(
-      messageName: "label_input_loading_keyframe_2",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "请输入 #RGB、#RGBA、#RRGGBB 或 #RRGGBBAA 格式"
-     */
-    getMessage(
-      messageName: "error_invalid_hex_color",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "输入框 loading 脉冲时长 (毫秒)"
-     */
-    getMessage(
-      messageName: "label_input_loading_pulse_duration",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "单个动画循环时长，建议 800-1600"
-     */
-    getMessage(
-      messageName: "hint_input_loading_pulse_duration",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "输入框 loading 动画方案"
-     */
-    getMessage(
-      messageName: "label_input_loading_pulse_easing",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "控制关键帧之间的过渡节奏"
-     */
-    getMessage(
-      messageName: "hint_input_loading_pulse_easing",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "动画预览"
-     */
-    getMessage(
-      messageName: "label_input_loading_preview",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "输入框翻译中..."
-     */
-    getMessage(
-      messageName: "input_loading_preview_text",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "线性"
-     */
-    getMessage(
-      messageName: "pulse_easing_linear",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "先快后慢"
-     */
-    getMessage(
-      messageName: "pulse_easing_ease_out",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "弹簧"
-     */
-    getMessage(
-      messageName: "pulse_easing_spring",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "备份与恢复"
-     */
-    getMessage(
-      messageName: "title_backup_restore",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "导出设置"
-     */
-    getMessage(
-      messageName: "btn_export_settings",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "导入设置"
-     */
-    getMessage(
-      messageName: "btn_import_settings",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "还原默认"
-     */
-    getMessage(
-      messageName: "btn_reset_default",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "加载设置失败"
-     */
-    getMessage(
-      messageName: "error_load_settings",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "保存失败"
-     */
-    getMessage(
-      messageName: "error_save_failed",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "导出失败"
-     */
-    getMessage(
-      messageName: "error_export_failed",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "导入失败"
-     */
-    getMessage(
-      messageName: "error_import_failed",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "名称和接口地址为必填项"
-     */
-    getMessage(
-      messageName: "error_required_fields",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "翻译失败"
-     */
-    getMessage(
-      messageName: "error_translation_failed",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "未知错误"
-     */
-    getMessage(
-      messageName: "error_unknown",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "新服务商"
-     */
-    getMessage(
-      messageName: "new_provider",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "接口地址"
-     */
-    getMessage(
-      messageName: "label_endpoint_url",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "API Key（可选）"
-     */
-    getMessage(
-      messageName: "label_api_key_optional",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "键"
-     */
-    getMessage(
-      messageName: "label_key",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "值"
-     */
-    getMessage(
-      messageName: "label_value",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "添加"
-     */
-    getMessage(
-      messageName: "btn_add",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "翻译提示词"
-     */
-    getMessage(
-      messageName: "label_provider_prompt",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "留空以使用全局提示词..."
-     */
-    getMessage(
-      messageName: "placeholder_provider_prompt",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "自定义提示词，支持 {{targetLang}} 变量。原文通过 user 消息单独传递，无需在提示词中插入。"
-     */
-    getMessage(
-      messageName: "hint_provider_prompt",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "通用翻译提示词"
-     */
-    getMessage(
-      messageName: "title_global_prompt",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "该提示词用于所有服务商，除非被单独覆盖。"
-     */
-    getMessage(
-      messageName: "desc_global_prompt",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "可用变量："
-     */
-    getMessage(
-      messageName: "hint_prompt_vars",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "聚合翻译设置"
-     */
-    getMessage(
-      messageName: "title_aggregation",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "启用聚合翻译"
-     */
-    getMessage(
-      messageName: "label_aggregate_enabled",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "将多个段落合并为一个翻译请求，提高效率。"
-     */
-    getMessage(
-      messageName: "desc_aggregate_enabled",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "每次最大段落数"
-     */
-    getMessage(
-      messageName: "label_max_paragraphs",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "每次最大文本长度"
-     */
-    getMessage(
-      messageName: "label_max_text_length",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "最大并发请求数"
-     */
-    getMessage(
-      messageName: "label_max_concurrent",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "请求超时（毫秒）"
-     */
-    getMessage(
-      messageName: "label_request_timeout",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "显示设置"
-     */
-    getMessage(
-      messageName: "title_display_settings",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "采样参数"
-     */
-    getMessage(
-      messageName: "label_sampling",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "Temperature"
-     */
-    getMessage(
-      messageName: "label_temperature",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "Top P"
-     */
-    getMessage(
-      messageName: "label_top_p",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "Max Tokens"
-     */
-    getMessage(
-      messageName: "label_max_tokens",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "启用"
-     */
-    getMessage(
-      messageName: "label_top_p_enable",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "流式响应"
-     */
-    getMessage(
-      messageName: "label_stream",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "开启后将以 SSE 增量解析翻译结果。注意：长文本可能触发请求超时，可在通用设置中调高请求超时时间。"
-     */
-    getMessage(
-      messageName: "hint_stream",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "与上方独立字段同名时以独立字段为准。"
-     */
-    getMessage(
-      messageName: "hint_extra_body_override",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "常用字段：
-• reasoning_effort (OpenAI): "none" / "low" / "medium" / "high"，设为 "none" 关闭推理
-• enable_thinking (Anthropic Claude): false，关闭扩展思考"
-     */
-    getMessage(
-      messageName: "hint_extra_body_examples",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "控制输出的随机性。值越低翻译越精准一致（推荐 0~0.3），值越高回答越有创造性。"
-     */
-    getMessage(
-      messageName: "hint_temperature",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "核采样，控制候选词的多样性。1.0 考虑所有可能，较低值更保守。通常调 Temperature 就够了，无需同时修改此项。"
-     */
-    getMessage(
-      messageName: "hint_top_p",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "每次翻译最多生成的 token 数量（1 token ≈ 0.75 个英文词或 1~2 个汉字）。翻译结果被截断时可适当调大。"
-     */
-    getMessage(
-      messageName: "hint_max_tokens",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "Content-Type 由请求层自动注入，无需手动设置。"
-     */
-    getMessage(
-      messageName: "hint_content_type_auto",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "Stream"
-     */
-    getMessage(
-      messageName: "badge_stream",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "加密密钥（可选）"
-     */
-    getMessage(
-      messageName: "label_export_passphrase",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "留空则导出明文 JSON。设置密钥后将以 AES-GCM 加密导出。密钥丢失后导出文件无法恢复。"
-     */
-    getMessage(
-      messageName: "hint_export_passphrase",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "检测到 API Key，强烈建议设置加密密钥保护敏感信息。注意：密钥丢失后导出文件无法恢复。"
-     */
-    getMessage(
-      messageName: "hint_export_passphrase_warn",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "导入密钥"
-     */
-    getMessage(
-      messageName: "label_import_passphrase",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "确认导入"
-     */
-    getMessage(
-      messageName: "btn_import_confirm",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "取消"
-     */
-    getMessage(
-      messageName: "btn_import_cancel",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "已生成加密备份，请妥善保管密钥，丢失后无法恢复。"
-     */
-    getMessage(
-      messageName: "toast_export_encrypted_remember",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "解密失败：密钥错误或文件已损坏。"
-     */
-    getMessage(
-      messageName: "error_import_decrypt_failed",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "该备份已加密，请输入密钥后再导入。"
-     */
-    getMessage(
-      messageName: "error_import_passphrase_required",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "负载均衡"
-     */
-    getMessage(
-      messageName: "tab_load_balance",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "翻译服务"
-     */
-    getMessage(
-      messageName: "tab_services",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "提示词与风格"
-     */
-    getMessage(
-      messageName: "tab_presets",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "负载均衡"
-     */
-    getMessage(
-      messageName: "title_load_balance",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "开启后，翻译请求将按权重自动分配到多个服务商，均衡使用配额。在 Popup 面板中可快速切换。"
-     */
-    getMessage(
-      messageName: "desc_load_balance",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "请先勾选至少一个参与负载均衡的服务商。"
-     */
-    getMessage(
-      messageName: "warn_no_lb_providers",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "权重"
-     */
-    getMessage(
-      messageName: "label_weight",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "请求按权重比例分配到各服务商。某个服务商失败时自动切换到下一个。"
-     */
-    getMessage(
-      messageName: "hint_load_balance",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "负载均衡模式"
-     */
-    getMessage(
-      messageName: "popup_load_balance",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "负载均衡已开启 — 请求将自动分配到多个服务商"
-     */
-    getMessage(
-      messageName: "popup_load_balance_active",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "模型顺序决定 fallback 优先级，排在前面的模型优先使用。"
-     */
-    getMessage(
-      messageName: "hint_model_order",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "上移"
-     */
-    getMessage(
-      messageName: "btn_move_up",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "下移"
-     */
-    getMessage(
-      messageName: "btn_move_down",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "优先模型"
-     */
-    getMessage(
-      messageName: "lb_preferred_model",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "按配置顺序"
-     */
-    getMessage(
-      messageName: "lb_model_default",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "请求设置"
-     */
-    getMessage(
-      messageName: "title_request_settings",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "适用于所有翻译请求（包括聚合和非聚合翻译）。"
-     */
-    getMessage(
-      messageName: "desc_request_settings",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "连通性测试"
-     */
-    getMessage(
-      messageName: "label_test_provider",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "使用随机语言的「你好」测试当前接口是否可用，结果将翻译成你的母语。"
-     */
-    getMessage(
-      messageName: "hint_test_provider",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "测试"
-     */
-    getMessage(
-      messageName: "btn_test",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "测试成功"
-     */
-    getMessage(
-      messageName: "test_success",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "测试失败"
-     */
-    getMessage(
-      messageName: "test_failed",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "查看详情"
-     */
-    getMessage(
-      messageName: "popup_meta_show",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "收起详情"
-     */
-    getMessage(
-      messageName: "popup_meta_hide",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "常见服务商地址"
-     */
-    getMessage(
-      messageName: "label_preset_urls",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "常见服务商接口地址快捷查询"
-     */
-    getMessage(
-      messageName: "preset_urls_modal_title",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "关闭"
-     */
-    getMessage(
-      messageName: "preset_urls_modal_close",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "全部"
-     */
-    getMessage(
-      messageName: "preset_urls_category_all",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "开源"
-     */
-    getMessage(
-      messageName: "preset_urls_category_open",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "闭源"
-     */
-    getMessage(
-      messageName: "preset_urls_category_closed",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "聚合"
-     */
-    getMessage(
-      messageName: "preset_urls_category_gateway",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "复制"
-     */
-    getMessage(
-      messageName: "btn_copy_url",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "已复制!"
-     */
-    getMessage(
-      messageName: "btn_copied_url",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "官方文档"
-     */
-    getMessage(
-      messageName: "btn_doc",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "统计"
-     */
-    getMessage(
-      messageName: "tab_statistics",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "使用统计"
-     */
-    getMessage(
-      messageName: "statistics_title",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "翻译请求性能与用量概览"
-     */
-    getMessage(
-      messageName: "statistics_subtitle",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "最近 100 次请求统计"
-     */
-    getMessage(
-      messageName: "statistics_response_time",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "各服务商/模型的平均响应时间与失败次数（基于最近 100 次请求）"
-     */
-    getMessage(
-      messageName: "statistics_response_time_desc",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "平均响应时间"
-     */
-    getMessage(
-      messageName: "statistics_avg_response_time",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "失败次数"
-     */
-    getMessage(
-      messageName: "statistics_failure_count",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "当月 Token 消耗"
-     */
-    getMessage(
-      messageName: "statistics_token_usage",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "按服务商和模型堆叠的 Token 用量（当月每日累加）"
-     */
-    getMessage(
-      messageName: "statistics_token_usage_desc",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "暂无统计数据"
-     */
-    getMessage(
-      messageName: "statistics_no_data",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "使用翻译功能后，统计数据将在此展示"
-     */
-    getMessage(
-      messageName: "statistics_no_data_hint",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "加载中..."
-     */
-    getMessage(
-      messageName: "loading",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "支持图片输入"
-     */
-    getMessage(
-      messageName: "label_supports_vision",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "勾选后该模型可用于翻译图片中的文字；图片翻译只会使用带此标记的模型。"
-     */
-    getMessage(
-      messageName: "hint_supports_vision",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "没有可用的图片翻译模型，请在设置中为模型勾选「支持图片输入」。"
-     */
-    getMessage(
-      messageName: "error_image_translate_no_vision_model",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "图片文字识别失败，请重试。"
-     */
-    getMessage(
-      messageName: "error_image_translate_recognize_failed",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "图片文字识别超时，请重试或改用响应更快的视觉模型。"
-     */
-    getMessage(
-      messageName: "error_image_translate_vision_timeout",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "当前模型不支持图片输入，请在设置中改选支持图片输入的模型。"
-     */
-    getMessage(
-      messageName: "error_image_translate_model_unsupported",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "识图请求失败，请检查服务地址、密钥与模型配置。"
-     */
-    getMessage(
-      messageName: "error_image_translate_http_error",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "仅支持 PNG、JPEG、WebP 格式的图片。"
-     */
-    getMessage(
-      messageName: "error_image_invalid_format",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "图片过大：单张不能超过 20MB，最长边不能超过 16384 像素。"
-     */
-    getMessage(
-      messageName: "error_image_too_large",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "图片读取失败，文件可能已损坏。"
-     */
-    getMessage(
-      messageName: "error_image_load_failed",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "图片中没有检测到可翻译的文字。"
-     */
-    getMessage(
-      messageName: "error_image_no_text",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "图片翻译"
-     */
-    getMessage(
-      messageName: "popup_image_translate",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
-    /**
-     * "移除图片"
-     */
-    getMessage(
-      messageName: "popup_image_remove",
-      substitutions?: string | string[],
-      options?: GetMessageOptions,
-    ): string;
     getMessage(
-      messageName: "@@extension_id" | "@@ui_locale" | "@@bidi_dir" | "@@bidi_reversed_dir" | "@@bidi_start_edge" | "@@bidi_end_edge" | "extName" | "extDescription" | "command_toggle_desc" | "popup_provider" | "popup_model" | "popup_translate_to" | "popup_placeholder" | "popup_translating" | "popup_translate" | "popup_result" | "popup_error" | "popup_error_hint" | "popup_dismiss_error" | "popup_open_settings" | "popup_auto_detect_hint" | "popup_target_auto" | "popup_manual_override_hint" | "popup_copied" | "popup_translate_page" | "popup_stop_translation" | "popup_page_translation_unavailable" | "options_title" | "options_subtitle" | "options_saved" | "options_imported" | "tab_providers" | "tab_model_queue" | "tab_language" | "tab_display" | "tab_general" | "tab_backup_restore" | "tab_manual" | "btn_add_provider" | "title_add_provider" | "title_edit_provider" | "btn_save" | "btn_cancel" | "label_name" | "label_base_url" | "label_api_key" | "placeholder_api_key" | "hint_api_key" | "btn_show" | "btn_hide" | "label_headers" | "label_query_params" | "label_extra_body" | "label_models" | "label_model_id" | "label_display_name" | "btn_add_model" | "btn_edit" | "btn_delete" | "queue_description" | "label_timeout" | "label_ui_language" | "hint_ui_language" | "label_native_language" | "hint_native_language" | "label_second_language" | "hint_second_language" | "option_follow_native_language" | "label_input_translation_target_language" | "hint_input_translation_target_language" | "label_default_style" | "style_original" | "style_bilingual" | "style_underline" | "style_clean" | "style_original_desc" | "style_bilingual_desc" | "style_underline_desc" | "style_clean_desc" | "title_display_mode_settings" | "title_translation_loading_theme" | "theme_indigo" | "theme_indigo_desc" | "theme_aurora" | "theme_aurora_desc" | "theme_monochrome" | "theme_monochrome_desc" | "theme_cosmic" | "theme_cosmic_desc" | "title_translation_tone" | "label_translation_tone" | "tone_normal" | "tone_normal_desc" | "tone_technical" | "tone_technical_desc" | "tone_tech_forward" | "tone_tech_forward_desc" | "tone_humorous" | "tone_humorous_desc" | "tone_literary" | "tone_literary_desc" | "tone_formal" | "tone_formal_desc" | "tone_colloquial" | "tone_colloquial_desc" | "label_keyboard_shortcut" | "shortcut_hint" | "shortcut_unbound" | "title_shortcut_settings" | "label_hover_shortcut_key" | "label_input_shortcut_key" | "hint_single_key_shortcut" | "hint_input_shortcut_key" | "shortcut_key_control" | "shortcut_key_alt" | "shortcut_key_option" | "shortcut_key_shift" | "shortcut_key_command" | "shortcut_key_win" | "shortcut_key_space" | "shortcut_key_escape" | "label_input_loading_pulse_color" | "title_display_style_settings" | "title_input_loading_settings" | "label_input_loading_keyframe_0" | "label_input_loading_keyframe_1" | "label_input_loading_keyframe_2" | "error_invalid_hex_color" | "label_input_loading_pulse_duration" | "hint_input_loading_pulse_duration" | "label_input_loading_pulse_easing" | "hint_input_loading_pulse_easing" | "label_input_loading_preview" | "input_loading_preview_text" | "pulse_easing_linear" | "pulse_easing_ease_out" | "pulse_easing_spring" | "title_backup_restore" | "btn_export_settings" | "btn_import_settings" | "btn_reset_default" | "error_load_settings" | "error_save_failed" | "error_export_failed" | "error_import_failed" | "error_required_fields" | "error_translation_failed" | "error_unknown" | "new_provider" | "label_endpoint_url" | "label_api_key_optional" | "label_key" | "label_value" | "btn_add" | "label_provider_prompt" | "placeholder_provider_prompt" | "hint_provider_prompt" | "title_global_prompt" | "desc_global_prompt" | "hint_prompt_vars" | "title_aggregation" | "label_aggregate_enabled" | "desc_aggregate_enabled" | "label_max_paragraphs" | "label_max_text_length" | "label_max_concurrent" | "label_request_timeout" | "title_display_settings" | "label_sampling" | "label_temperature" | "label_top_p" | "label_max_tokens" | "label_top_p_enable" | "label_stream" | "hint_stream" | "hint_extra_body_override" | "hint_extra_body_examples" | "hint_temperature" | "hint_top_p" | "hint_max_tokens" | "hint_content_type_auto" | "badge_stream" | "label_export_passphrase" | "hint_export_passphrase" | "hint_export_passphrase_warn" | "label_import_passphrase" | "btn_import_confirm" | "btn_import_cancel" | "toast_export_encrypted_remember" | "error_import_decrypt_failed" | "error_import_passphrase_required" | "tab_load_balance" | "tab_services" | "tab_presets" | "title_load_balance" | "desc_load_balance" | "warn_no_lb_providers" | "label_weight" | "hint_load_balance" | "popup_load_balance" | "popup_load_balance_active" | "hint_model_order" | "btn_move_up" | "btn_move_down" | "lb_preferred_model" | "lb_model_default" | "title_request_settings" | "desc_request_settings" | "label_test_provider" | "hint_test_provider" | "btn_test" | "test_success" | "test_failed" | "popup_meta_show" | "popup_meta_hide" | "label_preset_urls" | "preset_urls_modal_title" | "preset_urls_modal_close" | "preset_urls_category_all" | "preset_urls_category_open" | "preset_urls_category_closed" | "preset_urls_category_gateway" | "btn_copy_url" | "btn_copied_url" | "btn_doc" | "tab_statistics" | "statistics_title" | "statistics_subtitle" | "statistics_response_time" | "statistics_response_time_desc" | "statistics_avg_response_time" | "statistics_failure_count" | "statistics_token_usage" | "statistics_token_usage_desc" | "statistics_no_data" | "statistics_no_data_hint" | "loading" | "label_supports_vision" | "hint_supports_vision" | "error_image_translate_no_vision_model" | "error_image_translate_recognize_failed" | "error_image_translate_vision_timeout" | "error_image_translate_model_unsupported" | "error_image_translate_http_error" | "error_image_invalid_format" | "error_image_too_large" | "error_image_load_failed" | "error_image_no_text" | "popup_image_translate" | "popup_image_remove",
+      messageName: "@@extension_id" | "@@ui_locale" | "@@bidi_dir" | "@@bidi_reversed_dir" | "@@bidi_start_edge" | "@@bidi_end_edge" | "a11y_close_dialog" | "a11y_decrease" | "a11y_dismiss_toast" | "a11y_increase" | "a11y_toggle_off" | "a11y_toggle_on" | "badge_builtin_readonly" | "badge_fallback_on" | "badge_popup_polysemy" | "badge_service_in_use" | "badge_service_style" | "badge_service_tone" | "badge_stream" | "btn_add" | "btn_add_model" | "btn_add_pool_member" | "btn_add_provider" | "btn_add_tone" | "btn_cancel" | "btn_copied_url" | "btn_copy_url" | "btn_create_now" | "btn_delete" | "btn_doc" | "btn_edit" | "btn_export_settings" | "btn_hide" | "btn_import_cancel" | "btn_import_confirm" | "btn_import_settings" | "btn_move_down" | "btn_move_up" | "btn_new_service" | "btn_reset_default" | "btn_save" | "btn_show" | "btn_test" | "color_scheme_dark" | "color_scheme_light" | "color_scheme_system" | "command_toggle_desc" | "desc_aggregate_enabled" | "desc_color_scheme" | "desc_custom_tones" | "desc_enable_polysemy" | "desc_global_override_style" | "desc_global_override_tone" | "desc_global_prompt" | "desc_load_balance" | "desc_model_fallback" | "desc_prompt_mode_append" | "desc_prompt_mode_override" | "desc_request_settings" | "desc_services_config" | "desc_use_service_default_style" | "desc_use_service_default_tone" | "empty_no_service_desc" | "empty_no_service_title" | "empty_no_tones" | "error_all_models_failed" | "error_empty_response" | "error_export_failed" | "error_image_invalid_format" | "error_image_load_failed" | "error_image_no_text" | "error_image_too_large" | "error_image_translate_http_error" | "error_image_translate_model_unsupported" | "error_image_translate_no_vision_model" | "error_image_translate_recognize_failed" | "error_image_translate_vision_timeout" | "error_import_decrypt_failed" | "error_import_failed" | "error_import_passphrase_required" | "error_invalid_base_url" | "error_invalid_hex_color" | "error_invalid_import_version" | "error_load_settings" | "error_no_active_service" | "error_no_models" | "error_request_aborted" | "error_required_fields" | "error_save_failed" | "error_settings_quota_exceeded" | "error_translation_failed" | "error_unknown" | "extDescription" | "extName" | "hint_api_key" | "hint_content_type_auto" | "hint_export_passphrase" | "hint_export_passphrase_warn" | "hint_extra_body_override" | "hint_input_loading_pulse_duration" | "hint_input_loading_pulse_easing" | "hint_input_shortcut_key" | "hint_input_translation_target_language" | "hint_max_tokens" | "hint_model_order" | "hint_native_language" | "hint_prompt_vars" | "hint_second_language" | "hint_single_key_shortcut" | "hint_stream" | "hint_supports_vision" | "hint_temperature" | "hint_test_provider" | "hint_top_p" | "hint_ui_language" | "input_loading_preview_text" | "label_aggregate_enabled" | "label_api_key" | "label_base_url" | "label_color_scheme" | "label_display_name" | "label_enable_polysemy" | "label_export_passphrase" | "label_extra_body" | "label_global_display_style" | "label_global_tone" | "label_headers" | "label_hover_shortcut_key" | "label_import_passphrase" | "label_input_loading_keyframe_0" | "label_input_loading_keyframe_1" | "label_input_loading_keyframe_2" | "label_input_loading_preview" | "label_input_loading_pulse_duration" | "label_input_loading_pulse_easing" | "label_input_shortcut_key" | "label_input_translation_target_language" | "label_key" | "label_keyboard_shortcut" | "label_max_concurrent" | "label_max_paragraphs" | "label_max_text_length" | "label_max_tokens" | "label_model_fallback" | "label_model_id" | "label_model_inline" | "label_models" | "label_name" | "label_native_language" | "label_pool_members" | "label_pool_members_inline" | "label_preset_urls" | "label_prompt_append_tag" | "label_prompt_mode_append" | "label_prompt_mode_override" | "label_prompt_override_tag" | "label_provider_inline" | "label_query_params" | "label_request_timeout" | "label_sampling" | "label_second_language" | "label_service_default_style" | "label_service_default_tone" | "label_service_name" | "label_service_prompt" | "label_service_type" | "label_stream" | "label_supports_vision" | "label_temperature" | "label_test_provider" | "label_tone_instruction" | "label_tone_name" | "label_top_p" | "label_top_p_enable" | "label_translation_model" | "label_ui_language" | "label_underlying_provider" | "label_use_first_model" | "label_use_personal_default" | "label_value" | "label_weight" | "loading" | "new_provider" | "option_follow_native_language" | "option_global_override" | "option_use_service_default" | "options_imported" | "options_subtitle" | "options_title" | "placeholder_api_key" | "placeholder_tone_instruction" | "popup_auto_detect_hint" | "popup_copied" | "popup_dismiss_error" | "popup_error_retry" | "popup_image_remove" | "popup_image_translate" | "popup_manual_override_hint" | "popup_meta_hide" | "popup_meta_show" | "popup_model" | "popup_no_service_desc" | "popup_no_service_title" | "popup_open_settings" | "popup_page_translation_unavailable" | "popup_placeholder" | "popup_result" | "popup_select_service" | "popup_service_label" | "popup_service_pool_tag" | "popup_service_single_tag" | "popup_stop_translation" | "popup_target_auto" | "popup_translate" | "popup_translate_page" | "popup_translate_to" | "popup_translating" | "preset_qualifier_aliyun" | "preset_qualifier_baidu" | "preset_qualifier_bytedance" | "preset_qualifier_compatible" | "preset_qualifier_lingyi" | "preset_qualifier_local" | "preset_qualifier_moonshot" | "preset_qualifier_official" | "preset_qualifier_siliconflow" | "preset_qualifier_tencent" | "preset_qualifier_zhipu" | "preset_urls_category_all" | "preset_urls_category_closed" | "preset_urls_category_gateway" | "preset_urls_category_open" | "preset_urls_modal_close" | "preset_urls_modal_title" | "pulse_easing_ease_out" | "pulse_easing_linear" | "pulse_easing_spring" | "service_type_pool" | "service_type_single" | "settings_warnings_more" | "settings_warnings_prefix" | "shortcut_hint" | "shortcut_key_alt" | "shortcut_key_command" | "shortcut_key_control" | "shortcut_key_escape" | "shortcut_key_option" | "shortcut_key_shift" | "shortcut_key_space" | "shortcut_key_win" | "shortcut_unbound" | "statistics_avg_response_time" | "statistics_failure_count" | "statistics_no_data" | "statistics_no_data_hint" | "statistics_response_time" | "statistics_response_time_desc" | "statistics_subtitle" | "statistics_title" | "statistics_token_usage" | "statistics_token_usage_desc" | "style_bilingual" | "style_bilingual_desc" | "style_clean" | "style_clean_desc" | "style_original" | "style_original_desc" | "style_underline" | "style_underline_desc" | "tab_backup_restore" | "tab_display" | "tab_general" | "tab_language" | "tab_manual" | "tab_presets" | "tab_providers" | "tab_services" | "tab_statistics" | "test_failed" | "test_success" | "theme_aurora" | "theme_aurora_desc" | "theme_cosmic" | "theme_cosmic_desc" | "theme_indigo" | "theme_indigo_desc" | "theme_monochrome" | "theme_monochrome_desc" | "title_add_provider" | "title_add_service" | "title_add_tone" | "title_aggregation" | "title_backup_restore" | "title_choose_global_style" | "title_choose_global_tone" | "title_custom_tones" | "title_custom_tones_section" | "title_display_mode_settings" | "title_edit_provider" | "title_edit_service" | "title_edit_tone" | "title_global_prompt" | "title_input_loading_settings" | "title_request_settings" | "title_service_advanced" | "title_services_config" | "title_shortcut_settings" | "title_translation_loading_theme" | "title_translation_tone" | "toast_export_encrypted_remember" | "tone_colloquial" | "tone_colloquial_desc" | "tone_formal" | "tone_formal_desc" | "tone_humorous" | "tone_humorous_desc" | "tone_literary" | "tone_literary_desc" | "tone_no_extra_instruction" | "tone_normal" | "tone_normal_desc" | "tone_tech_forward" | "tone_tech_forward_desc" | "tone_technical" | "tone_technical_desc",
       substitutions?: string | string[],
       options?: GetMessageOptions,
     ): string;

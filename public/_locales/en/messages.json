@@ -1,90 +1,798 @@
 {
-  "extName": {
-    "message": "Translator",
-    "description": "Extension name"
+  "a11y_close_dialog": {
+    "message": "Close dialog"
   },
-  "extDescription": {
-    "message": "A modern browser translation extension based on large language models, compatible with various LLM service providers.",
-    "description": "Extension description"
+  "a11y_decrease": {
+    "message": "Decrease"
+  },
+  "a11y_dismiss_toast": {
+    "message": "Dismiss notification"
+  },
+  "a11y_increase": {
+    "message": "Increase"
+  },
+  "a11y_toggle_off": {
+    "message": "Off. Click to turn on"
+  },
+  "a11y_toggle_on": {
+    "message": "On. Click to turn off"
+  },
+  "badge_builtin_readonly": {
+    "message": "Built-in (read-only)"
+  },
+  "badge_fallback_on": {
+    "message": "(auto fallback on)"
+  },
+  "badge_popup_polysemy": {
+    "message": "Popup polysemy"
+  },
+  "badge_service_in_use": {
+    "message": "In use"
+  },
+  "badge_service_style": {
+    "message": "Own style"
+  },
+  "badge_service_tone": {
+    "message": "Own tone"
+  },
+  "badge_stream": {
+    "message": "Stream"
+  },
+  "btn_add": {
+    "message": "Add"
+  },
+  "btn_add_model": {
+    "message": "Add Model"
+  },
+  "btn_add_pool_member": {
+    "message": "Add provider + model"
+  },
+  "btn_add_provider": {
+    "message": "Add Provider"
+  },
+  "btn_add_tone": {
+    "message": "Add tone"
+  },
+  "btn_cancel": {
+    "message": "Cancel"
+  },
+  "btn_copied_url": {
+    "message": "Copied!"
+  },
+  "btn_copy_url": {
+    "message": "Copy"
+  },
+  "btn_create_now": {
+    "message": "Create now"
+  },
+  "btn_delete": {
+    "message": "Delete"
+  },
+  "btn_doc": {
+    "message": "Doc"
+  },
+  "btn_edit": {
+    "message": "Edit"
+  },
+  "btn_export_settings": {
+    "message": "Export Settings"
+  },
+  "btn_hide": {
+    "message": "Hide"
+  },
+  "btn_import_cancel": {
+    "message": "Cancel"
+  },
+  "btn_import_confirm": {
+    "message": "Confirm import"
+  },
+  "btn_import_settings": {
+    "message": "Import Settings"
+  },
+  "btn_move_down": {
+    "message": "Move down"
+  },
+  "btn_move_up": {
+    "message": "Move up"
+  },
+  "btn_new_service": {
+    "message": "New translation service"
+  },
+  "btn_reset_default": {
+    "message": "Restore default"
+  },
+  "btn_save": {
+    "message": "Save"
+  },
+  "btn_show": {
+    "message": "Show"
+  },
+  "btn_test": {
+    "message": "Test"
+  },
+  "color_scheme_dark": {
+    "message": "Dark"
+  },
+  "color_scheme_light": {
+    "message": "Light"
+  },
+  "color_scheme_system": {
+    "message": "Follow system"
   },
   "command_toggle_desc": {
     "message": "Toggle page translation",
     "description": "Command description for toggle translation"
   },
-  "popup_provider": {
-    "message": "Provider"
+  "desc_aggregate_enabled": {
+    "message": "Combine multiple paragraphs into a single translation request to improve efficiency."
   },
-  "popup_model": {
-    "message": "Model"
+  "desc_color_scheme": {
+    "message": "Controls the light/dark appearance of the settings page and popup; it does not affect page translation output."
   },
-  "popup_translate_to": {
-    "message": "Translate to"
+  "desc_custom_tones": {
+    "message": "Define your own translation tones; they appear alongside the built-in ones."
   },
-  "popup_placeholder": {
-    "message": "Enter text to translate..."
+  "desc_enable_polysemy": {
+    "message": "Applies to short text in the popup only. For a single word or phrase it also lists part of speech, senses and phonetics. Page translation never uses it, to avoid polluting the page structure."
   },
-  "popup_translating": {
-    "message": "Translating..."
+  "desc_global_override_style": {
+    "message": "Ignore per-service styles and force the selected style for every service."
   },
-  "popup_translate": {
-    "message": "Translate"
+  "desc_global_override_tone": {
+    "message": "Override per-service tones and use the selected tone everywhere."
   },
-  "popup_result": {
-    "message": "Result"
+  "desc_global_prompt": {
+    "message": "This prompt is used for all providers unless overridden."
   },
-  "popup_error": {
-    "message": "Error"
+  "desc_load_balance": {
+    "message": "When enabled, translation requests are distributed across multiple providers by weight. Toggle quickly from the Popup panel."
   },
-  "popup_error_hint": {
-    "message": "Click to view details"
+  "desc_model_fallback": {
+    "message": "When the preferred model fails, try the remaining models of this provider as backups."
   },
-  "popup_dismiss_error": {
-    "message": "Dismiss error"
+  "desc_prompt_mode_append": {
+    "message": "Leave empty to use only the global prompt. When filled, it is appended after the global prompt as extra instructions for this service."
   },
-  "popup_open_settings": {
-    "message": "Open Settings"
+  "desc_prompt_mode_override": {
+    "message": "Leave empty to use the global prompt. When filled, it fully replaces the global prompt for this service."
   },
-  "popup_auto_detect_hint": {
-    "message": "Auto-detect: native→second language, foreign→native"
+  "desc_request_settings": {
+    "message": "Applies to all translation requests (both aggregate and non-aggregate)."
   },
-  "popup_target_auto": {
-    "message": "Auto"
+  "desc_services_config": {
+    "message": "Configure a Single (one provider) or Pool (weighted) service as the primary translation channel."
   },
-  "popup_manual_override_hint": {
-    "message": "Manual override (this session only)"
+  "desc_use_service_default_style": {
+    "message": "Determined by the style set in each service's advanced settings."
   },
-  "popup_copied": {
-    "message": "Copied to clipboard"
+  "desc_use_service_default_tone": {
+    "message": "Determined by the tone set in the active service's advanced settings."
   },
-  "popup_translate_page": {
-    "message": "Translate Page"
+  "empty_no_service_desc": {
+    "message": "Click “New translation service” in the top right to create one."
   },
-  "popup_stop_translation": {
-    "message": "Stop Translating"
+  "empty_no_service_title": {
+    "message": "No translation service configured"
   },
-  "popup_page_translation_unavailable": {
-    "message": "Page translation is unavailable on this page"
+  "empty_no_tones": {
+    "message": "No custom tones yet."
   },
-  "options_title": {
-    "message": "Translator Settings"
+  "error_all_models_failed": {
+    "message": "All translation models failed. Check the endpoint, API key and network."
   },
-  "options_subtitle": {
-    "message": "Configure your OpenAI-compatible translation providers and preferences"
+  "error_empty_response": {
+    "message": "The model returned an empty translation. Retry or switch models."
   },
-  "options_saved": {
-    "message": "Settings saved successfully"
+  "error_export_failed": {
+    "message": "Export failed"
+  },
+  "error_image_invalid_format": {
+    "message": "Only PNG, JPEG and WebP images are supported."
+  },
+  "error_image_load_failed": {
+    "message": "Couldn't read the image. The file may be corrupted."
+  },
+  "error_image_no_text": {
+    "message": "No translatable text was found in the image."
+  },
+  "error_image_too_large": {
+    "message": "Image is too large: max 20MB and 16384px on the longest side."
+  },
+  "error_image_translate_http_error": {
+    "message": "The recognition request failed. Check the service URL, API key and model configuration."
+  },
+  "error_image_translate_model_unsupported": {
+    "message": "The selected model doesn't support image input. Pick a model marked \"Supports image input\" in settings."
+  },
+  "error_image_translate_no_vision_model": {
+    "message": "No model supports image input. Enable \"Supports image input\" for a model in settings."
+  },
+  "error_image_translate_recognize_failed": {
+    "message": "Couldn't recognize text in the image. Please try again."
+  },
+  "error_image_translate_vision_timeout": {
+    "message": "Recognizing image text timed out. Retry or switch to a faster vision model."
+  },
+  "error_import_decrypt_failed": {
+    "message": "Decryption failed: wrong passphrase or corrupted file."
+  },
+  "error_import_failed": {
+    "message": "Import failed"
+  },
+  "error_import_passphrase_required": {
+    "message": "This backup is encrypted. Please enter the passphrase to import."
+  },
+  "error_invalid_base_url": {
+    "message": "Endpoint URL must be a full URL starting with http:// or https://"
+  },
+  "error_invalid_hex_color": {
+    "message": "Use #RGB, #RGBA, #RRGGBB, or #RRGGBBAA"
+  },
+  "error_invalid_import_version": {
+    "message": "This backup was created by a newer version. Please update the extension first."
+  },
+  "error_load_settings": {
+    "message": "Failed to load settings"
+  },
+  "error_no_active_service": {
+    "message": "No active translation service. Please configure one in settings."
+  },
+  "error_no_models": {
+    "message": "No translation models available. Please configure providers in settings."
+  },
+  "error_request_aborted": {
+    "message": "Request cancelled."
+  },
+  "error_required_fields": {
+    "message": "Name and Base URL are required"
+  },
+  "error_save_failed": {
+    "message": "Save failed"
+  },
+  "error_settings_quota_exceeded": {
+    "message": "Settings exceed the browser sync storage quota. Reduce providers or shorten prompts and retry."
+  },
+  "error_translation_failed": {
+    "message": "Translation failed"
+  },
+  "error_unknown": {
+    "message": "Unknown error"
+  },
+  "extDescription": {
+    "message": "A modern browser translation extension based on large language models, compatible with various LLM service providers.",
+    "description": "Extension description"
+  },
+  "extName": {
+    "message": "Translator",
+    "description": "Extension name"
+  },
+  "hint_api_key": {
+    "message": "If set, Authorization: Bearer header will be sent automatically. You can still override it in custom headers."
+  },
+  "hint_content_type_auto": {
+    "message": "Content-Type is injected automatically by the request layer; no need to set it here."
+  },
+  "hint_export_passphrase": {
+    "message": "Leave empty to export plaintext JSON. With a passphrase, the export is encrypted with AES-GCM. The passphrase cannot be recovered if lost."
+  },
+  "hint_export_passphrase_warn": {
+    "message": "API keys detected — encrypting the export is strongly recommended. Warning: a lost passphrase makes the export unrecoverable."
+  },
+  "hint_extra_body_override": {
+    "message": "Standalone fields above take precedence over keys of the same name in this JSON."
+  },
+  "hint_input_loading_pulse_duration": {
+    "message": "Duration for one animation cycle. 800-1600 is usually comfortable."
+  },
+  "hint_input_loading_pulse_easing": {
+    "message": "Controls the transition rhythm between keyframes."
+  },
+  "hint_input_shortcut_key": {
+    "message": "Press three times to translate, then three times again to restore; default Space."
+  },
+  "hint_input_translation_target_language": {
+    "message": "Input box translation typically translates from your native language to a foreign language. Set the default target language here."
+  },
+  "hint_max_tokens": {
+    "message": "Maximum tokens per response (1 token ≈ 0.75 English words or 1~2 Chinese characters). Increase if translations are being cut off."
+  },
+  "hint_model_order": {
+    "message": "Model order determines fallback priority. Models listed first are tried first."
+  },
+  "hint_native_language": {
+    "message": "Your native language. Web and popup translations target this language by default."
+  },
+  "hint_prompt_vars": {
+    "message": "Available variables:"
+  },
+  "hint_second_language": {
+    "message": "In popup translation, when the input is in your native language, it is translated into this language."
+  },
+  "hint_single_key_shortcut": {
+    "message": "Single key only; default Ctrl"
+  },
+  "hint_stream": {
+    "message": "When enabled, results are parsed incrementally via SSE. Note: long inputs may hit the request timeout — increase it in General settings if needed."
+  },
+  "hint_supports_vision": {
+    "message": "Enable this to use the model for translating text in images. Only models with this flag are used for image translation."
+  },
+  "hint_temperature": {
+    "message": "Controls randomness. Lower values make translations more precise and consistent (recommended 0~0.3); higher values produce more creative output."
+  },
+  "hint_test_provider": {
+    "message": "Test the current provider by sending a random-language greeting. Result will be translated into your native language."
+  },
+  "hint_top_p": {
+    "message": "Nucleus sampling that controls word diversity. 1.0 considers all candidates; lower values are more conservative. Temperature alone is usually sufficient — no need to tweak both."
+  },
+  "hint_ui_language": {
+    "message": "Controls the language of this extension's UI"
+  },
+  "input_loading_preview_text": {
+    "message": "Translating input..."
+  },
+  "label_aggregate_enabled": {
+    "message": "Enable Aggregation"
+  },
+  "label_api_key": {
+    "message": "API Key"
+  },
+  "label_base_url": {
+    "message": "Base URL"
+  },
+  "label_color_scheme": {
+    "message": "Color scheme"
+  },
+  "label_display_name": {
+    "message": "Display Name"
+  },
+  "label_enable_polysemy": {
+    "message": "Enable polysemy dictionary mode in the popup"
+  },
+  "label_export_passphrase": {
+    "message": "Encryption passphrase (optional)"
+  },
+  "label_extra_body": {
+    "message": "Extra Body (JSON)"
+  },
+  "label_global_display_style": {
+    "message": "Global display style"
+  },
+  "label_global_tone": {
+    "message": "Global translation tone"
+  },
+  "label_headers": {
+    "message": "Headers"
+  },
+  "label_hover_shortcut_key": {
+    "message": "Hover translation shortcut"
+  },
+  "label_import_passphrase": {
+    "message": "Import passphrase"
+  },
+  "label_input_loading_keyframe_0": {
+    "message": "0% color"
+  },
+  "label_input_loading_keyframe_1": {
+    "message": "50% color"
+  },
+  "label_input_loading_keyframe_2": {
+    "message": "100% color"
+  },
+  "label_input_loading_preview": {
+    "message": "Animation preview"
+  },
+  "label_input_loading_pulse_duration": {
+    "message": "Input loading pulse duration (ms)"
+  },
+  "label_input_loading_pulse_easing": {
+    "message": "Input loading animation preset"
+  },
+  "label_input_shortcut_key": {
+    "message": "Input triple-press shortcut"
+  },
+  "label_input_translation_target_language": {
+    "message": "Input translation target language"
+  },
+  "label_key": {
+    "message": "Key"
+  },
+  "label_keyboard_shortcut": {
+    "message": "Keyboard Shortcut"
+  },
+  "label_max_concurrent": {
+    "message": "Max Concurrent Requests"
+  },
+  "label_max_paragraphs": {
+    "message": "Max Paragraphs per Request"
+  },
+  "label_max_text_length": {
+    "message": "Max Text Length per Request"
+  },
+  "label_max_tokens": {
+    "message": "Max Tokens"
+  },
+  "label_model_fallback": {
+    "message": "Automatic model fallback"
+  },
+  "label_model_id": {
+    "message": "Model ID"
+  },
+  "label_model_inline": {
+    "message": "Model: "
+  },
+  "label_models": {
+    "message": "Models"
+  },
+  "label_name": {
+    "message": "Name"
+  },
+  "label_native_language": {
+    "message": "Native Language"
+  },
+  "label_pool_members": {
+    "message": "Pool providers and models"
+  },
+  "label_pool_members_inline": {
+    "message": "Pool members: "
+  },
+  "label_preset_urls": {
+    "message": "Preset Providers"
+  },
+  "label_prompt_append_tag": {
+    "message": "Prompt append"
+  },
+  "label_prompt_mode_append": {
+    "message": "Append to global prompt"
+  },
+  "label_prompt_mode_override": {
+    "message": "Override global prompt"
+  },
+  "label_prompt_override_tag": {
+    "message": "Prompt override"
+  },
+  "label_provider_inline": {
+    "message": "Provider: "
+  },
+  "label_query_params": {
+    "message": "Query Parameters"
+  },
+  "label_request_timeout": {
+    "message": "Request Timeout (ms)"
+  },
+  "label_sampling": {
+    "message": "Sampling"
+  },
+  "label_second_language": {
+    "message": "Second Language"
+  },
+  "label_service_default_style": {
+    "message": "Service default display style"
+  },
+  "label_service_default_tone": {
+    "message": "Service default tone"
+  },
+  "label_service_name": {
+    "message": "Service name"
+  },
+  "label_service_prompt": {
+    "message": "Custom prompt"
+  },
+  "label_service_type": {
+    "message": "Service type"
+  },
+  "label_stream": {
+    "message": "Streaming response"
+  },
+  "label_supports_vision": {
+    "message": "Supports image input"
+  },
+  "label_temperature": {
+    "message": "Temperature"
+  },
+  "label_test_provider": {
+    "message": "Connectivity Test"
+  },
+  "label_tone_instruction": {
+    "message": "Prompt instruction (e.g. Translate in Classical Chinese style…)"
+  },
+  "label_tone_name": {
+    "message": "Tone name (e.g. Academic, Classical Chinese)"
+  },
+  "label_top_p": {
+    "message": "Top P"
+  },
+  "label_top_p_enable": {
+    "message": "Enable"
+  },
+  "label_translation_model": {
+    "message": "Translation model"
+  },
+  "label_ui_language": {
+    "message": "Interface Language"
+  },
+  "label_underlying_provider": {
+    "message": "Underlying provider"
+  },
+  "label_use_first_model": {
+    "message": "Use the first model"
+  },
+  "label_use_personal_default": {
+    "message": "Use personal default"
+  },
+  "label_value": {
+    "message": "Value"
+  },
+  "label_weight": {
+    "message": "Weight"
+  },
+  "loading": {
+    "message": "Loading..."
+  },
+  "new_provider": {
+    "message": "New Provider"
+  },
+  "option_follow_native_language": {
+    "message": "Follow native language"
+  },
+  "option_global_override": {
+    "message": "Custom global override"
+  },
+  "option_use_service_default": {
+    "message": "Use service default"
   },
   "options_imported": {
     "message": "Settings imported successfully"
   },
-  "tab_providers": {
-    "message": "Providers"
+  "options_subtitle": {
+    "message": "Configure your OpenAI-compatible translation providers and preferences"
   },
-  "tab_model_queue": {
-    "message": "Model Queue"
+  "options_title": {
+    "message": "Translator Settings"
   },
-  "tab_language": {
-    "message": "Language"
+  "placeholder_api_key": {
+    "message": "Enter API key..."
+  },
+  "placeholder_tone_instruction": {
+    "message": "Enter the prompt instructions this tone should follow…"
+  },
+  "popup_auto_detect_hint": {
+    "message": "Auto-detect: native→second language, foreign→native"
+  },
+  "popup_copied": {
+    "message": "Copied to clipboard"
+  },
+  "popup_dismiss_error": {
+    "message": "Dismiss error"
+  },
+  "popup_error_retry": {
+    "message": "Retry"
+  },
+  "popup_image_remove": {
+    "message": "Remove image"
+  },
+  "popup_image_translate": {
+    "message": "Translate image"
+  },
+  "popup_manual_override_hint": {
+    "message": "Manual override (this session only)"
+  },
+  "popup_meta_hide": {
+    "message": "Hide details"
+  },
+  "popup_meta_show": {
+    "message": "Show details"
+  },
+  "popup_model": {
+    "message": "Model"
+  },
+  "popup_no_service_desc": {
+    "message": "Add a provider and a translation service in settings first, then translate here."
+  },
+  "popup_no_service_title": {
+    "message": "No translation service configured"
+  },
+  "popup_open_settings": {
+    "message": "Open Settings"
+  },
+  "popup_page_translation_unavailable": {
+    "message": "Page translation is unavailable on this page"
+  },
+  "popup_placeholder": {
+    "message": "Enter text to translate..."
+  },
+  "popup_result": {
+    "message": "Result"
+  },
+  "popup_select_service": {
+    "message": "Select a translation service"
+  },
+  "popup_service_label": {
+    "message": "Service"
+  },
+  "popup_service_pool_tag": {
+    "message": "Pool"
+  },
+  "popup_service_single_tag": {
+    "message": "Single"
+  },
+  "popup_stop_translation": {
+    "message": "Stop Translating"
+  },
+  "popup_target_auto": {
+    "message": "Auto"
+  },
+  "popup_translate": {
+    "message": "Translate"
+  },
+  "popup_translate_page": {
+    "message": "Translate Page"
+  },
+  "popup_translate_to": {
+    "message": "Translate to"
+  },
+  "popup_translating": {
+    "message": "Translating..."
+  },
+  "preset_qualifier_aliyun": {
+    "message": "Alibaba Cloud"
+  },
+  "preset_qualifier_baidu": {
+    "message": "Baidu"
+  },
+  "preset_qualifier_bytedance": {
+    "message": "ByteDance"
+  },
+  "preset_qualifier_compatible": {
+    "message": "Compatible"
+  },
+  "preset_qualifier_lingyi": {
+    "message": "01.AI"
+  },
+  "preset_qualifier_local": {
+    "message": "Local"
+  },
+  "preset_qualifier_moonshot": {
+    "message": "Moonshot AI"
+  },
+  "preset_qualifier_official": {
+    "message": "Official"
+  },
+  "preset_qualifier_siliconflow": {
+    "message": "SiliconFlow"
+  },
+  "preset_qualifier_tencent": {
+    "message": "Tencent"
+  },
+  "preset_qualifier_zhipu": {
+    "message": "Zhipu AI"
+  },
+  "preset_urls_category_all": {
+    "message": "All"
+  },
+  "preset_urls_category_closed": {
+    "message": "Closed Source"
+  },
+  "preset_urls_category_gateway": {
+    "message": "Aggregator"
+  },
+  "preset_urls_category_open": {
+    "message": "Open Source"
+  },
+  "preset_urls_modal_close": {
+    "message": "Close"
+  },
+  "preset_urls_modal_title": {
+    "message": "Preset Provider Base URLs"
+  },
+  "pulse_easing_ease_out": {
+    "message": "Fast then slow"
+  },
+  "pulse_easing_linear": {
+    "message": "Linear"
+  },
+  "pulse_easing_spring": {
+    "message": "Spring"
+  },
+  "service_type_pool": {
+    "message": "Weighted pool (Pool)"
+  },
+  "service_type_single": {
+    "message": "Single provider service"
+  },
+  "settings_warnings_more": {
+    "message": "• {count} more similar issue(s)"
+  },
+  "settings_warnings_prefix": {
+    "message": "Some settings could not be read; these entries were skipped (everything else is unchanged):"
+  },
+  "shortcut_hint": {
+    "message": "Change in chrome://extensions/shortcuts"
+  },
+  "shortcut_key_alt": {
+    "message": "Alt"
+  },
+  "shortcut_key_command": {
+    "message": "Command"
+  },
+  "shortcut_key_control": {
+    "message": "Ctrl"
+  },
+  "shortcut_key_escape": {
+    "message": "Esc"
+  },
+  "shortcut_key_option": {
+    "message": "Option"
+  },
+  "shortcut_key_shift": {
+    "message": "Shift"
+  },
+  "shortcut_key_space": {
+    "message": "Space"
+  },
+  "shortcut_key_win": {
+    "message": "Win"
+  },
+  "shortcut_unbound": {
+    "message": "Not bound"
+  },
+  "statistics_avg_response_time": {
+    "message": "Avg Response Time"
+  },
+  "statistics_failure_count": {
+    "message": "Failures"
+  },
+  "statistics_no_data": {
+    "message": "No data yet"
+  },
+  "statistics_no_data_hint": {
+    "message": "Statistics will appear here after using the translation feature"
+  },
+  "statistics_response_time": {
+    "message": "Last 100 Requests"
+  },
+  "statistics_response_time_desc": {
+    "message": "Average response time and failure count per provider/model (based on last 100 requests)"
+  },
+  "statistics_subtitle": {
+    "message": "Translation request performance and usage overview"
+  },
+  "statistics_title": {
+    "message": "Usage Statistics"
+  },
+  "statistics_token_usage": {
+    "message": "Monthly Token Usage"
+  },
+  "statistics_token_usage_desc": {
+    "message": "Token consumption stacked by provider and model (daily accumulation for current month)"
+  },
+  "style_bilingual": {
+    "message": "bilingual"
+  },
+  "style_bilingual_desc": {
+    "message": "Show original and translation together"
+  },
+  "style_clean": {
+    "message": "clean"
+  },
+  "style_clean_desc": {
+    "message": "Clean replacement without any markers"
+  },
+  "style_original": {
+    "message": "original"
+  },
+  "style_original_desc": {
+    "message": "Replace text while preserving element structure"
+  },
+  "style_underline": {
+    "message": "underline"
+  },
+  "style_underline_desc": {
+    "message": "Underlined translation with original tooltip"
+  },
+  "tab_backup_restore": {
+    "message": "Backup & Restore"
   },
   "tab_display": {
     "message": "Display"
@@ -92,146 +800,29 @@
   "tab_general": {
     "message": "General"
   },
-  "tab_backup_restore": {
-    "message": "Backup & Restore"
+  "tab_language": {
+    "message": "Language"
   },
   "tab_manual": {
     "message": "User Manual"
   },
-  "btn_add_provider": {
-    "message": "Add Provider"
+  "tab_presets": {
+    "message": "Prompt & Styles"
   },
-  "title_add_provider": {
-    "message": "Add Provider"
+  "tab_providers": {
+    "message": "Providers"
   },
-  "title_edit_provider": {
-    "message": "Edit Provider"
+  "tab_services": {
+    "message": "Services"
   },
-  "btn_save": {
-    "message": "Save"
+  "tab_statistics": {
+    "message": "Statistics"
   },
-  "btn_cancel": {
-    "message": "Cancel"
+  "test_failed": {
+    "message": "Test failed"
   },
-  "label_name": {
-    "message": "Name"
-  },
-  "label_base_url": {
-    "message": "Base URL"
-  },
-  "label_api_key": {
-    "message": "API Key"
-  },
-  "placeholder_api_key": {
-    "message": "Enter API key..."
-  },
-  "hint_api_key": {
-    "message": "If set, Authorization: Bearer header will be sent automatically. You can still override it in custom headers."
-  },
-  "btn_show": {
-    "message": "Show"
-  },
-  "btn_hide": {
-    "message": "Hide"
-  },
-  "label_headers": {
-    "message": "Headers"
-  },
-  "label_query_params": {
-    "message": "Query Parameters"
-  },
-  "label_extra_body": {
-    "message": "Extra Body (JSON)"
-  },
-  "label_models": {
-    "message": "Models"
-  },
-  "label_model_id": {
-    "message": "Model ID"
-  },
-  "label_display_name": {
-    "message": "Display Name"
-  },
-  "btn_add_model": {
-    "message": "Add Model"
-  },
-  "btn_edit": {
-    "message": "Edit"
-  },
-  "btn_delete": {
-    "message": "Delete"
-  },
-  "queue_description": {
-    "message": "Models are tried in order. If one fails, the next is automatically used as fallback."
-  },
-  "label_timeout": {
-    "message": "Timeout (ms)"
-  },
-  "label_ui_language": {
-    "message": "Interface Language"
-  },
-  "hint_ui_language": {
-    "message": "Controls the language of this extension's UI"
-  },
-  "label_native_language": {
-    "message": "Native Language"
-  },
-  "hint_native_language": {
-    "message": "Your native language. Web and popup translations target this language by default."
-  },
-  "label_second_language": {
-    "message": "Second Language"
-  },
-  "hint_second_language": {
-    "message": "In popup translation, when the input is in your native language, it is translated into this language."
-  },
-  "option_follow_native_language": {
-    "message": "Follow native language"
-  },
-  "label_input_translation_target_language": {
-    "message": "Input translation target language"
-  },
-  "hint_input_translation_target_language": {
-    "message": "Input box translation typically translates from your native language to a foreign language. Set the default target language here."
-  },
-  "label_default_style": {
-    "message": "Default Translation Style"
-  },
-  "style_original": {
-    "message": "original"
-  },
-  "style_bilingual": {
-    "message": "bilingual"
-  },
-  "style_underline": {
-    "message": "underline"
-  },
-  "style_clean": {
-    "message": "clean"
-  },
-  "style_original_desc": {
-    "message": "Replace text while preserving element structure"
-  },
-  "style_bilingual_desc": {
-    "message": "Show original and translation together"
-  },
-  "style_underline_desc": {
-    "message": "Underlined translation with original tooltip"
-  },
-  "style_clean_desc": {
-    "message": "Clean replacement without any markers"
-  },
-  "title_display_mode_settings": {
-    "message": "Display Mode"
-  },
-  "title_translation_loading_theme": {
-    "message": "Translation Loading Theme"
-  },
-  "theme_indigo": {
-    "message": "Lavender Mist"
-  },
-  "theme_indigo_desc": {
-    "message": "Soft lavender tone, text pulses in and out with a gentle cadence — warm and understated"
+  "test_success": {
+    "message": "Test succeeded"
   },
   "theme_aurora": {
     "message": "Sage Teal"
@@ -239,41 +830,101 @@
   "theme_aurora_desc": {
     "message": "Soft sage teal tone, text pulses in and out with a gentle cadence — calm and fresh"
   },
-  "theme_monochrome": {
-    "message": "Quiet Slate"
-  },
-  "theme_monochrome_desc": {
-    "message": "Pure opacity pulse with zero chroma — deeply immersive and distraction-free"
-  },
   "theme_cosmic": {
     "message": "Dusty Rose"
   },
   "theme_cosmic_desc": {
     "message": "Soft dusty rose tone, text pulses in and out with a gentle cadence — warm without being loud"
   },
+  "theme_indigo": {
+    "message": "Lavender Mist"
+  },
+  "theme_indigo_desc": {
+    "message": "Soft lavender tone, text pulses in and out with a gentle cadence — warm and understated"
+  },
+  "theme_monochrome": {
+    "message": "Quiet Slate"
+  },
+  "theme_monochrome_desc": {
+    "message": "Pure opacity pulse with zero chroma — deeply immersive and distraction-free"
+  },
+  "title_add_provider": {
+    "message": "Add Provider"
+  },
+  "title_add_service": {
+    "message": "Add translation service"
+  },
+  "title_add_tone": {
+    "message": "New tone"
+  },
+  "title_aggregation": {
+    "message": "Aggregation Settings"
+  },
+  "title_backup_restore": {
+    "message": "Backup & Restore"
+  },
+  "title_choose_global_style": {
+    "message": "Choose a global display style"
+  },
+  "title_choose_global_tone": {
+    "message": "Choose a global translation tone"
+  },
+  "title_custom_tones": {
+    "message": "Custom translation tones"
+  },
+  "title_custom_tones_section": {
+    "message": "Custom tones"
+  },
+  "title_display_mode_settings": {
+    "message": "Display Mode"
+  },
+  "title_edit_provider": {
+    "message": "Edit Provider"
+  },
+  "title_edit_service": {
+    "message": "Edit translation service"
+  },
+  "title_edit_tone": {
+    "message": "Edit tone"
+  },
+  "title_global_prompt": {
+    "message": "Global Translation Prompt"
+  },
+  "title_input_loading_settings": {
+    "message": "Input loading"
+  },
+  "title_request_settings": {
+    "message": "Request Settings"
+  },
+  "title_service_advanced": {
+    "message": "Advanced service settings"
+  },
+  "title_services_config": {
+    "message": "Translation service configuration"
+  },
+  "title_shortcut_settings": {
+    "message": "Shortcut settings"
+  },
+  "title_translation_loading_theme": {
+    "message": "Translation Loading Theme"
+  },
   "title_translation_tone": {
     "message": "Translation Tone"
   },
-  "label_translation_tone": {
-    "message": "Default Tone"
+  "toast_export_encrypted_remember": {
+    "message": "Encrypted backup generated. Keep the passphrase safe — it cannot be recovered."
   },
-  "tone_normal": {
-    "message": "Normal"
+  "tone_colloquial": {
+    "message": "Colloquial"
   },
-  "tone_normal_desc": {
-    "message": "Natural and neutral translation style"
+  "tone_colloquial_desc": {
+    "message": "Everyday conversational, natural and casual"
   },
-  "tone_technical": {
-    "message": "Technical"
+  "tone_formal": {
+    "message": "Formal"
   },
-  "tone_technical_desc": {
-    "message": "Precise terminology, concise sentences, professional"
-  },
-  "tone_tech_forward": {
-    "message": "Tech-forward"
-  },
-  "tone_tech_forward_desc": {
-    "message": "Cutting-edge vocabulary, geek energy, engaging"
+  "tone_formal_desc": {
+    "message": "Dignified, precise, suitable for formal contexts"
   },
   "tone_humorous": {
     "message": "Humorous"
@@ -287,451 +938,25 @@
   "tone_literary_desc": {
     "message": "Elegant language, rich vocabulary, preserves rhetoric"
   },
-  "tone_formal": {
-    "message": "Formal"
+  "tone_no_extra_instruction": {
+    "message": "(no extra instruction; uses the default natural style)"
   },
-  "tone_formal_desc": {
-    "message": "Dignified, precise, suitable for formal contexts"
+  "tone_normal": {
+    "message": "Normal"
   },
-  "tone_colloquial": {
-    "message": "Colloquial"
+  "tone_normal_desc": {
+    "message": "Natural and neutral translation style"
   },
-  "tone_colloquial_desc": {
-    "message": "Everyday conversational, natural and casual"
+  "tone_tech_forward": {
+    "message": "Tech-forward"
   },
-  "label_keyboard_shortcut": {
-    "message": "Keyboard Shortcut"
+  "tone_tech_forward_desc": {
+    "message": "Cutting-edge vocabulary, geek energy, engaging"
   },
-  "shortcut_hint": {
-    "message": "Change in chrome://extensions/shortcuts"
+  "tone_technical": {
+    "message": "Technical"
   },
-  "shortcut_unbound": {
-    "message": "Not bound"
-  },
-  "title_shortcut_settings": {
-    "message": "Shortcut settings"
-  },
-  "label_hover_shortcut_key": {
-    "message": "Hover translation shortcut"
-  },
-  "label_input_shortcut_key": {
-    "message": "Input triple-press shortcut"
-  },
-  "hint_single_key_shortcut": {
-    "message": "Single key only; default Ctrl"
-  },
-  "hint_input_shortcut_key": {
-    "message": "Press three times to translate, then three times again to restore; default Space."
-  },
-  "shortcut_key_control": {
-    "message": "Ctrl"
-  },
-  "shortcut_key_alt": {
-    "message": "Alt"
-  },
-  "shortcut_key_option": {
-    "message": "Option"
-  },
-  "shortcut_key_shift": {
-    "message": "Shift"
-  },
-  "shortcut_key_command": {
-    "message": "Command"
-  },
-  "shortcut_key_win": {
-    "message": "Win"
-  },
-  "shortcut_key_space": {
-    "message": "Space"
-  },
-  "shortcut_key_escape": {
-    "message": "Esc"
-  },
-  "label_input_loading_pulse_color": {
-    "message": "Input loading pulse color"
-  },
-  "title_display_style_settings": {
-    "message": "Translation style"
-  },
-  "title_input_loading_settings": {
-    "message": "Input loading"
-  },
-  "label_input_loading_keyframe_0": {
-    "message": "0% color"
-  },
-  "label_input_loading_keyframe_1": {
-    "message": "50% color"
-  },
-  "label_input_loading_keyframe_2": {
-    "message": "100% color"
-  },
-  "error_invalid_hex_color": {
-    "message": "Use #RGB, #RGBA, #RRGGBB, or #RRGGBBAA"
-  },
-  "label_input_loading_pulse_duration": {
-    "message": "Input loading pulse duration (ms)"
-  },
-  "hint_input_loading_pulse_duration": {
-    "message": "Duration for one animation cycle. 800-1600 is usually comfortable."
-  },
-  "label_input_loading_pulse_easing": {
-    "message": "Input loading animation preset"
-  },
-  "hint_input_loading_pulse_easing": {
-    "message": "Controls the transition rhythm between keyframes."
-  },
-  "label_input_loading_preview": {
-    "message": "Animation preview"
-  },
-  "input_loading_preview_text": {
-    "message": "Translating input..."
-  },
-  "pulse_easing_linear": {
-    "message": "Linear"
-  },
-  "pulse_easing_ease_out": {
-    "message": "Fast then slow"
-  },
-  "pulse_easing_spring": {
-    "message": "Spring"
-  },
-  "title_backup_restore": {
-    "message": "Backup & Restore"
-  },
-  "btn_export_settings": {
-    "message": "Export Settings"
-  },
-  "btn_import_settings": {
-    "message": "Import Settings"
-  },
-  "btn_reset_default": {
-    "message": "Restore default"
-  },
-  "error_load_settings": {
-    "message": "Failed to load settings"
-  },
-  "error_save_failed": {
-    "message": "Save failed"
-  },
-  "error_export_failed": {
-    "message": "Export failed"
-  },
-  "error_import_failed": {
-    "message": "Import failed"
-  },
-  "error_required_fields": {
-    "message": "Name and Base URL are required"
-  },
-  "error_translation_failed": {
-    "message": "Translation failed"
-  },
-  "error_unknown": {
-    "message": "Unknown error"
-  },
-  "new_provider": {
-    "message": "New Provider"
-  },
-  "label_endpoint_url": {
-    "message": "Endpoint URL"
-  },
-  "label_api_key_optional": {
-    "message": "API Key (optional)"
-  },
-  "label_key": {
-    "message": "Key"
-  },
-  "label_value": {
-    "message": "Value"
-  },
-  "btn_add": {
-    "message": "Add"
-  },
-  "label_provider_prompt": {
-    "message": "Translation Prompt"
-  },
-  "placeholder_provider_prompt": {
-    "message": "Leave empty to use global prompt..."
-  },
-  "hint_provider_prompt": {
-    "message": "Custom prompt for this provider. Supports {{targetLang}} variable. The source text is passed separately as the user message; do not embed it in the prompt."
-  },
-  "title_global_prompt": {
-    "message": "Global Translation Prompt"
-  },
-  "desc_global_prompt": {
-    "message": "This prompt is used for all providers unless overridden."
-  },
-  "hint_prompt_vars": {
-    "message": "Available variables:"
-  },
-  "title_aggregation": {
-    "message": "Aggregation Settings"
-  },
-  "label_aggregate_enabled": {
-    "message": "Enable Aggregation"
-  },
-  "desc_aggregate_enabled": {
-    "message": "Combine multiple paragraphs into a single translation request to improve efficiency."
-  },
-  "label_max_paragraphs": {
-    "message": "Max Paragraphs per Request"
-  },
-  "label_max_text_length": {
-    "message": "Max Text Length per Request"
-  },
-  "label_max_concurrent": {
-    "message": "Max Concurrent Requests"
-  },
-  "label_request_timeout": {
-    "message": "Request Timeout (ms)"
-  },
-  "title_display_settings": {
-    "message": "Display Settings"
-  },
-  "label_sampling": {
-    "message": "Sampling"
-  },
-  "label_temperature": {
-    "message": "Temperature"
-  },
-  "label_top_p": {
-    "message": "Top P"
-  },
-  "label_max_tokens": {
-    "message": "Max Tokens"
-  },
-  "label_top_p_enable": {
-    "message": "Enable"
-  },
-  "label_stream": {
-    "message": "Streaming response"
-  },
-  "hint_stream": {
-    "message": "When enabled, results are parsed incrementally via SSE. Note: long inputs may hit the request timeout — increase it in General settings if needed."
-  },
-  "hint_extra_body_override": {
-    "message": "Standalone fields above take precedence over keys of the same name in this JSON."
-  },
-  "hint_extra_body_examples": {
-    "message": "Common fields:\n• reasoning_effort (OpenAI): \"none\" / \"low\" / \"medium\" / \"high\" — set to \"none\" to disable reasoning\n• enable_thinking (Anthropic Claude): false — disable extended thinking"
-  },
-  "hint_temperature": {
-    "message": "Controls randomness. Lower values make translations more precise and consistent (recommended 0~0.3); higher values produce more creative output."
-  },
-  "hint_top_p": {
-    "message": "Nucleus sampling that controls word diversity. 1.0 considers all candidates; lower values are more conservative. Temperature alone is usually sufficient — no need to tweak both."
-  },
-  "hint_max_tokens": {
-    "message": "Maximum tokens per response (1 token ≈ 0.75 English words or 1~2 Chinese characters). Increase if translations are being cut off."
-  },
-  "hint_content_type_auto": {
-    "message": "Content-Type is injected automatically by the request layer; no need to set it here."
-  },
-  "badge_stream": {
-    "message": "Stream"
-  },
-  "label_export_passphrase": {
-    "message": "Encryption passphrase (optional)"
-  },
-  "hint_export_passphrase": {
-    "message": "Leave empty to export plaintext JSON. With a passphrase, the export is encrypted with AES-GCM. The passphrase cannot be recovered if lost."
-  },
-  "hint_export_passphrase_warn": {
-    "message": "API keys detected — encrypting the export is strongly recommended. Warning: a lost passphrase makes the export unrecoverable."
-  },
-  "label_import_passphrase": {
-    "message": "Import passphrase"
-  },
-  "btn_import_confirm": {
-    "message": "Confirm import"
-  },
-  "btn_import_cancel": {
-    "message": "Cancel"
-  },
-  "toast_export_encrypted_remember": {
-    "message": "Encrypted backup generated. Keep the passphrase safe — it cannot be recovered."
-  },
-  "error_import_decrypt_failed": {
-    "message": "Decryption failed: wrong passphrase or corrupted file."
-  },
-  "error_import_passphrase_required": {
-    "message": "This backup is encrypted. Please enter the passphrase to import."
-  },
-  "tab_load_balance": {
-    "message": "Load Balance"
-  },
-  "tab_services": {
-    "message": "Services"
-  },
-  "tab_presets": {
-    "message": "Prompt & Styles"
-  },
-  "title_load_balance": {
-    "message": "Load Balancing"
-  },
-  "desc_load_balance": {
-    "message": "When enabled, translation requests are distributed across multiple providers by weight. Toggle quickly from the Popup panel."
-  },
-  "warn_no_lb_providers": {
-    "message": "Please select at least one provider for load balancing."
-  },
-  "label_weight": {
-    "message": "Weight"
-  },
-  "hint_load_balance": {
-    "message": "Requests are distributed proportionally by weight. If a provider fails, the next one is used automatically."
-  },
-  "popup_load_balance": {
-    "message": "Load Balance Mode"
-  },
-  "popup_load_balance_active": {
-    "message": "Load balancing active — requests distributed across providers"
-  },
-  "hint_model_order": {
-    "message": "Model order determines fallback priority. Models listed first are tried first."
-  },
-  "btn_move_up": {
-    "message": "Move up"
-  },
-  "btn_move_down": {
-    "message": "Move down"
-  },
-  "lb_preferred_model": {
-    "message": "Preferred model"
-  },
-  "lb_model_default": {
-    "message": "Use config order"
-  },
-  "title_request_settings": {
-    "message": "Request Settings"
-  },
-  "desc_request_settings": {
-    "message": "Applies to all translation requests (both aggregate and non-aggregate)."
-  },
-  "label_test_provider": {
-    "message": "Connectivity Test"
-  },
-  "hint_test_provider": {
-    "message": "Test the current provider by sending a random-language greeting. Result will be translated into your native language."
-  },
-  "btn_test": {
-    "message": "Test"
-  },
-  "test_success": {
-    "message": "Test succeeded"
-  },
-  "test_failed": {
-    "message": "Test failed"
-  },
-  "popup_meta_show": {
-    "message": "Show details"
-  },
-  "popup_meta_hide": {
-    "message": "Hide details"
-  },
-  "label_preset_urls": {
-    "message": "Preset Providers"
-  },
-  "preset_urls_modal_title": {
-    "message": "Preset Provider Base URLs"
-  },
-  "preset_urls_modal_close": {
-    "message": "Close"
-  },
-  "preset_urls_category_all": {
-    "message": "All"
-  },
-  "preset_urls_category_open": {
-    "message": "Open Source"
-  },
-  "preset_urls_category_closed": {
-    "message": "Closed Source"
-  },
-  "preset_urls_category_gateway": {
-    "message": "Aggregator"
-  },
-  "btn_copy_url": {
-    "message": "Copy"
-  },
-  "btn_copied_url": {
-    "message": "Copied!"
-  },
-  "btn_doc": {
-    "message": "Doc"
-  },
-  "tab_statistics": {
-    "message": "Statistics"
-  },
-  "statistics_title": {
-    "message": "Usage Statistics"
-  },
-  "statistics_subtitle": {
-    "message": "Translation request performance and usage overview"
-  },
-  "statistics_response_time": {
-    "message": "Last 100 Requests"
-  },
-  "statistics_response_time_desc": {
-    "message": "Average response time and failure count per provider/model (based on last 100 requests)"
-  },
-  "statistics_avg_response_time": {
-    "message": "Avg Response Time"
-  },
-  "statistics_failure_count": {
-    "message": "Failures"
-  },
-  "statistics_token_usage": {
-    "message": "Monthly Token Usage"
-  },
-  "statistics_token_usage_desc": {
-    "message": "Token consumption stacked by provider and model (daily accumulation for current month)"
-  },
-  "statistics_no_data": {
-    "message": "No data yet"
-  },
-  "statistics_no_data_hint": {
-    "message": "Statistics will appear here after using the translation feature"
-  },
-  "loading": {
-    "message": "Loading..."
-  },
-  "label_supports_vision": {
-    "message": "Supports image input"
-  },
-  "hint_supports_vision": {
-    "message": "Enable this to use the model for translating text in images. Only models with this flag are used for image translation."
-  },
-  "error_image_translate_no_vision_model": {
-    "message": "No model supports image input. Enable \"Supports image input\" for a model in settings."
-  },
-  "error_image_translate_recognize_failed": {
-    "message": "Couldn't recognize text in the image. Please try again."
-  },
-  "error_image_translate_vision_timeout": {
-    "message": "Recognizing image text timed out. Retry or switch to a faster vision model."
-  },
-  "error_image_translate_model_unsupported": {
-    "message": "The selected model doesn't support image input. Pick a model marked \"Supports image input\" in settings."
-  },
-  "error_image_translate_http_error": {
-    "message": "The recognition request failed. Check the service URL, API key and model configuration."
-  },
-  "error_image_invalid_format": {
-    "message": "Only PNG, JPEG and WebP images are supported."
-  },
-  "error_image_too_large": {
-    "message": "Image is too large: max 20MB and 16384px on the longest side."
-  },
-  "error_image_load_failed": {
-    "message": "Couldn't read the image. The file may be corrupted."
-  },
-  "error_image_no_text": {
-    "message": "No translatable text was found in the image."
-  },
-  "popup_image_translate": {
-    "message": "Translate image"
-  },
-  "popup_image_remove": {
-    "message": "Remove image"
+  "tone_technical_desc": {
+    "message": "Precise terminology, concise sentences, professional"
   }
 }

@@ -16,7 +16,7 @@ A browser translation extension powered by LLMs, supporting any OpenAI-compatibl
 - **Inline HTML preservation** — Code, links, emphasis preserved after translation
 - **Batch aggregation** — Multiple paragraphs combined into one request, auto-fallback on failure
 - **Translation cache** — Local cache, 7-day TTL, auto-invalidated on prompt changes, duplicate request merging
-- **Language detection** — Built-in local detection, optional Google or custom API detectors
+- **Language detection** — Purely local detection (franc + CJK charset fallback), no network requests
 - **Custom tones & prompt presets** — User-defined translation styles and reusable prompt templates
 - **Loading animations** — 4 themes + customizable input animation
 - **Encrypted export** — Settings export as JSON with optional password encryption
@@ -31,7 +31,7 @@ src/
 │   ├── background.ts          # Background: message routing, cache management, shortcuts
 │   ├── content/               # Content script: paragraph detection→lang detection→encoding→request→apply
 │   ├── popup/main.tsx         # Popup translation UI
-│   └── options/main.tsx       # Settings page (8 tabs)
+│   └── options/main.tsx       # Settings page (9 tabs)
 ├── lib/                       # Core libraries
 │   ├── api/                   # API calls, service queue, streaming
 │   ├── storage.ts, cache.ts   # Config storage & translation cache
@@ -56,15 +56,16 @@ bun install && bun run build
 | Providers   | API provider management (URL, Key, models)       |
 | Services    | Single (+fallback) or Pool (weighted) config     |
 | Presets     | Custom prompt presets, translation tone styles   |
-| Language    | Native/source/UI language, language detectors    |
+| Language    | Native/second/UI language, input target language |
 | Display     | Display style, tone, loading animations          |
 | General     | Global prompt, timeout, aggregation, shortcuts   |
 | Backup      | Settings export/import (encryption supported)    |
+| Statistics  | Request latency and token usage charts           |
 | Manual      | Full documentation                               |
 
 ## Permissions
 
-`storage` `activeTab` `alarms` `contextMenus` `host_permissions: <all_urls>`
+`storage` `activeTab` `alarms` `host_permissions: <all_urls>`
 
 ## Privacy
 

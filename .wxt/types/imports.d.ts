@@ -18,9 +18,12 @@ declare global {
   const fakeBrowser: typeof import('wxt/testing').fakeBrowser
   const getAppConfig: typeof import('wxt/utils/app-config').getAppConfig
   const injectScript: typeof import('wxt/utils/inject-script').injectScript
+  const resolveDarkScheme: typeof import('/Users/whj/codes/translator/src/hooks/use-dark-mode').resolveDarkScheme
   const storage: typeof import('wxt/utils/storage').storage
   const useAppConfig: typeof import('wxt/utils/app-config').useAppConfig
+  const useCopyFeedback: typeof import('/Users/whj/codes/translator/src/hooks/use-copy-feedback').useCopyFeedback
   const useDarkMode: typeof import('/Users/whj/codes/translator/src/hooks/use-dark-mode').useDarkMode
+  const useDebouncedSave: typeof import('/Users/whj/codes/translator/src/hooks/use-debounced-save').useDebouncedSave
   const useToast: typeof import('/Users/whj/codes/translator/src/hooks/use-toast').useToast
 }
 // for type re-export
