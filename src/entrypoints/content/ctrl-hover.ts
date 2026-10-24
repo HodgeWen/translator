@@ -7,9 +7,10 @@ import {
   isVisible,
   isInlineOnlyGrayContainer
 } from '@/lib/block-detect';
-import { state, wrapperToOriginal, applySettingsToState } from './state';
+import { state, applySettingsToState } from './state';
 import { toggleElementDisplay } from './style-apply';
-import { translateSingleElement } from './translate';
+import { translateSingleElement, retryFailedElement } from './translate';
+import { shouldRetryManually } from './retry';
 import {
   eventMatchesSingleKeyShortcut,
   isShortcutKeyEvent,
@@ -26,6 +27,7 @@ import {
 // 仅靠 `mouseover` 会漏掉姿势 2，因为按键不会重发 mouseover。
 
 const THEME_ATTR = 'data-translator-theme';
+const ERROR_ATTR = 'data-translator-error';
 const HOVER_DEBOUNCE_MS = 200;
 // 高亮命中段落到清除的最小总时长。即使翻译瞬间完成，也保证用户至少看到
 // 0.25s 的视觉反馈，避免按键后高亮一闪而过的体验割裂。
@@ -123,31 +125,38 @@ function findNearestTranslatableBlock(el: HTMLElement | null): HTMLElement | nul
   return null;
 }
 
-// 沿祖先链寻找已翻译的「逻辑段落 el」：
-// - original / clean 模式：原 el 已离开 DOM，鼠标命中的是带 `[data-translator-clone]`
-//   的 wrapper，通过 wrapperToOriginal 反查；
-// - bilingual / underline 模式：原 el 仍在 DOM，且作为 `state.elementMap` 的 key，
-//   直接命中即可（hover 目标可能是注入的 span/br 子节点）。
-function findToggleTarget(target: HTMLElement | null): HTMLElement | null {
+// 沿祖先链寻找「快捷键手势命中的段落 el」。
+// 所有显示模式都是**原地渲染**：原 el 节点本身始终留在 DOM 树里并作为
+// `state.elementMap` 的 key。因此鼠标命中的就是原 el（或其注入的译文子节点，
+// 沿 parentElement 上溯即可命中），无需再经 wrapper 反查表。
+//
+// 命中条件有两个：已进 elementMap（已翻译 / pending / 失败的段落），或仍带红虚线
+// 的残留元素。后者是「条目已被删、属性还没复位」的边界形态（清理路径与站点改写
+// 之间存在时间差），它没有可切换的显示状态，但同样属于失败段落、同样需要重试入口 ——
+// 只认 elementMap 会让这类红虚线永久无解。
+// 导出供单测直接验证「失败段落能被手势命中」这一判定（真机路径无法在 bun 里复现）。
+export function findShortcutTarget(target: HTMLElement | null): HTMLElement | null {
   let cur: HTMLElement | null = target;
   while (cur) {
-    if (cur.dataset?.translatorClone === 'true') {
-      return wrapperToOriginal.get(cur) ?? null;
-    }
-    if (state.elementMap.has(cur)) return cur;
+    if (state.elementMap.has(cur) || cur.hasAttribute(ERROR_ATTR)) return cur;
     cur = cur.parentElement;
   }
   return null;
 }
 
-// 命中已翻译目标时切换原文/译文显示，返回是否已「认定为命中」（无论是否真正切换）。
+// 命中目标时处理这次快捷键手势，返回是否已「认定为命中」（无论是否真正切换/重试）。
 //
-// 返回 true 即认为「这次 mouseover/keydown 命中了已翻译段落」，调用方据此跳过
-// 后续 tryStartHoverFor。只有「跨段落」或「快捷键重新按下」时才真正执行 toggle，
+// 返回 true 即认为「这次 mouseover/keydown 命中了已处理段落」，调用方据此跳过
+// 后续 tryStartHoverFor。只有「跨段落」或「快捷键重新按下」时才真正执行动作，
 // 同段落内的连续 mouseover 静默吞掉、不重复切换。
+//
+// 失败段落必须在这里分流到重试：它是 elementMap 里的正式条目，因此会被
+// findShortcutTarget 命中并 return true；而 toggleElementDisplay 对
+// status !== 'translated' 早退，旧实现的结果就是「命中 → 什么都没发生」——
+// 用户报障的 Ctrl+悬浮对红虚线完全无反应，根因正是这条分流缺失。
 function tryToggleDisplay(target: HTMLElement | null): boolean {
-  const toggleEl = findToggleTarget(target);
-  if (!toggleEl || !state.elementMap.has(toggleEl)) return false;
+  const toggleEl = findShortcutTarget(target);
+  if (!toggleEl) return false;
 
   if (lastShortcutToggledEl === toggleEl) {
     return true;
@@ -155,10 +164,20 @@ function tryToggleDisplay(target: HTMLElement | null): boolean {
 
   if (hoverTarget === toggleEl) cancelHoverDebounce();
   toggleEl.removeAttribute(THEME_ATTR);
-  const cloneEl = state.elementMap.get(toggleEl)?.cloneEl;
-  cloneEl?.removeAttribute(THEME_ATTR);
-  toggleElementDisplay(toggleEl);
   lastShortcutToggledEl = toggleEl;
+
+  // 失败段落（或红虚线残留）→ 手动重试，而不是无意义的显示切换。
+  // 判定走 retry.ts 的 shouldRetryManually：它放行 error / 残留属性，
+  // 但对 pending（请求在飞）与 translated（该走切换）返回 false。
+  // retryFailedElement 内部会清零自动重试预算并摘掉红虚线，用户手势永远可用。
+  if (shouldRetryManually(state.elementMap.get(toggleEl)?.status, toggleEl.hasAttribute(ERROR_ATTR))) {
+    // 第三参 true：悬停翻译不依赖整页翻译激活（state.isActive 恒为 false），
+    // 不跳过该检查的话重试结果会被「用户已停止翻译」逻辑丢弃、译文永不渲染。
+    void retryFailedElement(toggleEl, true);
+    return true;
+  }
+
+  toggleElementDisplay(toggleEl);
   return true;
 }
 
@@ -219,10 +238,8 @@ async function tryStartHoverFor(target: HTMLElement | null): Promise<void> {
       if (wait > 0) {
         await new Promise<void>((resolve) => window.setTimeout(resolve, wait));
       }
-      // 清除主题色：bilingual/underline 直接清；original/clean 清 wrapper
+      // 清除主题色。原地渲染下主题色始终挂在原 el 上，无需再清 wrapper。
       paragraph.removeAttribute(THEME_ATTR);
-      const wrapper = state.elementMap.get(paragraph)?.cloneEl;
-      wrapper?.removeAttribute(THEME_ATTR);
       if (hoverTarget === paragraph) hoverTarget = null;
     }
   }, HOVER_DEBOUNCE_MS);
@@ -253,7 +270,7 @@ export function setupCtrlHover(): void {
   // 用户先悬停后按快捷键的姿势：mouseover 不会再次触发，需要 keydown 兜底。
   // 同时承担「再按快捷键恢复原文」的 toggle 入口：
   //   1. 用 `shortcutPressed` 屏蔽 auto-repeat，确保「松开后再次按下」才视作一次按键；
-  //   2. 命中已翻译段落（wrapper 或原 el）→ 同步恢复原文，不进入翻译路径；
+  //   2. 命中已翻译段落（原 el 本身）→ 同步恢复原文，不进入翻译路径；
   //   3. 否则走原有翻译路径（lastHoverTarget + tryStartHoverFor）。
   document.addEventListener('keydown', (e) => {
     if (!eventMatchesSingleKeyShortcut(e, hoverShortcutKey)) return;

@@ -3,13 +3,21 @@ import type { LangCode, DisplayStyle, GlobalSettings, TranslationLoadingTheme } 
 // ─── Types ──────────────────────────────────────────────────────────────
 
 export interface ElementState {
-  originalHTML: string;
+  // 已废弃：历史上用于「innerHTML 兜底还原」，原地渲染改造后**无人读取**。
+  // 原节点的权威引用是 originalNodes（真实节点数组），innerHTML 只是它的
+  // 字符串副本 —— 保留它等于给每个已翻译段落多存一份完整 HTML，长页面上
+  // 是纯内存放大。字段保留为可选以兼容测试里的字面量构造，生产代码不再写入。
+  originalHTML?: string;
   // 原子节点引用（按原顺序）。以数组而非 DocumentFragment 保存：fragment 被
   // append 后会移空自身，还原时只会拿到空集合（bilingual 停止清空的根因）
   originalNodes?: ChildNode[];
+  // 译文渲染节点引用（按原顺序）。original / clean / underline 三种模式都是
+  // 「原地渲染」：原 el 节点本身始终留在 DOM 树中，只交换其子节点。
+  // 这里保存渲染出来的子节点，Ctrl+悬浮 / Alt+W 切换时直接换回，
+  // 不再需要「wrapper 占位 + 反查原 el」机制（那会让原节点离树、监听器失效）。
+  renderedNodes?: ChildNode[];
   translatedText: string;
   status: 'idle' | 'pending' | 'translated' | 'error';
-  cloneEl?: HTMLElement;
   showingOriginal: boolean;
   // 失败时间戳（performance.now()），仅 status === 'error' 时写入；
   // 用于 IntersectionObserver 再次进入视口时判断是否已过重试阈值
@@ -44,16 +52,45 @@ export interface GlobalState {
   displayMode: 'translation' | 'original';
 }
 
+// ─── 自动重试预算 ──────────────────────────────────────────────────────
+//
+// 失败段落的自动重试次数上限（上限常量与判定函数在 observer.ts，与
+// `shouldRetryError` 的时间阈值组合使用）。计数用 WeakMap 保存而不是只放
+// `ElementState.retryCount`：观察者在重试前会删除 elementMap 条目（否则
+// 翻译流程会因「已存在条目」而跳过），计数必须跨这次删除存活；
+// WeakMap 不污染页面 DOM，节点离树即随 GC 回收，无泄漏。
+//
+// 计数只存在这个 WeakMap 里，不在 ElementState 上留镜像：镜像会让
+// resetAllAutoRetryCounts() 失效（复评实测：WeakMap 归零后镜像仍停在 3，
+// 取 max 判定为超限，手动重试永不生效）。
+let autoRetryCounts: WeakMap<HTMLElement, number> = new WeakMap();
+
+/** 该段落已消耗的自动重试次数（0 表示尚未自动重试过） */
+export function getAutoRetryCount(el: HTMLElement): number {
+  return autoRetryCounts.get(el) ?? 0;
+}
+
+/** 记录一次自动重试，返回累计次数 */
+export function consumeAutoRetry(el: HTMLElement): number {
+  const next = getAutoRetryCount(el) + 1;
+  autoRetryCounts.set(el, next);
+  return next;
+}
+
+/** 单段落清零（翻译成功时调用：SPA 虚拟列表会复用同一节点承载新段落） */
+export function resetAutoRetryCount(el: HTMLElement): void {
+  autoRetryCounts.delete(el);
+}
+
+/**
+ * 全局清零：仅在用户手动重新开启一轮翻译时调用（Alt+W / popup「翻译此页」→
+ * startTranslation）。这是「手动触发重置计数」路径，让用户始终可以手动重试。
+ */
+export function resetAllAutoRetryCounts(): void {
+  autoRetryCounts = new WeakMap();
+}
+
 // ─── State ──────────────────────────────────────────────────────────────
-
-// 译文 wrapper → 原始 el 反查表。用于 Ctrl 切换恢复时从 wrapper 反查原 el；
-// 同时是「原 el 离开 DOM 后仍可触达」的存储锚点。原 el 节点本身保存在
-// `state.elementMap`（通过 ElementState）；DOM 树里只剩 wrapper 占据槽位。
-export const wrapperToOriginal: WeakMap<HTMLElement, HTMLElement> = new WeakMap();
-
-// WeakSet：标记「由扩展自身 replaceWith 导致的 DOM 移除」，防止 MutationObserver
-// 误把翻译/还原/切换操作当成站点移除节点而清理 elementMap。
-export const mutationIgnoredNodes = new WeakSet<HTMLElement>();
 
 export const state: GlobalState = {
   isActive: false,

@@ -1,23 +1,42 @@
 /* ============================================================================
  * 译文样式 — DOM 契约
  * ----------------------------------------------------------------------------
- * original  → 原 el 通过 `el.replaceWith(wrapper)` 离开 DOM 树，仅由 elementMap
- *             保留节点引用作存储；wrapper（原 el 的同标签 cloneNode + 译文
- *             DocumentFragment + [data-translator-clone]）接管原 el 的 DOM 槽位，
- *             与原 el 拥有完全一致的 :nth-child / 兄弟选择器命中。
- *             恢复时 wrapper.replaceWith(原 el) 还原。
+ * 所有「替换型」模式一律**原地渲染（in-place rendering）**：
+ * 原段落元素本身**始终留在 DOM 树中**，只替换它的子节点。
+ * 因此元素级 addEventListener、React/Vue 合成事件委托、自定义元素
+ * （Web Components）升级状态、id 锚点、label[for] / aria-labelledby 全部保持有效，
+ * 且 :nth-child / 兄弟选择器仍然命中同一个元素。
+ *
+ * original  → el.replaceChildren(译文 fragment)；原节点引用以数组保存
+ *             （ElementState.originalNodes，不用 DocumentFragment —— append 会移空它）。
+ *             el 保留 id / class / 事件监听器，并打上 [data-translator-processed]。
+ *             还原：el.replaceChildren(...originalNodes)。
  * clean     → 同 original（语义差别留给 UI 层，DOM 契约一致）
- * bilingual → 原 el 保留，末尾追加
- *             <br data-translator-br> + <span/<div>[data-translator-bilingual][data-display=block|inline]>
- * underline → 原 el 清空，追加 <span[data-translator-underline] title="原文文本">
+ * bilingual → 原 el 子节点保留，末尾追加
+ *             <br data-translator-br> + <span[data-translator-bilingual][data-display=block|inline]>
+ *             toggle 只改两者的 display，不交换子节点。
+ * underline → el.replaceChildren(<span[data-translator-underline] title="原文文本">)；
+ *             原节点同样以数组保存，还原 / 切换走同一条原地替换路径。
+ *
+ * 属性清单（运行时契约，block-detect / ctrl-hover 依赖）：
+ *   data-translator-processed  段落已完成翻译（阻止重复收集）
+ *   data-translator-pending    请求进行中（加载态脉冲）
+ *   data-translator-theme      加载 / 悬停主题色
+ *   data-translator-error      翻译失败（可重试提示）
+ *   data-translator-br         bilingual 的换行分隔
+ *   data-translator-bilingual  bilingual 译文容器
+ *   data-translator-underline  underline 译文容器
+ *   data-translator-shadow-style 注入到 shadow root 的样式表标记（幂等判据）
  *
  * 隔离策略：
- *   - clone 走原标签 + 原 class，自然继承站点 CSS（保留 blockquote 左边框、
- *     列表标记、标题字号等结构化样式）；不做 `all: revert`，避免把站点为
- *     blockquote/li/h1 等定义的视觉指示一并抹掉。
- *   - bilingual / underline 是注入式 span / div，需要 `all: revert` 清洗
+ *   - original / clean / underline 的译文写回**原标签内部**，天然继承站点为该
+ *     标签定义的 CSS（保留 blockquote 左边框、列表标记、标题字号等结构化样式）；
+ *     不做 `all: revert`，避免把站点为 blockquote/li/h1 等定义的视觉指示一并抹掉。
+ *   - bilingual / underline 注入的是新增 span / div，需要 `all: revert` 清洗
  *     从父节点继承的奇葩 inline 样式，再 `inherit` 回站点字体/颜色。
  *   - !important 仅在必要处压过站点 CSS（与 kiss-translator / 沉浸式翻译一致）。
+ *   - 本文件同时以 `./styles.css?inline` 内联进 content bundle，注入到每个注册
+ *     观察的 open shadow root（document 级样式表进不去 shadow root）。
  * ============================================================================ */
 
 /* ─── 注入式译文容器基线（仅 bilingual / underline）─────── */
@@ -60,7 +79,6 @@
 }
 
 /* ─── 内部链接保持可点击 ─────────────────── */
-[data-translator-clone] a,
 [data-translator-bilingual] a,
 [data-translator-underline] a {
   color: inherit;
@@ -89,8 +107,10 @@
 }
 
 /* ─── 主题色 — 独立于 pending，hover / 翻译中均生效 ── */
-/* 不加 !important：站点 iframe / widget 等场景若需覆盖可降级。    */
-/* 与 [data-translator-pending] 共存时，pending 只控制透明度脉冲。 */
+/* 需要 !important：译文写回的是站点原有的 p / li / div，站点自身常给这些标签
+   设置 color（含 `a { color }` 这类更高优先级的规则），不加则主题色会被覆盖、
+   加载态完全不可见。与文件头的隔离策略一致：!important 仅用于压过站点 CSS。
+   与 [data-translator-pending] 共存时，pending 只控制透明度脉冲。 */
 [data-translator-theme='indigo'] {
   color: rgba(165, 168, 224, 0.88) !important;
 }
@@ -159,211 +179,5 @@ textarea[data-translator-input-loading='true'],
   [data-translator-error]:hover {
     background-color: rgba(248, 113, 113, 0.12) !important;
   }
-}
-
-/* ─── 图片翻译：悬浮「译」按钮 ─────────────────────────────
- *
- * 固定定位的小按钮只覆盖图片右上角 32×32 区域，不拦截页面其它交互。
- * all: revert 洗掉站点对 button 的继承样式，再显式声明外观。
- */
-[data-translator-image-hover] {
-  all: revert;
-  position: fixed;
-  z-index: 2147483646;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  border-radius: 9999px;
-  background: rgba(15, 23, 42, 0.88);
-  color: #f8fafc;
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
-  font-size: 15px;
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: normal;
-  text-align: center;
-  cursor: pointer;
-  user-select: none;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.35);
-  transition:
-    background-color 120ms ease,
-    transform 120ms ease;
-}
-
-[data-translator-image-hover]:hover {
-  background: rgba(37, 99, 235, 0.94);
-  transform: scale(1.06);
-}
-
-[data-translator-image-hover]:focus-visible {
-  outline: 2px solid rgba(96, 165, 250, 0.95);
-  outline-offset: 2px;
-}
-
-/* ─── 图片翻译：加载 / 错误状态徽标 ─────────────────────────
- *
- * 加载中 pointer-events: none，不挡图片点击；错误态可点击重试。
- */
-[data-translator-image-status] {
-  all: revert;
-  position: fixed;
-  z-index: 2147483647;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  max-width: min(320px, calc(100vw - 16px));
-  padding: 6px 10px;
-  border-radius: 8px;
-  background: rgba(15, 23, 42, 0.9);
-  color: #f8fafc;
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 1.4;
-  letter-spacing: normal;
-  pointer-events: none;
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.35);
-}
-
-[data-translator-image-status-spinner] {
-  flex: none;
-  width: 12px;
-  height: 12px;
-  border: 2px solid rgba(248, 250, 252, 0.28);
-  border-top-color: #f8fafc;
-  border-radius: 9999px;
-  animation: translator-image-spin 0.8s linear infinite;
-}
-
-[data-translator-image-status-text] {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-[data-translator-image-status][data-state='error'] {
-  background: rgba(127, 29, 29, 0.95);
-  pointer-events: auto;
-  cursor: pointer;
-}
-
-[data-translator-image-status][data-state='error']:hover {
-  background: rgba(153, 27, 27, 0.97);
-}
-
-[data-translator-image-status][data-state='error'] [data-translator-image-status-spinner] {
-  display: none;
-}
-
-@keyframes translator-image-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* ─── 图片翻译：原位覆盖层与工具条 ─────────────────────────
- *
- * 覆盖层是 fixed 定位的独立节点，只读取 <img> 的 getBoundingClientRect，
- * 不改动图片节点本身；块尺寸用百分比跟随显示尺寸，字号由 JS 重算。
- * 层 pointer-events: none，只有工具条可交互。
- */
-[data-translator-image-overlay] {
-  all: revert;
-  position: fixed;
-  z-index: 2147483645;
-  box-sizing: border-box;
-  overflow: visible;
-  pointer-events: none;
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
-  font-size: 12px;
-  line-height: 1.15;
-  letter-spacing: normal;
-  text-align: center;
-  color: #0f172a;
-}
-
-[data-translator-image-overlay][hidden] {
-  display: none !important;
-}
-
-[data-translator-image-overlay-layer] {
-  all: revert;
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-[data-translator-image-overlay-layer][hidden] {
-  display: none !important;
-}
-
-[data-translator-image-overlay-block] {
-  all: revert;
-  position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  overflow: hidden;
-  padding: 0 2px;
-  border-radius: 2px;
-  font-weight: 500;
-  text-align: center;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-  pointer-events: none;
-}
-
-[data-translator-image-overlay-toolbar] {
-  all: revert;
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 2px;
-  border: 1px solid rgba(148, 163, 184, 0.5);
-  border-radius: 8px;
-  background: rgba(15, 23, 42, 0.88);
-  color: #f8fafc;
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 1;
-  letter-spacing: normal;
-  pointer-events: auto;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.35);
-  backdrop-filter: blur(4px);
-}
-
-[data-translator-image-overlay-toolbar] button {
-  all: revert;
-  appearance: none;
-  padding: 5px 8px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  line-height: 1;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-[data-translator-image-overlay-toolbar] button:hover {
-  background: rgba(148, 163, 184, 0.28);
-}
-
-[data-translator-image-overlay-toolbar] button:focus-visible {
-  outline: 2px solid #60a5fa;
-  outline-offset: 1px;
 }
 
