@@ -40,9 +40,18 @@ function mapLangCode(iso3: string): LangCode {
 
 // 字符集快速兜底：CJK 文本（中/日/韩）即使长度 < 10 也能正确识别。
 // 优先级：日文（含假名）> 韩文（谚文）> 中文（仅 CJK 表意文字）。
+//
+// 入口预探测：下面的逐字符循环只统计三个码位区间（CJK 表意文字、假名、谚文），
+// 三者计数全为 0 时必然返回 null。预探测正则覆盖的正是这三个区间的并集，因此
+// 「预探测未命中 ⇒ 三计数全 0 ⇒ 返回 null」与原逻辑严格等价（区间全在 BMP 内，
+// 不涉及代理对），但把拉丁/西里尔等非 CJK 文本的路径从「逐字符 + 每字符一次
+// 正则」压缩成一次正则扫描。页面翻译会对每段文本调用本函数，这是固定开销。
+const CJK_CHARSET_PROBE = /[\u3400-\u4dbf\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af]/;
+
 function detectByCharset(text: string): LangCode | null {
   const trimmed = text.trim();
   if (!trimmed) return null;
+  if (!CJK_CHARSET_PROBE.test(trimmed)) return null;
 
   let cjk = 0;
   let kana = 0;

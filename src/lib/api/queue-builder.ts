@@ -76,7 +76,10 @@ export function buildServiceQueue(settings: GlobalSettings, activeService: Trans
     // 将首选成员及其模型排在最前
     const pickedProvider = settings.providers.find(p => p.id === picked.providerId);
     if (pickedProvider) {
-      const prefModel = picked.modelId 
+      // 首选模型：显式指定且仍存在才用它；显式指定但已失效时不再静默回退到
+      // models[0]（那会让用户以为在跑 A 模型、实际跑 B）。失效则直接跳过首选位，
+      // 由下面的「按顺序补全部模型」兜底，行为可预期。
+      const prefModel = picked.modelId
         ? pickedProvider.models.find(m => m.id === picked.modelId)
         : pickedProvider.models[0];
       if (prefModel) {
@@ -92,7 +95,8 @@ export function buildServiceQueue(settings: GlobalSettings, activeService: Trans
       if (entry.providerId === picked.providerId) continue;
       const provider = settings.providers.find(p => p.id === entry.providerId);
       if (!provider) continue;
-      const prefModel = entry.modelId 
+      // 同上：显式指定的模型失效时不静默替换成 models[0]
+      const prefModel = entry.modelId
         ? provider.models.find(m => m.id === entry.modelId)
         : provider.models[0];
       if (prefModel) {

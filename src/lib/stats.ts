@@ -1,3 +1,4 @@
+import Dexie from 'dexie';
 import { ensureDb } from './cache';
 import type { RequestLogEntry, TokenUsage } from '@/types';
 
@@ -23,15 +24,24 @@ export async function recordRequestStat(
     };
     await db.request_logs.add(entry);
 
-    // 维护每 (providerId, modelId) 最多 MAX_REQUEST_LOGS_PER_KEY 条
-    const all = await db.request_logs
-      .where({ providerId, modelId })
-      .sortBy('timestamp');
+    // 维护每 (providerId, modelId) 最多 MAX_REQUEST_LOGS_PER_KEY 条。
+    // 旧实现把该键的全部行 toArray + sortBy('timestamp') 再 slice，等于每次请求
+    // 都把 100 行完整记录（含 responseTime 等字段）读进内存排序；这里改为：
+    //   1) count() 只走索引计数（不读值）；
+    //   2) 需要裁剪时用复合索引 [providerId+modelId+timestamp] 取最旧的若干主键。
+    // 索引顺序即 timestamp 升序（同 timestamp 按主键升序，与旧 sortBy 的稳定排序
+    // 结果一致），因此裁剪集合与旧实现逐条相同，但只读主键、不读整行。
+    const whereKey = { providerId, modelId };
+    const count = await db.request_logs.where(whereKey).count();
+    const excess = count - MAX_REQUEST_LOGS_PER_KEY;
+    if (excess <= 0) return;
 
-    if (all.length > MAX_REQUEST_LOGS_PER_KEY) {
-      const toDelete = all.slice(0, all.length - MAX_REQUEST_LOGS_PER_KEY);
-      await db.request_logs.bulkDelete(toDelete.map((e) => e.id!));
-    }
+    const oldestKeys = await db.request_logs
+      .where('[providerId+modelId+timestamp]')
+      .between([providerId, modelId, Dexie.minKey], [providerId, modelId, Dexie.maxKey])
+      .limit(excess)
+      .primaryKeys();
+    await db.request_logs.bulkDelete(oldestKeys);
   } catch {
     // 统计写入失败不影响翻译功能
   }
@@ -49,26 +59,31 @@ export async function accumulateTokenUsage(
     const now = new Date();
     const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-    const existing = await db.daily_token_usage
-      .where({ providerId, modelId, date })
-      .first();
+    // 读-改-写必须在同一个事务里完成：并发翻译（聚合多批 + 并发上限 >1）会同时
+    // 累加同一 (providerId, modelId, date)，非事务版本会丢更新。
+    // Dexie 的 'rw' 事务对同一张表的写操作串行化，因此这里的 += 是原子的。
+    await db.transaction('rw', db.daily_token_usage, async () => {
+      const existing = await db.daily_token_usage
+        .where({ providerId, modelId, date })
+        .first();
 
-    if (existing) {
-      await db.daily_token_usage.update(existing.id!, {
-        promptTokens: existing.promptTokens + usage.promptTokens,
-        completionTokens: existing.completionTokens + usage.completionTokens,
-        totalTokens: existing.totalTokens + usage.totalTokens,
-      });
-    } else {
-      await db.daily_token_usage.add({
-        providerId,
-        modelId,
-        date,
-        promptTokens: usage.promptTokens,
-        completionTokens: usage.completionTokens,
-        totalTokens: usage.totalTokens,
-      });
-    }
+      if (existing) {
+        await db.daily_token_usage.update(existing.id!, {
+          promptTokens: existing.promptTokens + usage.promptTokens,
+          completionTokens: existing.completionTokens + usage.completionTokens,
+          totalTokens: existing.totalTokens + usage.totalTokens,
+        });
+      } else {
+        await db.daily_token_usage.add({
+          providerId,
+          modelId,
+          date,
+          promptTokens: usage.promptTokens,
+          completionTokens: usage.completionTokens,
+          totalTokens: usage.totalTokens,
+        });
+      }
+    });
   } catch {
     // 统计写入失败不影响翻译功能
   }

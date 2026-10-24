@@ -1,5 +1,16 @@
 import type { TokenUsage } from '@/types';
-import { applyProviderSampling, buildUrl, buildHeaders, HttpError, isProviderFatal } from '../api';
+import {
+  applyProviderSampling,
+  buildUrl,
+  buildHeaders,
+  HttpError,
+  isProviderFatal,
+  isTranslationAbortError,
+  linkAbortSignals,
+  sanitizeHttpErrorBody,
+  TranslationAbortError,
+  type TranslateOptions,
+} from '../api';
 import { consumeOpenAIStream } from './sse-consumer';
 import { buildVisionQueue, type ProviderModel } from './queue-builder';
 import { getSettings } from '../storage';
@@ -30,9 +41,6 @@ interface VisionChatResponse {
  */
 export const IMAGE_VISION_TIMEOUT_MS = 60_000;
 
-/** HTTP 错误响应体截断上限，避免把整段 HTML 塞进用户可见的错误信息 */
-const HTTP_ERROR_BODY_LIMIT = 200;
-
 /** 部分 provider 用 400/422 + 这些措辞表示「该模型不支持图片输入」 */
 const VISION_UNSUPPORTED_HTTP_STATUSES = [400, 422];
 const VISION_UNSUPPORTED_BODY_PATTERNS = [
@@ -50,7 +58,7 @@ const VISION_FAILURE_CODE_PRIORITY: ImageTranslationErrorCode[] = [
 ];
 
 /** 识图 HTTP 失败：保留 HttpError 的 status 供 provider 级跳过判定，同时携带稳定错误码 */
-export class VisionHttpError extends HttpError {
+class VisionHttpError extends HttpError {
   constructor(
     public readonly code: 'VISION_MODEL_UNSUPPORTED' | 'VISION_HTTP_ERROR',
     status: number,
@@ -59,13 +67,6 @@ export class VisionHttpError extends HttpError {
     super(status, message);
     this.name = 'VisionHttpError';
   }
-}
-
-function truncateHttpBody(body: string): string {
-  const trimmed = body.trim();
-  return trimmed.length > HTTP_ERROR_BODY_LIMIT
-    ? trimmed.slice(0, HTTP_ERROR_BODY_LIMIT) + '…'
-    : trimmed;
 }
 
 /** 把识图的 HTTP 失败映射为「模型不支持图片」或通用 HTTP 错误 */
@@ -77,7 +78,9 @@ function visionHttpError(status: number, body: string): VisionHttpError {
   return new VisionHttpError(
     unsupported ? 'VISION_MODEL_UNSUPPORTED' : 'VISION_HTTP_ERROR',
     status,
-    'HTTP ' + status + ': ' + (truncateHttpBody(body) || 'Unknown error')
+    // 与文本链路共用 api.ts 的处理：先脱敏密钥片段再截断到 200 字符，
+    // 只截断不脱敏时，回显在体首部的密钥仍会完整进 UI。
+    'HTTP ' + status + ': ' + (sanitizeHttpErrorBody(body) || 'Unknown error')
   );
 }
 
@@ -138,7 +141,10 @@ export function buildVisionBody(
   return body;
 }
 
-/** 按队列顺序尝试识图；401/403/429 跳过同 provider 剩余模型 */
+/**
+ * 按队列顺序尝试识图；鉴权类（401/403）与 429 跳过同 provider 剩余模型。
+ * 外部取消（TranslationAbortError）直接向上抛，绝不降级到下一个模型。
+ */
 export async function runVisionQueue<T>(
   queue: ProviderModel[],
   attempt: (providerModel: ProviderModel) => Promise<T>
@@ -151,11 +157,14 @@ export async function runVisionQueue<T>(
     try {
       return await attempt(providerModel);
     } catch (error) {
+      // 调用方取消：不是模型失败，立即终止整条队列
+      if (isTranslationAbortError(error)) throw error;
+
       const errorMsg = error instanceof Error ? error.message : String(error);
       errors.push(providerModel.provider.name + '/' + providerModel.model.name + ': ' + errorMsg);
       codes.push(visionFailureCode(error));
 
-      if (isProviderFatal(error)) {
+      if (isVisionProviderFatal(error)) {
         const failedProviderId = providerModel.provider.id;
         while (i + 1 < queue.length && queue[i + 1].provider.id === failedProviderId) {
           i++;
@@ -182,17 +191,32 @@ function toTokenUsage(raw: VisionChatResponse['usage']): TokenUsage | undefined 
 }
 
 /**
+ * 识图链路的 provider 级致命判定：只认鉴权类（401/403）。
+ *
+ * 429 是瞬时限流而非 provider 失效：识图没有退避重试，但跳过该 provider 的其余
+ * 视觉模型并不合理 —— 同一 provider 的不同模型常有独立配额。此前把 429 当致命，
+ * 会让「首选模型限流」直接丢掉整个 provider 的备选模型。
+ */
+function isVisionProviderFatal(error: unknown): boolean {
+  return isProviderFatal(error);
+}
+
+/**
  * 识图请求的共享管线：发请求、超时/HTTP 错误映射、流式或整包响应取回消息内容。
  * 具体提示词与解析由调用方决定。
+ * 外部 signal 与内部超时 signal 合并：外部取消映射为 TranslationAbortError（不降级），
+ * 内部超时才映射为 VISION_TIMEOUT。
  */
 async function postVisionChat(
   providerModel: ProviderModel,
   body: Record<string, unknown>,
-  timeout: number
+  timeout: number,
+  externalSignal?: AbortSignal
 ): Promise<{ content: unknown; usage?: TokenUsage }> {
   const { provider } = providerModel;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
+  const unlinkAbort = linkAbortSignals(controller, externalSignal);
 
   try {
     const response = await fetch(buildUrl(provider.baseURL, provider.query), {
@@ -222,10 +246,13 @@ async function postVisionChat(
       usage: toTokenUsage(data.usage),
     };
   } catch (error) {
+    // 外部取消优先：取消不是模型的问题，不能映射成 VISION_TIMEOUT 触发降级
+    if (externalSignal?.aborted || isTranslationAbortError(error)) throw new TranslationAbortError();
     if (isAbortFailure(error, controller.signal)) throw visionTimeoutError(timeout);
     throw error;
   } finally {
     clearTimeout(timeoutId);
+    unlinkAbort();
   }
 }
 
@@ -234,12 +261,14 @@ export async function callVisionModel(
   providerModel: ProviderModel,
   imageDataUrl: string,
   targetLang: string,
-  timeout: number
+  timeout: number,
+  signal?: AbortSignal
 ): Promise<{ text: string; usage?: TokenUsage }> {
   const { content, usage } = await postVisionChat(
     providerModel,
     buildVisionBody(providerModel, imageDataUrl, targetLang),
-    timeout
+    timeout,
+    signal
   );
   return { text: parseVisionText(content), usage };
 }
@@ -274,7 +303,7 @@ export async function resolveVisionRunContext(): Promise<VisionRunContext> {
   return { queue };
 }
 
-/** 队列内单次尝试的统计包装：成功/失败都记请求日志，token 用量仅成功时有 */
+/** 队列内单次尝试的统计包装：成功/失败都记请求日志，token 用量仅成功时有；取消不计失败 */
 async function attemptWithStats<T>(
   providerModel: ProviderModel,
   attempt: () => Promise<{ value: T; usage?: TokenUsage }>
@@ -288,7 +317,10 @@ async function attemptWithStats<T>(
     accumulateTokenUsage(provider.id, model.id, usage).catch(() => {});
     return value;
   } catch (error) {
-    recordRequestStat(provider.id, model.id, Date.now() - startedAt, false).catch(() => {});
+    // 外部取消不是模型失败，不写失败统计
+    if (!isTranslationAbortError(error)) {
+      recordRequestStat(provider.id, model.id, Date.now() - startedAt, false).catch(() => {});
+    }
     throw error;
   }
 }
@@ -297,9 +329,12 @@ async function attemptWithStats<T>(
 export async function translateImageText(
   imageDataUrl: string,
   targetLang: string,
-  context?: VisionRunContext
+  context?: VisionRunContext,
+  options?: TranslateOptions
 ): Promise<VisionTranslationResult> {
   const { queue } = context ?? (await resolveVisionRunContext());
+  const signal = options?.signal;
+  if (signal?.aborted) throw new TranslationAbortError();
 
   return runVisionQueue(queue, (providerModel) =>
     attemptWithStats(providerModel, async () => {
@@ -307,7 +342,8 @@ export async function translateImageText(
         providerModel,
         imageDataUrl,
         targetLang,
-        IMAGE_VISION_TIMEOUT_MS
+        IMAGE_VISION_TIMEOUT_MS,
+        signal
       );
       return {
         value: { text, providerId: providerModel.provider.id, modelId: providerModel.model.id },

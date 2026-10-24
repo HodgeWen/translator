@@ -1,198 +1,143 @@
-import type { ProviderConfig, TranslationRequest, TranslationResponse, LangCode } from '@/types';
+import type { ProviderConfig, TranslationRequest, TranslationResponse, LangCode, TokenUsage } from '@/types';
 import { getSettings } from './storage';
-import { getCachedTranslation, setCachedTranslation } from './cache';
+import { getCachedTranslation } from './cache';
 import { DEFAULT_GLOBAL_PROMPT, TONE_INSTRUCTIONS, formatToneInstruction, isLikelyWordOrPhrase, buildPolysemyPrompt } from './prompts';
 import { consumeOpenAIStream } from './api/sse-consumer';
 import { buildServiceQueue, type ProviderModel } from './api/queue-builder';
 import { recordRequestStat, accumulateTokenUsage } from './stats';
+import { buildUrl, buildHeaders, applyProviderSampling } from './api/http';
+import { buildBody } from './api/prompt';
+import { lookupAggregateCache, writeAggregateCache, writeTranslationCache } from './api/aggregate-cache';
+import {
+  extractTranslatedText,
+  toTokenUsage,
+  type OpenAIChatResponse,
+} from './api/openai-types';
+
+// 对外契约说明（拆分时不可动摇的边界）：
+//   - translate / testProvider / buildTranslationCachePartition / HttpError /
+//     TranslationAbortError / redactHttpErrorBody / sanitizeHttpErrorBody /
+//     truncateHttpErrorBody / parseRetryAfterMs / linkAbortSignals 等**必须定义在本文件**。
+//     多个测试用 spyOn(storage, 'getSettings') / spyOn(cache, 'getCachedTranslation') 替换
+//     模块命名空间上的属性，本文件对 getSettings / getCachedTranslation 的调用也必须
+//     继续直接从 './storage' / './cache' 导入 —— 绕道子模块会让 spy 拦不到调用点。
+//   - 搬走的只是纯构造逻辑（URL/请求头、提示词渲染与请求体、聚合缓存读写），
+//     它们不持有跨模块可被替换的引用，或只引用 cache 的具名导出（bun 下 spy 仍生效）。
 
 const inflightRequests = new Map<string, Promise<TranslationResponse>>();
+
+/** 「测试连接」按钮的固定超时（与通用设置的 requestTimeout 无关） */
+const PROVIDER_TEST_TIMEOUT_MS = 30_000;
+
+// URL / 请求头 / 采样字段构造在 api/http.ts，这里转出以保持既有导入路径可用
+export { buildUrl, buildHeaders, applyProviderSampling };
+
 
 function inflightKey(
   text: string,
   targetLang: string,
   extraPrompt: string | undefined,
   serviceId: string,
-  tone: string
-): string {
-  return `${text}::${targetLang}::${extraPrompt ?? ''}::${serviceId}::${tone}`;
-}
-
-async function shortPromptHash(prompt: string): Promise<string> {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(prompt));
-  return Array.from(new Uint8Array(buf, 0, 4))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
-}
-
-export async function buildTranslationCachePartition(globalPrompt: string, extraPrompt?: string, tone?: string): Promise<string> {
-  const effectiveTone = tone && tone !== 'normal' ? tone : undefined;
-  if (!extraPrompt && !effectiveTone) return shortPromptHash(globalPrompt);
-  return shortPromptHash(JSON.stringify([globalPrompt, extraPrompt ?? '', effectiveTone ?? '']));
-}
-
-export class HttpError extends Error {
-  constructor(public status: number, message: string) {
-    super(message);
-    this.name = 'HttpError';
-  }
-}
-
-export function isProviderFatal(err: unknown): boolean {
-  if (!(err instanceof HttpError)) return false;
-  return err.status === 401 || err.status === 403 || err.status === 429;
-}
-
-interface OpenAIUsage {
-  prompt_tokens?: number;
-  completion_tokens?: number;
-  total_tokens?: number;
-}
-
-interface OpenAIChatResponse {
-  choices?: Array<{
-    message?: { content?: string };
-    delta?: { content?: string };
-    text?: string;
-  }>;
-  response?: string;
-  output?: string;
-  result?: string;
-  detected_language?: string;
-  source_language?: string;
-  usage?: OpenAIUsage;
-}
-
-function extractTranslatedText(data: OpenAIChatResponse): string | null {
-  return (
-    data.choices?.[0]?.message?.content?.trim() ||
-    data.choices?.[0]?.text?.trim() ||
-    data.response?.trim() ||
-    data.output?.trim() ||
-    data.result?.trim() ||
-    null
-  );
-}
-
-export function buildUrl(baseURL: string, query: Record<string, string>): string {
-  const url = new URL(baseURL);
-  Object.entries(query).forEach(([key, value]) => {
-    url.searchParams.set(key, value);
-  });
-  return url.toString();
-}
-
-const PLACEHOLDER_RULE = `\n\nThe text may contain numeric placeholders in the form of #1#, #2#, #3# ... (single "#" on each side). You MUST preserve every placeholder exactly as-is in your output: do not add, remove, modify, reorder, or translate any of them. Treat them as opaque tokens that stand in for inline HTML fragments.`;
-
-const HTML_PROTECTION_RULE = `\n\nThe text may contain HTML tags, code snippets, and format placeholders. Follow these rules:
-- Preserve all HTML tags, placeholders, format symbols, and whitespace exactly as they appear. Only translate the inner text content.
-- Do NOT translate content inside <code>, <pre>, <samp>, <kbd>, <var> tags, text enclosed in backticks (\`code\`), file paths, URLs, variable names, or placeholders like {1}, {{1}}, [1], [[1]].`;
-
-function renderPrompt(
-  template: string,
-  targetLang: string,
+  tone: string,
   isAggregate: boolean,
-  hasPlaceholders: boolean,
-  extraPrompt?: string
+  hasPlaceholders: boolean
 ): string {
-  let prompt = template
-    .replace(/\{\{targetLang\}\}/g, targetLang);
-
-  if (isAggregate || hasPlaceholders) {
-    prompt += HTML_PROTECTION_RULE;
-  }
-
-  if (hasPlaceholders) {
-    prompt += PLACEHOLDER_RULE;
-  }
-
-  if (isAggregate) {
-    prompt += `\n\nThe input contains multiple paragraphs. Each paragraph is preceded by a marker of the form "<<<N>>>" on its own line, where N is a positive integer (1, 2, 3, ...). You MUST follow this protocol exactly:
-1. Translate the content of each paragraph into ${targetLang}.
-2. Output every translated paragraph preceded by the SAME "<<<N>>>" marker on its own line, in the SAME order as the input.
-3. Do not merge paragraphs, do not skip paragraphs, and do not introduce extra paragraphs or markers that were not in the input.
-4. Treat "<<<N>>>" as opaque tokens: never translate, localize, reformat, or alter the digits/symbols inside them.`;
-    if (hasPlaceholders) {
-      prompt += `\n5. Preserve every "#N#" inline placeholder inside paragraphs verbatim, exactly as instructed above.
-6. Do not add any commentary, headings, or text outside the marker/paragraph structure.`;
-    } else {
-      prompt += `\n5. Do not add any commentary, headings, or text outside the marker/paragraph structure.`;
-    }
-  }
-
-  if (extraPrompt) {
-    prompt += `\n\n${extraPrompt}`;
-  }
-
-  return prompt;
+  // 格式开关参与 key：它们会改变 renderPrompt 的规则段落与缓存分区，
+  // 相同原文在不同参数下不能复用同一个在途请求。
+  return `${text}::${targetLang}::${extraPrompt ?? ''}::${serviceId}::${tone}::${isAggregate ? 1 : 0}${hasPlaceholders ? 1 : 0}`;
 }
 
-function buildBody(
-  modelId: string,
-  text: string,
-  targetLang: string,
-  extraBody: Record<string, unknown>,
-  promptTemplate: string,
-  isAggregate: boolean,
-  hasPlaceholders: boolean,
-  provider: ProviderConfig,
-  extraPrompt?: string
-): Record<string, unknown> {
-  const systemPrompt = renderPrompt(promptTemplate, targetLang, isAggregate, hasPlaceholders, extraPrompt);
+// 错误体脱敏与限长在 api/error-body.ts（纯字符串处理，无内部依赖）。
+// 这里 import 供本文件内部调用，并 re-export 保持既有 `from '@/lib/api'`
+// 的导入路径与测试调用点不变。
+import { sanitizeHttpErrorBody } from './api/error-body';
+export {
+  HTTP_ERROR_BODY_LIMIT,
+  truncateHttpErrorBody,
+  redactHttpErrorBody,
+  sanitizeHttpErrorBody,
+} from './api/error-body';
 
-  const body: Record<string, unknown> = {
-    model: modelId,
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: text },
-    ],
-    ...extraBody,
-  };
+// 缓存分区盐值计算在 api/cache-partition.ts（纯函数，无内部依赖）。
+// 这里 import 供本文件内部调用，并 re-export 保持既有 `from '@/lib/api'`
+// 的导入路径与测试调用点不变。
+import { buildTranslationCachePartition } from './api/cache-partition';
+export { buildTranslationCachePartition, shortPromptHash } from './api/cache-partition';
 
-  applyProviderSampling(body, provider);
+// 错误类型与取消信号工具在 api/errors.ts（稳定契约，被识图链路与上层共同依赖）。
+// 这里 import 供本文件内部调用，并 re-export 保持既有 `from '@/lib/api'` 导入不变。
+import {
+  HttpError,
+  TranslationAbortError,
+  isTranslationAbortError,
+  isProviderFatal,
+  linkAbortSignals,
+  type TranslateOptions,
+} from './api/errors';
+export {
+  HttpError,
+  TranslationAbortError,
+  isTranslationAbortError,
+  isProviderFatal,
+  linkAbortSignals,
+  type TranslateOptions,
+} from './api/errors';
 
-  return body;
+interface ProviderCallResult {
+  text: string;
+  detectedLang?: string;
+  usage?: TokenUsage;
 }
 
-/** 把 provider 的采样/流式设置写入请求体（独立字段覆盖 body 中的同名键） */
-export function applyProviderSampling(body: Record<string, unknown>, provider: ProviderConfig): void {
-  if (provider.temperature !== undefined) body.temperature = provider.temperature;
-  if (provider.topP !== undefined) body.top_p = provider.topP;
-  if (provider.maxTokens !== undefined) body.max_tokens = provider.maxTokens;
-  if (provider.stream === true) body.stream = true;
+// 429 限流退避策略在 api/rate-limit.ts（纯策略函数）。
+// 这里 import 供本文件内部调用，并 re-export 保持既有 `from '@/lib/api'` 导入不变。
+import {
+  RATE_LIMIT_MAX_RETRIES,
+  parseRetryAfterMs,
+  computeRateLimitDelayMs,
+  sleep,
+} from './api/rate-limit';
+export { parseRetryAfterMs, computeRateLimitDelayMs } from './api/rate-limit';
+
+interface CallProviderOptions {
+  promptTemplate: string;
+  /** 本次 fetch 的超时预算（重试时会收缩为剩余预算） */
+  timeoutMs: number;
+  isAggregate: boolean;
+  hasPlaceholders: boolean;
+  extraPrompt?: string;
+  /** 外部取消信号，与内部超时 signal 合并 */
+  signal?: AbortSignal;
 }
 
-export function buildHeaders(provider: ProviderConfig): Record<string, string> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    Accept: provider.stream === true ? 'text/event-stream' : 'application/json',
-    ...provider.headers,
-  };
-
-  if (provider.apiKey && !headers['Authorization'] && !headers['authorization']) {
-    headers['Authorization'] = `Bearer ${provider.apiKey}`;
-  }
-
-  return headers;
-}
-
+/** 单次请求尝试（不含 429 重试） */
 async function callProvider(
   providerModel: ProviderModel,
   text: string,
   targetLang: string,
-  promptTemplate: string,
-  timeout: number,
-  isAggregate: boolean,
-  hasPlaceholders: boolean,
-  extraPrompt?: string
-): Promise<{ text: string; detectedLang?: string; usage?: { promptTokens: number; completionTokens: number; totalTokens: number } }> {
+  options: CallProviderOptions
+): Promise<ProviderCallResult> {
   const { provider, model } = providerModel;
+  const externalSignal = options.signal;
+
+  if (externalSignal?.aborted) throw new TranslationAbortError();
 
   const url = buildUrl(provider.baseURL, provider.query);
-  const body = buildBody(model.id, text, targetLang, provider.body, promptTemplate, isAggregate, hasPlaceholders, provider, extraPrompt);
+  const body = buildBody(
+    model.id,
+    text,
+    targetLang,
+    provider.body,
+    options.promptTemplate,
+    options.isAggregate,
+    options.hasPlaceholders,
+    provider,
+    options.extraPrompt
+  );
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  const timeoutId = setTimeout(() => controller.abort(), options.timeoutMs);
+  const unlinkAbort = linkAbortSignals(controller, externalSignal);
 
   try {
     const response = await fetch(url, {
@@ -204,7 +149,11 @@ async function callProvider(
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Unknown error');
-      throw new HttpError(response.status, `HTTP ${response.status}: ${errorText}`);
+      throw new HttpError(
+        response.status,
+        `HTTP ${response.status}: ${sanitizeHttpErrorBody(errorText) || 'Unknown error'}`,
+        parseRetryAfterMs(response.headers.get('Retry-After'))
+      );
     }
 
     if (provider.stream === true) {
@@ -217,21 +166,65 @@ async function callProvider(
       throw new Error('Empty translation response');
     }
     const detectedLang = data.detected_language ?? data.source_language;
-    const usage = data.usage
-      ? {
-          promptTokens: data.usage.prompt_tokens ?? 0,
-          completionTokens: data.usage.completion_tokens ?? 0,
-          totalTokens: data.usage.total_tokens ?? 0,
-        }
-      : undefined;
+    const usage = toTokenUsage(data.usage);
 
     return { text: translatedText, detectedLang, usage };
+  } catch (error) {
+    // 外部取消：抛可识别错误，避免被当成模型失败而降级
+    if (externalSignal?.aborted) throw new TranslationAbortError();
+    throw error;
   } finally {
     clearTimeout(timeoutId);
+    unlinkAbort();
   }
 }
-export async function translate(request: TranslationRequest): Promise<TranslationResponse> {
+
+/**
+ * 单模型尝试：遇到 429 时在「该模型的超时预算」内做有限次退避重试。
+ * 其它错误（含超时、5xx）不重试，直接交给上层降级到下一个模型。
+ */
+async function callProviderWithRateLimitRetry(
+  providerModel: ProviderModel,
+  text: string,
+  targetLang: string,
+  options: CallProviderOptions,
+  budgetMs: number
+): Promise<ProviderCallResult> {
+  const deadline = Date.now() + budgetMs;
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt <= RATE_LIMIT_MAX_RETRIES; attempt++) {
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) break;
+
+    try {
+      return await callProvider(providerModel, text, targetLang, { ...options, timeoutMs: remaining });
+    } catch (error) {
+      lastError = error;
+
+      // 只对 429 重试；取消错误/其它 HTTP 错误原样抛出，由上层决定是否降级
+      if (!(error instanceof HttpError) || error.status !== 429) throw error;
+      if (attempt === RATE_LIMIT_MAX_RETRIES) break;
+
+      const remainingBudget = deadline - Date.now();
+      // Retry-After 会超出剩余预算：放弃退避，直接降级下一个模型
+      if (error.retryAfterMs !== undefined && error.retryAfterMs >= remainingBudget) break;
+
+      const delay = computeRateLimitDelayMs(attempt, error.retryAfterMs);
+      if (delay >= remainingBudget) break;
+
+      await sleep(delay, options.signal);
+    }
+  }
+
+  throw lastError ?? new Error('Request timed out');
+}
+
+export async function translate(request: TranslationRequest, options?: TranslateOptions): Promise<TranslationResponse> {
   const { text, targetLang, isAggregate, hasPlaceholders, extraPrompt, enablePolysemy } = request;
+  const externalSignal = options?.signal;
+
+  if (externalSignal?.aborted) throw new TranslationAbortError();
 
   // Resolve settings and activeService/finalTone first to generate the correct in-flight key
   const settings = await getSettings();
@@ -249,10 +242,22 @@ export async function translate(request: TranslationRequest): Promise<Translatio
     finalTone = serviceTone === 'personal_default' ? settings.translationTone : serviceTone;
   }
 
-  const cacheKey = inflightKey(text, targetLang, extraPrompt, activeService.id, finalTone);
+  const cacheKey = inflightKey(
+    text,
+    targetLang,
+    extraPrompt,
+    activeService.id,
+    finalTone,
+    isAggregate === true,
+    hasPlaceholders === true
+  );
 
-  const existing = inflightRequests.get(cacheKey);
-  if (existing) return existing;
+  // 带外部 signal 的调用不参与在途去重：共享同一个 promise 会让一个调用方的取消
+  // 连带拒绝其他调用方。无 signal 的调用方（background.ts 等）保持原有去重语义。
+  if (!externalSignal) {
+    const existing = inflightRequests.get(cacheKey);
+    if (existing) return existing;
+  }
 
   const promise = (async () => {
     try {
@@ -285,12 +290,26 @@ export async function translate(request: TranslationRequest): Promise<Translatio
       }
       const finalPromptTemplate = toneInstruction ? `${basePrompt}${formatToneInstruction(toneInstruction)}` : basePrompt;
 
-      const promptSalt = await buildTranslationCachePartition(basePrompt, extraPrompt, finalTone);
+      // 传入请求文本：分区函数据此判断格式开关是否已由文本本身表达
+      // （聚合的 `<<<N>>>`、占位符的 `#N#` / `<sN>`），只有开关与文本矛盾时
+      // 才额外分区，避免无谓的缓存键漂移（详见该函数注释）
+      const promptSalt = await buildTranslationCachePartition(
+        basePrompt,
+        extraPrompt,
+        finalTone,
+        isAggregate,
+        hasPlaceholders,
+        text
+      );
 
-      const cached = await getCachedTranslation(text, targetLang, promptSalt);
+      // 聚合请求按段落查缓存：批次组成不再进入缓存键（否则滚动节奏一变就全量
+      // miss，见 lookupAggregateCache 的实测数据）。切分有歧义时回落整批缓存。
+      const cached = isAggregate === true
+        ? await lookupAggregateCache(text, targetLang, promptSalt)
+        : (await getCachedTranslation(text, targetLang, promptSalt))?.text ?? null;
       if (cached) {
         return {
-          text: cached.text,
+          text: cached,
           providerId: 'cache',
           modelId: 'cache',
         };
@@ -308,35 +327,29 @@ export async function translate(request: TranslationRequest): Promise<Translatio
       for (let i = 0; i < models.length; i++) {
         const providerModel = models[i];
         const startTime = Date.now();
+        let result: ProviderCallResult;
+
         try {
-          const result = await callProvider(
+          result = await callProviderWithRateLimitRetry(
             providerModel,
             text,
             targetLang,
-            finalPromptTemplate,
-            timeout,
-            isAggregate || false,
-            hasPlaceholders || false,
-            extraPrompt
+            {
+              promptTemplate: finalPromptTemplate,
+              timeoutMs: timeout,
+              isAggregate: isAggregate || false,
+              hasPlaceholders: hasPlaceholders || false,
+              extraPrompt,
+              signal: externalSignal,
+            },
+            timeout
           );
-
-          const responseTime = Date.now() - startTime;
-          // 异步记录统计，不阻塞翻译
-          const pid = providerModel.provider.id;
-          const mid = providerModel.model.id;
-          recordRequestStat(pid, mid, responseTime, true).catch(() => {});
-          accumulateTokenUsage(pid, mid, result.usage).catch(() => {});
-
-          await setCachedTranslation(text, targetLang, result.text, undefined, promptSalt);
-
-          return {
-            text: result.text,
-            providerId: pid,
-            modelId: mid,
-            detectedLang: result.detectedLang as LangCode | undefined,
-            usage: result.usage,
-          };
         } catch (error) {
+          // 外部取消不是模型的问题：不记失败统计、不降级，直接抛可识别的 abort 错误
+          if (externalSignal?.aborted || isTranslationAbortError(error)) {
+            throw new TranslationAbortError();
+          }
+
           const responseTime = Date.now() - startTime;
           recordRequestStat(providerModel.provider.id, providerModel.model.id, responseTime, false).catch(() => {});
 
@@ -351,16 +364,43 @@ export async function translate(request: TranslationRequest): Promise<Translatio
               errors.push(`${skipped.provider.name}/${skipped.model.name}: skipped (provider-level fatal error)`);
             }
           }
+
+          continue;
         }
+
+        // 已成功且已计费：统计与缓存写入的失败都不得触发降级
+        const responseTime = Date.now() - startTime;
+        const pid = providerModel.provider.id;
+        const mid = providerModel.model.id;
+        // 异步记录统计，不阻塞翻译
+        recordRequestStat(pid, mid, responseTime, true).catch(() => {});
+        accumulateTokenUsage(pid, mid, result.usage).catch(() => {});
+        if (isAggregate === true) {
+          // 逐段写缓存，与 lookupAggregateCache 的读法对齐；失败不触发降级
+          await writeAggregateCache(text, result.text, targetLang, promptSalt);
+        } else {
+          await writeTranslationCache(text, targetLang, result.text, promptSalt);
+        }
+
+        return {
+          text: result.text,
+          providerId: pid,
+          modelId: mid,
+          detectedLang: result.detectedLang as LangCode | undefined,
+          usage: result.usage,
+        };
       }
 
       throw new Error(`All translation models failed:\n${errors.join('\n')}`);
     } finally {
-      inflightRequests.delete(cacheKey);
+      // 只清理自己登记过的条目：带 signal 的调用不参与去重、也不写 inflightRequests，
+      // 若无条件 delete 会把另一个无 signal 调用方仍在进行中的请求条目删掉，
+      // 导致后续同 key 请求重新发起 fetch（重复计费）。
+      if (!externalSignal) inflightRequests.delete(cacheKey);
     }
   })();
 
-  inflightRequests.set(cacheKey, promise);
+  if (!externalSignal) inflightRequests.set(cacheKey, promise);
   return promise;
 }
 
@@ -368,7 +408,7 @@ export async function testProvider(
   provider: ProviderConfig,
   text: string,
   targetLang: string
-): Promise<{ text: string; modelName: string; usage?: { promptTokens: number; completionTokens: number; totalTokens: number } }> {
+): Promise<{ text: string; modelName: string; usage?: TokenUsage }> {
   const model = provider.models[0];
   if (!model) throw new Error('No models configured');
 
@@ -377,7 +417,7 @@ export async function testProvider(
   const body = buildBody(model.id, text, targetLang, provider.body, promptTemplate, false, false, provider);
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000);
+  const timeoutId = setTimeout(() => controller.abort(), PROVIDER_TEST_TIMEOUT_MS);
 
   try {
     const response = await fetch(url, {
@@ -389,7 +429,13 @@ export async function testProvider(
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Unknown error');
-      throw new Error(`HTTP ${response.status}: ${errorText}`);
+      throw new Error(`HTTP ${response.status}: ${sanitizeHttpErrorBody(errorText) || 'Unknown error'}`);
+    }
+
+    // 流式 provider 的响应是 SSE，不能走 response.json()（会抛 JSON Parse error）
+    if (provider.stream === true) {
+      const { text: streamedText } = await consumeOpenAIStream(response, controller.signal);
+      return { text: streamedText, modelName: model.name };
     }
 
     const data = (await response.json()) as OpenAIChatResponse;
@@ -401,13 +447,7 @@ export async function testProvider(
     return {
       text: translatedText,
       modelName: model.name,
-      usage: data.usage
-        ? {
-            promptTokens: data.usage.prompt_tokens ?? 0,
-            completionTokens: data.usage.completion_tokens ?? 0,
-            totalTokens: data.usage.total_tokens ?? 0,
-          }
-        : undefined,
+      usage: toTokenUsage(data.usage),
     };
   } finally {
     clearTimeout(timeoutId);

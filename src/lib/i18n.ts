@@ -25,5 +25,10 @@ export function t(key: string): string {
   if (loadedLang && cache[loadedLang]?.[key]) {
     return cache[loadedLang][key];
   }
+  // 基础 UI 组件与单测环境可能没有 chrome.i18n（SSR / linkedom / 非扩展上下文），
+  // 此时回退到 key 本身，避免直接访问 chrome 抛错打断渲染。
+  if (typeof chrome === 'undefined' || !chrome.i18n?.getMessage) {
+    return key;
+  }
   return chrome.i18n.getMessage(key) || key;
 }

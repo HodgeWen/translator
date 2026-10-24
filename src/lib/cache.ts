@@ -2,7 +2,7 @@ import Dexie, { type EntityTable, type Table } from 'dexie';
 import type { CacheEntry, RequestLogEntry, DailyTokenUsageEntry } from '@/types';
 
 const DB_NAME = 'TranslatorCache';
-const DB_VERSION = 7; // v7: 以新主键重建图片缓存表；v6 仅负责删除旧表
+const DB_VERSION = 8; // v8: 统计表补索引（裁剪与按 provider 清理不再全表扫描）
 const TTL_DAYS = 7;
 const TTL_MS = TTL_DAYS * 24 * 60 * 60 * 1000;
 
@@ -65,11 +65,30 @@ db.version(6).stores({
   image_translations: null,
 });
 // v7: 以新主键重建图片缓存表
-db.version(DB_VERSION).stores({
+db.version(7).stores({
   translations: 'hash, targetLang, createdAt',
   request_logs: '++id, [providerId+modelId], timestamp',
   daily_token_usage: '++id, [providerId+modelId+date], date',
   image_translations: '[imageHash+promptVersion+targetLang], createdAt',
+});
+// v8: 统计表补索引。只新增索引、不改主键、不删表，Dexie 会就地建索引并保留全部既有
+// 行（升级后 request_logs / daily_token_usage 的历史统计不丢；translations 与
+// image_translations 完全未提及，保持原样）。
+//   - request_logs 加 [providerId+modelId+timestamp]：裁剪「每键最多 100 条」时按
+//     索引范围取最旧的主键，替代旧实现「把该键全部行读出来再 sortBy」。
+//   - daily_token_usage 加 [providerId+modelId]：按 provider+model 清理时命中索引。
+//   - 两表都加单字段 providerId：修掉 clearStatsForProvider 的真实报错。
+//     旧 v7 的 daily_token_usage 只有 [providerId+modelId+date] 这一个复合索引，
+//     Dexie 的 where({providerId}) 会把它当「虚拟前缀索引」用，按 keyTail=2 在
+//     上下界补两个 `[[]]` 哨兵；但补位复用了同一个 `[[]]` 实例，而 IndexedDB 规范
+//     的「convert value to key」会因数组内出现重复引用判为非法键 → 直接抛 DataError
+//     （实测 fake-indexeddb 与 Dexie 4.0.11：request_logs 正常，daily 抛错）。
+//     结果是「清除某服务商统计」先删掉 request_logs 再抛错，daily 用量记录静默残留。
+//     有了真正的 providerId 单字段索引，where({providerId}) 命中实体索引，不再走
+//     虚拟前缀填充，既正确也更快（无需按 keyTail 展开主键）。
+db.version(DB_VERSION).stores({
+  request_logs: '++id, providerId, [providerId+modelId], [providerId+modelId+timestamp], timestamp',
+  daily_token_usage: '++id, providerId, [providerId+modelId], [providerId+modelId+date], date',
 });
 
 let openPromise: Promise<CacheDatabase> | null = null;
@@ -110,7 +129,9 @@ export async function getCachedTranslation(
   if (!entry) return null;
 
   if (Date.now() - entry.createdAt > TTL_MS) {
-    await dbInstance.translations.delete(hash);
+    // 缓存是可选加速层：清理失败（事务被中止 / 连接关闭）绝不能把「缓存未命中」
+    // 变成「翻译失败」。与下方碰撞占位清理保持同一策略。
+    await dbInstance.translations.delete(hash).catch(() => {});
     return null;
   }
 
@@ -188,21 +209,25 @@ export async function setCachedImageTranslation(entry: ImageTranslationSnapshot)
 export async function clearExpiredCache(): Promise<number> {
   const dbInstance = await ensureDb();
   const cutoff = Date.now() - TTL_MS;
-  const expired = await dbInstance.translations
+
+  // 只取主键而不 toArray()：过期条目可能上千条，每条都带 sourceText + text（数 KB），
+  // 全量物化会让后台 service worker 在清理时白白吃几 MB 内存。索引 'createdAt'
+  // 上的 primaryKeys() 走同一条索引范围扫描，但只读键、不读值。
+  const expiredHashes = await dbInstance.translations
     .where('createdAt')
     .below(cutoff)
-    .toArray();
+    .primaryKeys();
 
-  await dbInstance.translations.bulkDelete(expired.map(e => e.hash));
+  await dbInstance.translations.bulkDelete(expiredHashes);
 
-  const expiredImages = await dbInstance.image_translations
+  // 图片缓存主键是复合键 [imageHash+promptVersion+targetLang]，primaryKeys() 返回的
+  // 正是该复合键数组，可直接交给 bulkDelete。
+  const expiredImageKeys = await dbInstance.image_translations
     .where('createdAt')
     .below(cutoff)
-    .toArray();
+    .primaryKeys();
 
-  await dbInstance.image_translations.bulkDelete(
-    expiredImages.map(e => buildImageCacheKey(e.imageHash, e.promptVersion, e.targetLang))
-  );
+  await dbInstance.image_translations.bulkDelete(expiredImageKeys);
 
-  return expired.length + expiredImages.length;
+  return expiredHashes.length + expiredImageKeys.length;
 }

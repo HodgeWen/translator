@@ -6,6 +6,8 @@ export type DisplayStyle = 'original' | 'bilingual' | 'underline' | 'clean';
 export type TranslationTone = 'normal' | 'technical' | 'tech_forward' | 'humorous' | 'literary' | 'formal' | 'colloquial';
 export type InputLoadingPulseEasing = 'linear' | 'ease-out' | 'spring';
 export type TranslationLoadingTheme = 'indigo' | 'aurora' | 'monochrome' | 'cosmic';
+// 界面配色：system 跟随系统；light / dark 为用户显式覆盖
+export type ColorScheme = 'system' | 'light' | 'dark';
 
 // OpenAI-compatible provider configuration
 export interface ProviderConfig {
@@ -48,6 +50,7 @@ export interface GlobalSettings {
   displayStyle: DisplayStyle;
   translationTone: TranslationTone;
   translationLoadingTheme: TranslationLoadingTheme;
+  colorScheme: ColorScheme;
   globalPrompt: string;
   shortcutKey: string;
   hoverShortcutKey: string;
