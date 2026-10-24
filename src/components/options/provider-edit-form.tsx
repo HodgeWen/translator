@@ -1,22 +1,40 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CodeEditor } from '@/components/code-editor';
 import { NumberInput } from '@/components/ui/number-input';
 import { KeyValueList } from './key-value-list';
+import { Switch, SwitchRow } from '@/components/ui/switch';
 import { ReasoningHelpModal } from './reasoning-help-modal';
-import type { ProviderConfig } from '@/types';
+import type { ColorScheme, ProviderConfig } from '@/types';
 import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
-import { testProvider } from '@/lib/api';
-import { getRandomGreeting } from '@/lib/greetings';
-import { Plus, Trash2, Save, Eye, EyeOff, FileText, Sliders, ArrowUp, ArrowDown, Play, Loader2, CheckCircle2, XCircle, Globe } from 'lucide-react';
+import { Plus, Trash2, Save, FileText, Sliders, ArrowUp, ArrowDown, Globe } from 'lucide-react';
 import { PresetUrlsModal } from './preset-urls-modal';
+import { ProviderTestPanel } from './provider-test-panel';
+import { PasswordInput } from '@/components/ui/password-input';
+
+/**
+ * 接口地址校验：必须是带协议的合法 URL（与 schema 的 `z.string().url()` 对齐）。
+ * 抽成纯函数便于单测，也避免表单与 schema 的口径漂移。
+ */
+export function isValidEndpointUrl(baseURL: string): boolean {
+  try {
+    const url = new URL(baseURL.trim());
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
 
 interface ProviderEditFormProps {
   provider: ProviderConfig;
   isAddingProvider: boolean;
   nativeLanguage: string;
+  /** 界面语言：用于弹窗内技术文档的双语提示 */
+  uiLanguage?: string;
+  /** 界面配色偏好，透传给内嵌 CodeMirror 主题 */
+  colorScheme?: ColorScheme;
   onSave: (provider: ProviderConfig) => void;
   onCancel: () => void;
   onError: (message: string) => void;
@@ -26,52 +44,15 @@ export function ProviderEditForm({
   provider: initialProvider,
   isAddingProvider,
   nativeLanguage,
+  uiLanguage,
+  colorScheme = 'system',
   onSave,
   onCancel,
   onError,
 }: ProviderEditFormProps) {
   const [editingProvider, setEditingProvider] = useState<ProviderConfig>({ ...initialProvider });
-  const [showApiKey, setShowApiKey] = useState(false);
   const [showReasoningHelp, setShowReasoningHelp] = useState(false);
   const [showPresetUrlsModal, setShowPresetUrlsModal] = useState(false);
-  const testRunIdRef = useRef(0);
-  const activeTestProviderIdRef = useRef<string | null>(null);
-  const [testState, setTestState] = useState<
-    | { status: 'idle' }
-    | { status: 'loading' }
-    | { status: 'success'; result: string; modelName: string; sourceLang: string; usage?: { promptTokens: number; completionTokens: number; totalTokens: number } }
-    | { status: 'error'; message: string }
-  >({ status: 'idle' });
-
-  const resetTestState = (providerId: string | null = null) => {
-    testRunIdRef.current += 1;
-    activeTestProviderIdRef.current = providerId;
-    setTestState({ status: 'idle' });
-  };
-
-  const handleTest = async () => {
-    const providerId = editingProvider.id;
-    const runId = testRunIdRef.current + 1;
-    testRunIdRef.current = runId;
-    activeTestProviderIdRef.current = providerId;
-    setTestState({ status: 'loading' });
-    try {
-      const greeting = getRandomGreeting();
-      const result = await testProvider(editingProvider, greeting.text, nativeLanguage);
-      if (testRunIdRef.current !== runId || activeTestProviderIdRef.current !== providerId) return;
-      setTestState({
-        status: 'success',
-        result: result.text,
-        modelName: result.modelName,
-        sourceLang: greeting.lang,
-        usage: result.usage,
-      });
-    } catch (err) {
-      if (testRunIdRef.current !== runId || activeTestProviderIdRef.current !== providerId) return;
-      setTestState({ status: 'error', message: err instanceof Error ? err.message : String(err) });
-    }
-  };
-
   const updateEditingProvider = (updates: Partial<ProviderConfig>) => {
     setEditingProvider((prev) => ({ ...prev, ...updates }));
   };
@@ -85,8 +66,18 @@ export function ProviderEditForm({
       onError(t('error_required_fields'));
       return;
     }
+    // schema 要求合法 URL，但表单此前只校验非空：用户填 `example.com`（漏协议）
+    // 能通过表单，随后被 Zod 丢弃，provider 与 API Key 一起静默消失。
+    // 这里提前拦截，给出可操作的提示。
+    if (!isValidEndpointUrl(editingProvider.baseURL)) {
+      onError(t('error_invalid_base_url'));
+      return;
+    }
     onSave(editingProvider);
   };
+
+  // 弹窗内正文技术文档暂只提供中文，这里把界面语言透传下去做双语提示
+  const isZh = (uiLanguage ?? 'zh-CN').startsWith('zh');
 
   const temperature = editingProvider.temperature ?? 0.3;
   const topPEnabled = editingProvider.topP !== undefined;
@@ -104,9 +95,10 @@ export function ProviderEditForm({
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <div className="flex items-center h-5">
-            <label className="text-sm font-medium">{t('label_name')}</label>
+            <label htmlFor="provider-name" className="text-sm font-medium">{t('label_name')}</label>
           </div>
           <input
+            id="provider-name"
             type="text"
             value={editingProvider.name}
             onChange={(e) => updateEditingProvider({ name: e.target.value })}
@@ -115,7 +107,7 @@ export function ProviderEditForm({
         </div>
         <div className="space-y-2">
           <div className="flex items-center justify-between h-5">
-            <label className="text-sm font-medium">{t('label_base_url')}</label>
+            <label htmlFor="provider-base-url" className="text-sm font-medium">{t('label_base_url')}</label>
             <button
               type="button"
               onClick={() => setShowPresetUrlsModal(true)}
@@ -126,6 +118,7 @@ export function ProviderEditForm({
             </button>
           </div>
           <input
+            id="provider-base-url"
             type="text"
             value={editingProvider.baseURL}
             onChange={(e) => updateEditingProvider({ baseURL: e.target.value })}
@@ -135,25 +128,13 @@ export function ProviderEditForm({
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-medium">{t('label_api_key')}</label>
-        <div className="flex gap-2">
-          <input
-            type={showApiKey ? 'text' : 'password'}
-            value={editingProvider.apiKey}
-            onChange={(e) => updateEditingProvider({ apiKey: e.target.value })}
-            placeholder={t('placeholder_api_key')}
-            className="flex-1 h-9 rounded-md border border-input bg-transparent px-3 text-sm"
-          />
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-9 w-9 shrink-0"
-            onClick={() => setShowApiKey(!showApiKey)}
-            title={showApiKey ? t('btn_hide') : t('btn_show')}
-          >
-            {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </Button>
-        </div>
+        <label htmlFor="provider-api-key" className="text-sm font-medium">{t('label_api_key')}</label>
+        <PasswordInput
+          id="provider-api-key"
+          value={editingProvider.apiKey}
+          onChange={(apiKey) => updateEditingProvider({ apiKey })}
+          placeholder={t('placeholder_api_key')}
+        />
         <p className="text-xs text-muted-foreground">{t('hint_api_key')}</p>
       </div>
 
@@ -180,13 +161,14 @@ export function ProviderEditForm({
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-sm">{t('label_temperature')}</label>
+            <span id="provider-temperature-label" className="text-sm">{t('label_temperature')}</span>
             <Badge variant="secondary" className="font-mono text-[11px]">
               {temperature.toFixed(2)}
             </Badge>
           </div>
           <input
             type="range"
+            aria-labelledby="provider-temperature-label"
             min={0}
             max={2}
             step={0.05}
@@ -199,7 +181,7 @@ export function ProviderEditForm({
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-sm">{t('label_top_p')}</label>
+            <span id="provider-top-p-label" className="text-sm">{t('label_top_p')}</span>
             <div className="flex items-center gap-2">
               <Badge
                 variant="secondary"
@@ -229,6 +211,7 @@ export function ProviderEditForm({
           </div>
           <input
             type="range"
+            aria-labelledby="provider-top-p-label"
             min={0.05}
             max={1}
             step={0.05}
@@ -240,8 +223,8 @@ export function ProviderEditForm({
           <p className="text-xs text-muted-foreground">{t('hint_top_p')}</p>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-sm">{t('label_max_tokens')}</label>
+        <div className="space-y-2" role="group" aria-labelledby="provider-max-tokens-label">
+          <span id="provider-max-tokens-label" className="text-sm block">{t('label_max_tokens')}</span>
           <NumberInput
             min={1}
             allowEmpty
@@ -254,44 +237,34 @@ export function ProviderEditForm({
       </div>
 
       <div className="rounded-md border border-border p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-sm font-medium">{t('label_stream')}</div>
-            <div className="text-xs text-muted-foreground mt-0.5">{t('hint_stream')}</div>
-          </div>
-          <button
-            type="button"
-            onClick={() => updateEditingProvider({ stream: !stream })}
-            className={cn(
-              'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-              stream ? 'bg-indigo-500' : 'bg-muted'
-            )}
-            aria-pressed={stream}
-          >
-            <span
-              className={cn(
-                'inline-block h-4 w-4 transform rounded-full bg-white transition-transform',
-                stream ? 'translate-x-6' : 'translate-x-1'
-              )}
-            />
-          </button>
-        </div>
+        <SwitchRow
+          labelId="provider-stream-label"
+          label={t('label_stream')}
+          description={<span className="mt-0.5 inline-block">{t('hint_stream')}</span>}
+        >
+          <Switch
+            checked={stream}
+            onChange={(checked) => updateEditingProvider({ stream: checked })}
+            labelledBy="provider-stream-label"
+          />
+        </SwitchRow>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2" role="group" aria-labelledby="provider-extra-body-label">
         <div className="flex items-center justify-between">
-          <label className="text-sm font-medium">{t('label_extra_body')}</label>
+          <div id="provider-extra-body-label" className="text-sm font-medium">{t('label_extra_body')}</div>
           <button
             type="button"
             onClick={() => setShowReasoningHelp(true)}
             className="text-xs text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium flex items-center gap-1.5 cursor-pointer bg-indigo-50 dark:bg-indigo-950/20 px-2 py-1 rounded border border-indigo-100 dark:border-indigo-900/50 hover:bg-indigo-100 transition-colors"
           >
             <FileText className="h-3.5 w-3.5" />
-            <span>配置指南: 如何控制大模型推理与思考深度</span>
+            <span>{isZh ? '配置指南：如何控制大模型推理与思考深度' : 'Guide: controlling model reasoning depth'}</span>
           </button>
         </div>
         <p className="text-xs text-muted-foreground">{t('hint_extra_body_override')}</p>
         <CodeEditor
+          colorScheme={colorScheme}
           value={JSON.stringify(editingProvider.body, null, 2)}
           onChange={(value) => {
             try {
@@ -306,8 +279,8 @@ export function ProviderEditForm({
       </div>
 
 
-      <div className="space-y-2">
-        <label className="text-sm font-medium">{t('label_models')}</label>
+      <div className="space-y-2" role="group" aria-labelledby="provider-models-label">
+        <div id="provider-models-label" className="text-sm font-medium">{t('label_models')}</div>
         <p className="text-xs text-muted-foreground">{t('hint_model_order')}</p>
         {editingProvider.models.map((model, index) => (
           <div key={index} className="flex gap-2 items-center">
@@ -341,6 +314,7 @@ export function ProviderEditForm({
             </div>
             <input
               type="text"
+              aria-label={t('label_model_id')}
               value={model.id}
               onChange={(e) => {
                 const newModels = [...editingProvider.models];
@@ -352,6 +326,7 @@ export function ProviderEditForm({
             />
             <input
               type="text"
+              aria-label={t('label_display_name')}
               value={model.name}
               onChange={(e) => {
                 const newModels = [...editingProvider.models];
@@ -381,6 +356,7 @@ export function ProviderEditForm({
               variant="ghost"
               size="icon"
               className="h-8 w-8"
+              aria-label={t('btn_delete')}
               onClick={() => {
                 const newModels = editingProvider.models.filter((_, i) => i !== index);
                 updateEditingModels(newModels);
@@ -401,66 +377,13 @@ export function ProviderEditForm({
         </Button>
       </div>
 
-      {/* Test Connectivity */}
-      <div className="rounded-md border border-border p-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-sm font-medium">{t('label_test_provider')}</div>
-            <div className="text-xs text-muted-foreground mt-0.5">{t('hint_test_provider')}</div>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleTest}
-            disabled={testState.status === 'loading'}
-          >
-            {testState.status === 'loading' ? (
-              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Play className="mr-1.5 h-3.5 w-3.5" />
-            )}
-            {t('btn_test')}
-          </Button>
-        </div>
-
-        {testState.status === 'success' && (
-          <div className="rounded-md bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 p-3 space-y-2">
-            <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400">
-              <CheckCircle2 className="h-4 w-4" />
-              <span className="text-xs font-medium">{t('test_success')}</span>
-            </div>
-            <div className="text-sm text-foreground">{testState.result}</div>
-            <div className="flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
-              <span className="truncate max-w-[120px]">{testState.modelName}</span>
-              {testState.usage && (
-                <>
-                  <span className="text-muted-foreground/40">·</span>
-                  <span>Prompt {testState.usage.promptTokens}</span>
-                  <span className="text-muted-foreground/40">·</span>
-                  <span>Output {testState.usage.completionTokens}</span>
-                  <span className="text-muted-foreground/40">·</span>
-                  <span>Total {testState.usage.totalTokens}</span>
-                </>
-              )}
-            </div>
-          </div>
-        )}
-
-        {testState.status === 'error' && (
-          <div className="rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 space-y-1">
-            <div className="flex items-center gap-1.5 text-red-700 dark:text-red-400">
-              <XCircle className="h-4 w-4" />
-              <span className="text-xs font-medium">{t('test_failed')}</span>
-            </div>
-            <p className="text-xs text-red-600 dark:text-red-300 break-all">{testState.message}</p>
-          </div>
-        )}
-      </div>
+      {/* 连通性测试：独立组件，自带竞态作废逻辑 */}
+      <ProviderTestPanel provider={editingProvider} nativeLanguage={nativeLanguage} />
 
       {/* Sticky save bar */}
       <div className="sticky bottom-0 -mx-6 -mb-6 border-t border-border bg-background/95 backdrop-blur-sm rounded-b-lg">
         <div className="px-6 py-3 flex justify-end gap-2">
-          <Button variant="outline" size="sm" onClick={() => { onCancel(); resetTestState(); }}>
+          <Button variant="outline" size="sm" onClick={onCancel}>
             {t('btn_cancel')}
           </Button>
           <Button size="sm" onClick={handleSave} className="bg-indigo-600 hover:bg-indigo-700 text-white">
@@ -474,6 +397,7 @@ export function ProviderEditForm({
       <ReasoningHelpModal
         isOpen={showReasoningHelp}
         onClose={() => setShowReasoningHelp(false)}
+        uiLanguage={uiLanguage}
       />
 
       {/* Preset URLs list lookup modal */}

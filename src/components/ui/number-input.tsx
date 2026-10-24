@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Minus, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { t } from '@/lib/i18n';
 
 export interface NumberInputProps {
   value?: number;
@@ -14,6 +15,12 @@ export interface NumberInputProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  // 输入框 id，供外部 <label htmlFor> 关联
+  id?: string;
+  // 无可见 label 时的无障碍名称（与 aria-labelledby 二选一）
+  ariaLabel?: string;
+  // 指向外部可见标签的 id
+  ariaLabelledby?: string;
 }
 
 export function NumberInput({
@@ -28,8 +35,14 @@ export function NumberInput({
   placeholder,
   disabled = false,
   className,
+  id,
+  ariaLabel,
+  ariaLabelledby,
 }: NumberInputProps) {
-  const [inputValue, setInputValue] = React.useState<string>('');
+  // 首屏直接用外部 value 初始化，避免 SSR / 首帧渲染成空串（effect 之后才补值）
+  const [inputValue, setInputValue] = React.useState<string>(() =>
+    value === undefined || value === null ? '' : String(value)
+  );
 
   React.useEffect(() => {
     setInputValue(value === undefined || value === null ? '' : String(value));
@@ -115,7 +128,22 @@ export function NumberInput({
     onChange?.(nextVal);
   };
 
+  // 上下方向键增减：与原生 spinbutton 行为一致；阻止默认以免光标跳到行首/行尾
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (disabled) return;
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      handleStep('up');
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      handleStep('down');
+    }
+  };
+
   const parsedVal = parseInt(inputValue, 10);
+  // allowEmpty 下可能没有数值：此时不声明 spinbutton（该 role 要求 aria-valuenow），
+  // 退回普通 textbox，避免产出不符合 ARIA 规范的组合
+  const hasNumericValue = !isNaN(parsedVal);
   const isMinusDisabled = disabled || (min !== undefined && !isNaN(parsedVal) && parsedVal <= min);
   const isPlusDisabled = disabled || (max !== undefined && !isNaN(parsedVal) && parsedVal >= max);
 
@@ -133,6 +161,7 @@ export function NumberInput({
         type="button"
         disabled={isMinusDisabled}
         onClick={() => handleStep('down')}
+        aria-label={t('a11y_decrease')}
         className={cn(
           "flex items-center justify-center shrink-0 text-muted-foreground transition-colors",
           "hover:bg-accent hover:text-accent-foreground active:bg-accent/80",
@@ -144,12 +173,21 @@ export function NumberInput({
       </button>
 
       <input
+        id={id}
         type="text"
         inputMode="numeric"
         pattern="[0-9]*"
+        // spinbutton 语义让读屏能朗读「当前值 / 最小 / 最大」，并提示可用上下键调整
+        role={hasNumericValue ? 'spinbutton' : undefined}
+        aria-valuemin={hasNumericValue ? min : undefined}
+        aria-valuemax={hasNumericValue ? max : undefined}
+        aria-valuenow={hasNumericValue ? parsedVal : undefined}
+        aria-label={ariaLabelledby ? undefined : ariaLabel}
+        aria-labelledby={ariaLabelledby}
         value={inputValue}
         onChange={handleInputChange}
         onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
         placeholder={placeholder}
         disabled={disabled}
         className={cn(
@@ -163,6 +201,7 @@ export function NumberInput({
         type="button"
         disabled={isPlusDisabled}
         onClick={() => handleStep('up')}
+        aria-label={t('a11y_increase')}
         className={cn(
           "flex items-center justify-center shrink-0 text-muted-foreground transition-colors",
           "hover:bg-accent hover:text-accent-foreground active:bg-accent/80",

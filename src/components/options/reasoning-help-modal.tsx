@@ -1,11 +1,21 @@
 import { useState } from 'react';
-import { X, Code, Clipboard, Check, Lightbulb } from 'lucide-react';
+import { Code, Clipboard, Check, Lightbulb } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import { SettingsModal } from '@/components/ui/settings-modal';
+import { t } from '@/lib/i18n';
+import { useCopyFeedback } from '@/hooks/use-copy-feedback';
+
+/*
+ * 说明：本组件正文（各服务商推理参数的技术说明）面向中文用户，是该页主要受众，
+ * 因此正文技术文档暂只提供中文，未逐句翻译（逐句翻译会引入大量 locale 键而收益很低）。
+ * 仅「标题 / 按钮 / 关闭」等 UI 控件文案走 t()，保证英文界面下控件不出现中文。
+ */
 
 interface ReasoningHelpModalProps {
   isOpen: boolean;
   onClose: () => void;
+  /** 界面语言；正文技术文档暂只提供中文，此处仅用于说明横幅的双语提示 */
+  uiLanguage?: string;
 }
 
 type Vendor =
@@ -268,138 +278,119 @@ const VENDOR_DOCS: Record<Vendor, VendorDoc> = {
   }
 };
 
-export function ReasoningHelpModal({ isOpen, onClose }: ReasoningHelpModalProps) {
+export function ReasoningHelpModal({ isOpen, onClose, uiLanguage = 'zh-CN' }: ReasoningHelpModalProps) {
   const [activeVendor, setActiveVendor] = useState<Vendor>('openai');
-  const [copied, setCopied] = useState(false);
-
-  if (!isOpen) return null;
+  const { copied, copy, reset: resetCopied } = useCopyFeedback<boolean>();
+  const titleId = 'reasoning-help-modal-title';
+  const isZh = uiLanguage.startsWith('zh');
 
   const currentDoc = VENDOR_DOCS[activeVendor];
 
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(currentDoc.jsonSample);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Ignore copy failure
-    }
+  const handleCopy = () => {
+    void copy(currentDoc.jsonSample);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
-      {/* Backdrop click listener */}
-      <div className="absolute inset-0 cursor-default" onClick={onClose} />
-
-      <div className="relative w-full max-w-3xl rounded-xl border border-border bg-card shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-6 py-4 bg-muted/20">
-          <div className="flex items-center gap-2">
-            <Lightbulb className="h-5 w-5 text-indigo-500" />
-            <h3 className="text-base font-semibold text-foreground">主流服务商推理与深度思考（Thinking）参数指南</h3>
-          </div>
+    <SettingsModal
+      isOpen={isOpen}
+      onClose={onClose}
+      icon={<Lightbulb className="h-5 w-5 text-indigo-500" />}
+      title="主流服务商推理与深度思考（Thinking）参数指南"
+      titleId={titleId}
+      maxHeightClass="max-h-[85vh]"
+    >
+      {/* 左侧侧边栏 */}
+      <div className="w-44 border-r border-border bg-muted/10 p-2 space-y-0.5 overflow-y-auto">
+        {VENDORS.map(v => (
           <button
-            onClick={onClose}
-            className="rounded-full p-1 hover:bg-accent text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+            key={v.id}
+            onClick={() => {
+              setActiveVendor(v.id);
+              resetCopied();
+            }}
+            aria-pressed={activeVendor === v.id}
+            className={cn(
+              'w-full text-left px-2.5 py-1.5 text-xs rounded-md transition-colors cursor-pointer truncate',
+              activeVendor === v.id
+                ? 'bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 font-semibold'
+                : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+            )}
           >
-            <X className="h-5 w-5" />
+            {v.label}
           </button>
+        ))}
+      </div>
+
+      {/* 详情面板 */}
+      <div className="flex-1 p-6 overflow-y-auto flex flex-col space-y-4">
+        {/* 速度提示横幅 */}
+        <div className="rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 p-3 flex items-start gap-2">
+          <Lightbulb className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+            大模型深度思考会额外耗费数秒至数分钟，翻译场景建议关闭思考功能以获得毫秒级响应。
+            {!isZh && (
+              <span className="block mt-1 text-amber-700/80 dark:text-amber-400/80">
+                (Reference text below is Chinese-only. Deep thinking costs seconds to minutes;
+                disable it for translation to get millisecond-level responses.)
+              </span>
+            )}
+          </p>
         </div>
 
-        {/* Content Body */}
-        <div className="flex-1 flex overflow-hidden min-h-[350px]">
-          {/* Sidebar */}
-          <div className="w-44 border-r border-border bg-muted/10 p-2 space-y-0.5 overflow-y-auto">
-            {VENDORS.map(v => (
-              <button
-                key={v.id}
-                onClick={() => {
-                  setActiveVendor(v.id);
-                  setCopied(false);
-                }}
-                className={cn(
-                  'w-full text-left px-2.5 py-1.5 text-xs rounded-md transition-colors cursor-pointer truncate',
-                  activeVendor === v.id
-                    ? 'bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 font-semibold'
-                    : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
-                )}
-              >
-                {v.label}
-              </button>
+        <div>
+          <div className="flex items-center gap-2">
+            <h4 className="text-base font-bold text-foreground">{currentDoc.name}</h4>
+            <span className="text-xs font-normal text-muted-foreground">| {currentDoc.subTitle}</span>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+            {currentDoc.intro}
+          </p>
+        </div>
+
+        {/* JSON 示例 */}
+        <div className="space-y-1.5">
+          <div className="flex justify-between items-center">
+            <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+              <Code className="h-3.5 w-3.5" />
+              {isZh ? 'JSON 配置：' : 'JSON config:'}
+            </span>
+            <button
+              onClick={handleCopy}
+              className="text-xs text-indigo-600 hover:text-indigo-700 flex items-center gap-1 cursor-pointer hover:underline"
+            >
+              {copied ? (
+                <>
+                  <Check className="h-3.5 w-3.5 text-emerald-600" />
+                  <span className="text-emerald-600 font-semibold">{t('btn_copied_url')}</span>
+                </>
+              ) : (
+                <>
+                  <Clipboard className="h-3.5 w-3.5" />
+                  <span>{t('btn_copy_url')}</span>
+                </>
+              )}
+            </button>
+          </div>
+          <pre className="font-mono text-xs text-foreground bg-muted p-4 rounded border border-border overflow-x-auto select-all leading-relaxed shadow-inner">
+            {currentDoc.jsonSample}
+          </pre>
+        </div>
+
+        {/* 参数说明 */}
+        <div className="space-y-2">
+          <span className="text-xs font-semibold text-muted-foreground">
+            {isZh ? '参数说明：' : 'Parameter notes (Chinese):'}
+          </span>
+          <ul className="space-y-2">
+            {currentDoc.tips.map((tip, idx) => (
+              <li key={idx} className="text-xs text-muted-foreground leading-relaxed flex items-start gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 shrink-0 mt-1.5" />
+                <span>{tip}</span>
+              </li>
             ))}
-          </div>
-
-          {/* Details Pane */}
-          <div className="flex-1 p-6 overflow-y-auto flex flex-col space-y-4">
-            {/* Speed warning banner */}
-            <div className="rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 p-3 flex items-start gap-2">
-              <Lightbulb className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-              <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
-                大模型深度思考会额外耗费数秒至数分钟，翻译场景建议关闭思考功能以获得毫秒级响应。
-              </p>
-            </div>
-
-            <div>
-              <div className="flex items-center gap-2">
-                <h4 className="text-base font-bold text-foreground">{currentDoc.name}</h4>
-                <span className="text-xs font-normal text-muted-foreground">| {currentDoc.subTitle}</span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
-                {currentDoc.intro}
-              </p>
-            </div>
-
-            {/* JSON Code Example */}
-            <div className="space-y-1.5">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
-                  <Code className="h-3.5 w-3.5" />
-                  JSON 配置：
-                </span>
-                <button
-                  onClick={handleCopy}
-                  className="text-xs text-indigo-600 hover:text-indigo-700 flex items-center gap-1 cursor-pointer hover:underline"
-                >
-                  {copied ? (
-                    <>
-                      <Check className="h-3.5 w-3.5 text-emerald-600" />
-                      <span className="text-emerald-600 font-semibold">已复制!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Clipboard className="h-3.5 w-3.5" />
-                      <span>复制配置</span>
-                    </>
-                  )}
-                </button>
-              </div>
-              <pre className="font-mono text-xs text-foreground bg-muted p-4 rounded border border-border overflow-x-auto select-all leading-relaxed shadow-inner">
-                {currentDoc.jsonSample}
-              </pre>
-            </div>
-
-            {/* Dynamic Tips List */}
-            <div className="space-y-2">
-              <span className="text-xs font-semibold text-muted-foreground">参数说明：</span>
-              <ul className="space-y-2">
-                {currentDoc.tips.map((tip, idx) => (
-                  <li key={idx} className="text-xs text-muted-foreground leading-relaxed flex items-start gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 shrink-0 mt-1.5" />
-                    <span>{tip}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="border-t border-border px-6 py-3.5 bg-muted/20 flex justify-end">
-          <Button onClick={onClose} className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm size-sm">
-            关闭指南
-          </Button>
+          </ul>
         </div>
       </div>
-    </div>
+    </SettingsModal>
   );
 }

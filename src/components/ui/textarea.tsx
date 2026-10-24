@@ -5,6 +5,7 @@ export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextArea
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ className, ...props }, ref) => {
+    // {...props} 全量透传：id（供外部 <label htmlFor> 关联）、aria-*、aria-describedby 均直接落到 textarea 上
     return (
       <textarea
         ref={ref}

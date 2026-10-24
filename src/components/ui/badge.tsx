@@ -5,6 +5,8 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: 'default' | 'secondary' | 'destructive' | 'outline';
 }
 
+// 纯展示元素：不设 role，保持语义中性，避免读屏把装饰性标签当成独立控件；
+// 需要被读出的场景由调用方传 aria-label 或放进有语义的容器里。
 function Badge({ className, variant = 'default', ...props }: BadgeProps) {
   return (
     <div

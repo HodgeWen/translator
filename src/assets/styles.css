@@ -3,6 +3,8 @@
 @theme {
   --color-background: hsl(0 0% 100%);
   --color-foreground: hsl(222 47% 11%);
+  /* 卡片背景：组件里 15 处在用 bg-card，缺这个变量 Tailwind 会静默不生成规则 */
+  --color-card: hsl(0 0% 100%);
   --color-popover: hsl(0 0% 100%);
   --color-primary: hsl(243 75% 59%);
   --color-primary-foreground: hsl(0 0% 100%);
@@ -23,6 +25,7 @@
 .dark {
   --color-background: hsl(222 47% 6%);
   --color-foreground: hsl(210 20% 96%);
+  --color-card: hsl(222 47% 8%);
   --color-popover: hsl(222 47% 8%);
   --color-primary: hsl(243 70% 65%);
   --color-primary-foreground: hsl(0 0% 100%);

@@ -7,10 +7,14 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = 'default', size = 'default', ...props }, ref) => {
+  ({ className, variant = 'default', size = 'default', type = 'button', ...props }, ref) => {
+    // 默认 type="button"：避免放在 <form> 里被当成提交按钮；调用方显式传 type="submit" 时仍可覆盖。
+    // disabled 语义交给原生 disabled 属性（读屏会朗读 "dimmed/unavailable"），不额外加 aria-disabled，
+    // 因为两者同时出现时部分读屏会重复播报。
     return (
       <button
         ref={ref}
+        type={type}
         className={cn(
           'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
           {

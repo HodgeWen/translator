@@ -1,7 +1,24 @@
+import { cn } from '@/lib/utils'
+
 interface Section {
   title: string
   content: string
 }
+
+/**
+ * 流程步骤的渐变色。提到模块级：原先写在组件函数体内，
+ * 每次 render 都重建一次数组（纯静态数据，无重建理由）。
+ * 必须保持完整字面量（'from-sky-400 to-blue-500'），
+ * Tailwind 扫描源码时才能看到这些类名并生成规则。
+ */
+const FLOW_GRADIENTS = [
+  'from-sky-400 to-blue-500',
+  'from-indigo-400 to-indigo-600',
+  'from-violet-400 to-purple-600',
+  'from-fuchsia-400 to-pink-600',
+  'from-orange-400 to-rose-500',
+  'from-emerald-400 to-teal-600'
+] as const
 
 const manualZhCN: Section[] = [
   {
@@ -217,15 +234,6 @@ function TranslationFlowDiagram({ isZh }: { isZh: boolean }) {
         },
       ]
 
-  const gradients = [
-    'from-sky-400 to-blue-500',
-    'from-indigo-400 to-indigo-600',
-    'from-violet-400 to-purple-600',
-    'from-fuchsia-400 to-pink-600',
-    'from-orange-400 to-rose-500',
-    'from-emerald-400 to-teal-600',
-  ]
-
   return (
     <div className="relative py-2">
       {/* 中央竖线 */}
@@ -259,7 +267,10 @@ function TranslationFlowDiagram({ isZh }: { isZh: boolean }) {
           <div className="flex items-start gap-4">
             {/* 步骤编号 */}
             <div
-              className={`relative z-10 flex-shrink-0 w-[3.25rem] h-[3.25rem] rounded-xl bg-gradient-to-br ${gradients[i]} flex items-center justify-center text-white font-bold text-base shadow-md`}
+              className={cn(
+                'relative z-10 flex-shrink-0 w-[3.25rem] h-[3.25rem] rounded-xl bg-gradient-to-br flex items-center justify-center text-white font-bold text-base shadow-md',
+                FLOW_GRADIENTS[i]
+              )}
             >
               {i + 1}
             </div>
@@ -268,7 +279,10 @@ function TranslationFlowDiagram({ isZh }: { isZh: boolean }) {
             <div className="flex-1 min-w-0 rounded-xl border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md">
               <div className="flex items-center gap-2 mb-3">
                 <span
-                  className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold text-white bg-gradient-to-r ${gradients[i]}`}
+                  className={cn(
+                    'inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold text-white bg-gradient-to-r',
+                    FLOW_GRADIENTS[i]
+                  )}
                 >
                   {stage.badge}
                 </span>
@@ -280,7 +294,10 @@ function TranslationFlowDiagram({ isZh }: { isZh: boolean }) {
                 {stage.items.map((item, j) => (
                   <li key={j} className="flex items-start gap-2 text-sm text-muted-foreground">
                     <span
-                      className={`mt-1.5 block w-1.5 h-1.5 flex-shrink-0 rounded-full bg-gradient-to-r ${gradients[i]}`}
+                      className={cn(
+                        'mt-1.5 block w-1.5 h-1.5 flex-shrink-0 rounded-full bg-gradient-to-r',
+                        FLOW_GRADIENTS[i]
+                      )}
                     />
                     <span>{item}</span>
                   </li>

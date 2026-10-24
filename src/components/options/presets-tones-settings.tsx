@@ -1,38 +1,37 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import type { GlobalSettings, CustomTone } from '@/types';
 import { t } from '@/lib/i18n';
+import { useDebouncedSave } from '@/hooks/use-debounced-save';
 import { DEFAULT_GLOBAL_PROMPT, TONE_INSTRUCTIONS } from '@/lib/prompts';
 import { Plus, Trash2, Edit2, Lock, Sparkles, FileText, RotateCcw } from 'lucide-react';
+import { SettingsCard } from './settings-card';
 
 interface OptionsPresetsTonesSettingsProps {
   settings: GlobalSettings;
   onSave: (settings: GlobalSettings) => void;
 }
 
-// 系统内置翻译风格（只读），与 TONE_INSTRUCTIONS 保持同步
-const SYSTEM_TONES = (Object.keys(TONE_INSTRUCTIONS) as Array<keyof typeof TONE_INSTRUCTIONS>).map(key => ({
-  id: key,
-  label: t(`tone_${key}`),
-  desc: t(`tone_${key}_desc`),
-  instruction: TONE_INSTRUCTIONS[key],
-}));
+// 系统内置翻译风格（只读）的 id 列表，与 TONE_INSTRUCTIONS 保持同步。
+// 注意：文案必须在组件内调用 t() 生成，否则切换语言后模块级缓存不会刷新。
+const SYSTEM_TONE_IDS = Object.keys(TONE_INSTRUCTIONS) as Array<keyof typeof TONE_INSTRUCTIONS>;
 
 export function OptionsPresetsTonesSettings({ settings, onSave }: OptionsPresetsTonesSettingsProps) {
   const [draftPrompt, setDraftPrompt] = useState(settings.globalPrompt);
 
   useEffect(() => { setDraftPrompt(settings.globalPrompt); }, [settings.globalPrompt]);
 
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const debouncedSave = useCallback((patch: Partial<GlobalSettings>) => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      onSave({ ...settings, ...patch });
-    }, 500);
-  }, [settings, onSave]);
-  useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
+  const systemTones = SYSTEM_TONE_IDS.map(key => ({
+    id: key,
+    label: t(`tone_${key}`),
+    desc: t(`tone_${key}_desc`),
+    instruction: TONE_INSTRUCTIONS[key],
+  }));
+
+  // 全局提示词 textarea 逐字输入：同样走共享防抖，避免打满 sync 写入配额
+  const debouncedSave = useDebouncedSave(settings, onSave);
 
   const [editingTone, setEditingTone] = useState<CustomTone | null>(null);
   const [isAddingTone, setIsAddingTone] = useState(false);
@@ -41,7 +40,7 @@ export function OptionsPresetsTonesSettings({ settings, onSave }: OptionsPresets
   const handleAddTone = () => {
     setEditingTone({
       id: `custom_tone_${crypto.randomUUID().slice(0, 8)}`,
-      name: '自定义语气风格',
+      name: t('title_add_tone'),
       promptInstruction: '',
     });
     setIsAddingTone(true);
@@ -53,7 +52,7 @@ export function OptionsPresetsTonesSettings({ settings, onSave }: OptionsPresets
   };
 
   const handleDeleteTone = (id: string) => {
-    const nextTones = settings.customTones.filter(t => t.id !== id);
+    const nextTones = settings.customTones.filter(tone => tone.id !== id);
     onSave({
       ...settings,
       customTones: nextTones
@@ -67,7 +66,7 @@ export function OptionsPresetsTonesSettings({ settings, onSave }: OptionsPresets
     if (isAddingTone) {
       nextTones = [...settings.customTones, editingTone];
     } else {
-      nextTones = settings.customTones.map(t => t.id === editingTone.id ? editingTone : t);
+      nextTones = settings.customTones.map(tone => tone.id === editingTone.id ? editingTone : tone);
     }
 
     onSave({
@@ -82,12 +81,11 @@ export function OptionsPresetsTonesSettings({ settings, onSave }: OptionsPresets
   return (
     <div className="space-y-10">
       {/* Section 1: Global Prompt */}
-      <div className="rounded-lg border border-border p-6 bg-card space-y-4">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-indigo-500" />
-            <h3 className="text-lg font-semibold">{t('title_global_prompt')}</h3>
-          </div>
+      <SettingsCard
+        icon={<FileText className="h-5 w-5 text-indigo-500" />}
+        title={t('title_global_prompt')}
+        spaceClass="space-y-4"
+        actions={
           <Button
             variant="ghost"
             size="sm"
@@ -97,9 +95,12 @@ export function OptionsPresetsTonesSettings({ settings, onSave }: OptionsPresets
             <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
             {t('btn_reset_default')}
           </Button>
-        </div>
+        }
+      >
         <p className="text-sm text-muted-foreground">{t('desc_global_prompt')}</p>
+        <label htmlFor="global-prompt-input" className="sr-only">{t('title_global_prompt')}</label>
         <textarea
+          id="global-prompt-input"
           value={draftPrompt}
           onChange={(e) => { setDraftPrompt(e.target.value); debouncedSave({ globalPrompt: e.target.value }); }}
           rows={8}
@@ -109,31 +110,27 @@ export function OptionsPresetsTonesSettings({ settings, onSave }: OptionsPresets
           <p>{t('hint_prompt_vars')}</p>
           <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded">{'{{targetLang}}'}</code>
         </div>
-      </div>
+      </SettingsCard>
 
       {/* Section 2: Custom Tones */}
-      <div className="rounded-lg border border-border p-6 bg-card space-y-6">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-violet-500" />
-            <h3 className="text-lg font-semibold">自定义语气风格 (Custom Translation Tones)</h3>
-          </div>
-          {!editingTone && (
+      <SettingsCard
+        icon={<Sparkles className="h-5 w-5 text-violet-500" />}
+        title={t('title_custom_tones')}
+        actions={
+          !editingTone ? (
             <Button onClick={handleAddTone} size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white">
               <Plus className="mr-1.5 h-4 w-4" />
-              添加风格语气
+              {t('btn_add_tone')}
             </Button>
-          )}
-        </div>
-
-        <p className="text-xs text-muted-foreground mt-1">
-          定义属于你个人的个性化翻译语气风格。自定义语气将和系统默认翻译语气一同可供选择。
-        </p>
+          ) : null
+        }
+      >
+        <p className="text-xs text-muted-foreground mt-1">{t('desc_custom_tones')}</p>
 
         {editingTone ? (
           <div className="rounded-md border border-border p-4 bg-muted/5 space-y-4">
             <div className="flex justify-between items-center">
-              <h4 className="font-semibold text-sm">{isAddingTone ? '新建风格语气' : '编辑风格语气'}</h4>
+              <h4 className="font-semibold text-sm">{isAddingTone ? t('title_add_tone') : t('title_edit_tone')}</h4>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => setEditingTone(null)} className="h-8">
                   {t('btn_cancel')}
@@ -146,8 +143,9 @@ export function OptionsPresetsTonesSettings({ settings, onSave }: OptionsPresets
 
             <div className="grid grid-cols-1 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">风格名称 (例如: 学术风、文言文风)</label>
+                <label htmlFor="tone-name-input" className="text-sm font-medium">{t('label_tone_name')}</label>
                 <input
+                  id="tone-name-input"
                   type="text"
                   value={editingTone.name}
                   onChange={e => setEditingTone({ ...editingTone, name: e.target.value })}
@@ -156,12 +154,13 @@ export function OptionsPresetsTonesSettings({ settings, onSave }: OptionsPresets
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">注入的 Prompt 指令 (例如: Translate in Classical Chinese style...)</label>
+                <label htmlFor="tone-instruction-input" className="text-sm font-medium">{t('label_tone_instruction')}</label>
                 <Textarea
+                  id="tone-instruction-input"
                   rows={3}
                   value={editingTone.promptInstruction}
                   onChange={e => setEditingTone({ ...editingTone, promptInstruction: e.target.value })}
-                  placeholder="输入该风格翻译需要遵循的具体 Prompt 指导指令..."
+                  placeholder={t('placeholder_tone_instruction')}
                   className="font-mono text-xs font-medium"
                 />
               </div>
@@ -170,56 +169,61 @@ export function OptionsPresetsTonesSettings({ settings, onSave }: OptionsPresets
         ) : (
           <div className="space-y-4">
             {/* Render system built-in tones (read-only) */}
-            {SYSTEM_TONES.map(tone => (
+            {systemTones.map(tone => (
               <div key={tone.id} className="rounded-lg border border-border/80 p-4 bg-muted/20 flex items-start justify-between gap-4">
                 <div className="space-y-1.5 min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <h4 className="font-semibold text-sm text-foreground/90">{tone.label}</h4>
                     <Badge variant="outline" className="text-[10px] text-muted-foreground border-border bg-background flex items-center">
                       <Lock className="h-2.5 w-2.5 mr-1" />
-                      系统内置 (只读)
+                      {t('badge_builtin_readonly')}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground leading-relaxed">{tone.desc}</p>
                   <pre className="font-mono text-[10px] text-foreground/80 bg-muted/50 p-2.5 rounded border border-border/50 overflow-x-auto whitespace-pre-wrap leading-relaxed">
-{tone.instruction || '（无额外指令，使用默认自然翻译风格）'}
+{tone.instruction || t('tone_no_extra_instruction')}
                   </pre>
                 </div>
               </div>
             ))}
 
             {/* Render custom tones */}
-            {settings.customTones.length === 0 ? (
-              <div className="text-center p-6 border border-dashed border-border rounded-lg bg-muted/5 text-xs text-muted-foreground">
-                目前没有任何自定义语气风格，支持添加个性化的语气！
-              </div>
-            ) : (
-              settings.customTones.map(tone => (
-                <div key={tone.id} className="rounded-lg border border-border p-4 bg-card flex items-center justify-between gap-4 hover:border-violet-500/30 transition-colors">
-                  <div className="space-y-1 min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-semibold text-sm text-foreground">{tone.name}</h4>
-                      <Badge variant="outline" className="text-[10px] text-violet-500 border-violet-200/50 bg-violet-500/5">
-                        自定义语气
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground/80 font-mono truncate">{tone.promptInstruction}</p>
-                  </div>
-
-                  <div className="flex gap-2 shrink-0">
-                    <Button variant="outline" size="sm" onClick={() => handleEditTone(tone)} className="h-8">
-                      <Edit2 className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button variant="destructive" size="sm" onClick={() => handleDeleteTone(tone.id)} className="h-8">
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
+            <div className="pt-2">
+              <h4 className="text-sm font-semibold mb-3">{t('title_custom_tones_section')}</h4>
+              {settings.customTones.length === 0 ? (
+                <div className="text-center p-6 border border-dashed border-border rounded-lg bg-muted/5 text-xs text-muted-foreground">
+                  {t('empty_no_tones')}
                 </div>
-              ))
-            )}
+              ) : (
+                <div className="space-y-3">
+                  {settings.customTones.map(tone => (
+                    <div key={tone.id} className="rounded-lg border border-border p-4 bg-card flex items-center justify-between gap-4 hover:border-violet-500/30 transition-colors">
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-semibold text-sm text-foreground">{tone.name}</h4>
+                          <Badge variant="outline" className="text-[10px] text-violet-500 border-violet-200/50 bg-violet-500/5">
+                            {t('title_custom_tones_section')}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground/80 font-mono truncate">{tone.promptInstruction}</p>
+                      </div>
+
+                      <div className="flex gap-2 shrink-0">
+                        <Button variant="outline" size="sm" onClick={() => handleEditTone(tone)} className="h-8" aria-label={t('btn_edit')}>
+                          <Edit2 className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button variant="destructive" size="sm" onClick={() => handleDeleteTone(tone.id)} className="h-8" aria-label={t('btn_delete')}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
-      </div>
+      </SettingsCard>
     </div>
   );
 }

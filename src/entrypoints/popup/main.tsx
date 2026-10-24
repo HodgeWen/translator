@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useReducer, useRef } from 'react'
 import { createRoot } from 'react-dom/client'
 import '@/assets/styles.css'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
 import { useDarkMode } from '@/hooks/use-dark-mode'
 import { Toast } from '@/components/ui/toast'
-import { Select } from '@/components/ui/select'
-import { PopupTranslationResult } from '@/components/popup/translation-result'
+import { PopupTranslationResult, localizeTranslationError } from '@/components/popup/translation-result'
+import { PopupHeader } from '@/components/popup/popup-header'
+import { PopupServiceSelector } from '@/components/popup/popup-service-selector'
+import { PopupInputArea } from '@/components/popup/popup-input-area'
+import { TARGET_AUTO, resolveAutoTargetLang, type TargetSelection, type SelectedImage } from '@/components/popup/popup-shared'
 import type {
   GlobalSettings,
   TranslationResponse,
@@ -17,9 +18,8 @@ import type {
 } from '@/types'
 import { getSettings, saveSettings } from '@/lib/storage'
 import { sendBgMessage } from '@/lib/messaging'
-import { detectLanguageLocal, isSameLanguage } from '@/lib/lang-detect'
+import { detectLanguageLocal } from '@/lib/lang-detect'
 import {
-  LOCAL_IMAGE_ACCEPT,
   imageTranslationErrorKey,
   localImageFileErrorKey,
   readImageFileAsDataUrl,
@@ -28,32 +28,8 @@ import {
 } from '@/lib/image-translate/local-image'
 import { ImageTranslationError } from '@/lib/image-translate/types'
 import { BgMessageError } from '@/lib/messaging'
-import { LANGUAGE_OPTIONS } from '@/lib/languages'
 import { t, setUILanguage } from '@/lib/i18n'
 import { useToast } from '@/hooks/use-toast'
-import { Send, Loader2, Settings, Layers, Languages, Square, ImagePlus, X } from 'lucide-react'
-import { LogoIcon } from '@/components/logo-icon'
-
-const TARGET_AUTO = 'auto' as const
-type TargetSelection = typeof TARGET_AUTO | LangCode
-
-interface SelectedImage {
-  previewUrl: string
-  dataUrl: string
-  name: string
-}
-
-// 根据检测结果决定翻译方向：母语→第二语言，外语→母语
-function resolveAutoTargetLang(
-  detectedLang: LangCode | null,
-  nativeLanguage: LangCode,
-  secondLanguage: LangCode
-): LangCode {
-  if (detectedLang && isSameLanguage(detectedLang, nativeLanguage)) {
-    return secondLanguage
-  }
-  return nativeLanguage
-}
 
 function App() {
   const { toast, showSuccess, showError, dismiss } = useToast()
@@ -66,7 +42,10 @@ function App() {
     usage?: { promptTokens: number; completionTokens: number; totalTokens: number }
   } | null>(null)
   const [loading, setLoading] = useState(false)
-  const [langVersion, setLangVersion] = useState(0)
+  // 语言切换后强制重渲染（不卸载子树，避免丢失正在输入的草稿）。
+  // 与 options/main.tsx 保持同一方案：t() 是普通函数而非 hook，语言包加载完成后
+  // 必须触发一次 re-render 才能让文案重新求值；用 key 重挂载会清空输入框与结果。
+  const [, forceLangRender] = useReducer((n: number) => n + 1, 0)
   const [currentTone, setCurrentTone] = useState<TranslationTone>('normal')
   const [targetLangPreview, setTargetLangPreview] = useState<LangCode>('zh-CN')
   const [manualTarget, setManualTarget] = useState<TargetSelection>(TARGET_AUTO)
@@ -77,6 +56,12 @@ function App() {
   const imageInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const detectSeqRef = useRef(0)
+  // 翻译失败的内联错误：用 role="alert" 呈现，比 toast 更利于键盘/读屏用户
+  const [error, setError] = useState<{ text: string; retryable: boolean } | null>(null)
+  // 请求序号：快速连续操作时用它丢弃过期响应，防止旧结果覆盖新结果
+  const requestSeqRef = useRef(0)
+  // 最近一次翻译的文本入参，供「重试」复用；undefined 表示走图片链路
+  const lastAttemptRef = useRef<string | undefined>(undefined)
 
   useEffect(() => {
     loadSettingsData()
@@ -90,7 +75,8 @@ function App() {
     return () => clearTimeout(timer)
   }, [])
 
-  useDarkMode()
+  // 与设置页共用同一份配色偏好：settings 尚未加载时先跟随系统，避免闪烁成错误配色
+  useDarkMode(settings?.colorScheme ?? 'system')
 
   useEffect(() => {
     if (!settings) return
@@ -119,7 +105,7 @@ function App() {
       await setUILanguage(s.uiLanguage)
       setSettings(s)
       setTargetLangPreview(s.nativeLanguage)
-      setLangVersion((v) => v + 1)
+      forceLangRender()
       setCurrentTone(s.translationTone)
     } catch {
       showError(t('error_load_settings'))
@@ -134,15 +120,24 @@ function App() {
     }
   }, [image])
 
-  const showImageFailure = (failure: unknown) => {
-    if (failure instanceof BgMessageError || failure instanceof ImageTranslationError) {
-      showError(t(imageTranslationErrorKey(failure.code)))
-    } else {
-      showError(failure instanceof Error ? failure.message : t('error_translation_failed'))
+  // 图片链路的错误码更具体（NO_VISION_MODEL 等），优先用图片映射；
+  // 映射不到时回落到通用的翻译错误本地化，避免把英文原文甩给用户。
+  const localizeImageFailure = (failure: unknown): string => {
+    if (failure instanceof ImageTranslationError) {
+      return t(imageTranslationErrorKey(failure.code))
     }
+    if (failure instanceof BgMessageError) {
+      const key = imageTranslationErrorKey(failure.code)
+      return key === 'error_translation_failed' ? localizeTranslationError(failure) : t(key)
+    }
+    return localizeTranslationError(failure)
   }
 
-  const translateImageAndShow = async (dataUrl: string) => {
+  // 只在响应仍是最新一次请求时才允许写 UI：取消或新请求会自增序号，
+  // 在途的旧响应随之失效（真正的网络 abort 待 api.ts 暴露 signal 后再接线）。
+  const isCurrent = (seq: number) => seq === requestSeqRef.current
+
+  const translateImageAndShow = async (dataUrl: string, seq: number) => {
     if (!settings) return
     const targetLang = resolveLocalImageTargetLang(
       manualTarget,
@@ -154,6 +149,7 @@ function App() {
       type: 'IMAGE_TRANSLATE',
       payload: { dataUrl, targetLang }
     })
+    if (!isCurrent(seq)) return
     const provider = settings.providers.find((p) => p.id === response.providerId)
     const model = provider?.models.find((m) => m.id === response.modelId)
     setResultMeta({
@@ -171,18 +167,24 @@ function App() {
       return
     }
 
+    const seq = ++requestSeqRef.current
+    // 图片链路的重试目标就是当前图片，故清空文本入参
+    lastAttemptRef.current = undefined
     setLoading(true)
+    setError(null)
     setResult('')
     setResultMeta(null)
     try {
       const dataUrl = await readImageFileAsDataUrl(file)
+      if (!isCurrent(seq)) return
       setInputText('')
       setImage({ previewUrl: URL.createObjectURL(file), dataUrl, name: file.name })
-      await translateImageAndShow(dataUrl)
+      await translateImageAndShow(dataUrl, seq)
     } catch (failure) {
-      showImageFailure(failure)
+      if (!isCurrent(seq)) return
+      setError({ text: localizeImageFailure(failure), retryable: true })
     } finally {
-      setLoading(false)
+      if (isCurrent(seq)) setLoading(false)
     }
   }
 
@@ -228,15 +230,19 @@ function App() {
   const handleTranslate = async (textOverride?: string) => {
     // 有图片时优先翻译图片；粘贴文本带 textOverride 的场景仍走文本链路
     if (!textOverride && image) {
+      const seq = ++requestSeqRef.current
+      lastAttemptRef.current = undefined
       setLoading(true)
+      setError(null)
       setResult('')
       setResultMeta(null)
       try {
-        await translateImageAndShow(image.dataUrl)
+        await translateImageAndShow(image.dataUrl, seq)
       } catch (failure) {
-        showImageFailure(failure)
+        if (!isCurrent(seq)) return
+        setError({ text: localizeImageFailure(failure), retryable: true })
       } finally {
-        setLoading(false)
+        if (isCurrent(seq)) setLoading(false)
       }
       return
     }
@@ -244,7 +250,10 @@ function App() {
     const text = textOverride ?? inputText
     if (!text.trim()) return
     if (!settings) return
+    const seq = ++requestSeqRef.current
+    lastAttemptRef.current = text
     setLoading(true)
+    setError(null)
     setResult('')
     setResultMeta(null)
 
@@ -257,6 +266,7 @@ function App() {
         const detected = await detectLanguageLocal(trimmed)
         targetLang = resolveAutoTargetLang(detected, settings.nativeLanguage, settings.secondLanguage)
       }
+      if (!isCurrent(seq)) return
       setTargetLangPreview(targetLang)
       const response = await sendBgMessage<TranslationResponse>({
         type: 'TRANSLATE',
@@ -266,6 +276,7 @@ function App() {
           enablePolysemy: true,
         }
       })
+      if (!isCurrent(seq)) return
 
       const provider = settings.providers.find((p) => p.id === response.providerId)
       const model = provider?.models.find((m) => m.id === response.modelId)
@@ -276,10 +287,32 @@ function App() {
       })
       setResult(response.text)
     } catch (err) {
-      showError(err instanceof Error ? err.message : t('error_translation_failed'))
+      if (!isCurrent(seq)) return
+      setError({ text: localizeTranslationError(err), retryable: true })
     } finally {
-      setLoading(false)
+      if (isCurrent(seq)) setLoading(false)
     }
+  }
+
+  /**
+   * 取消正在进行的翻译。
+   * 实现是「本地作废」：自增请求序号让在途响应全部失效，并立即解除 loading 态。
+   * 后台请求本身仍会跑完（api.ts 尚未接受外部 signal），后续可在 sendBgMessage
+   * 增加 signal 参数后，在这里同时 abort 真正的网络请求。
+   */
+  const handleCancel = () => {
+    requestSeqRef.current += 1
+    setLoading(false)
+    setError({ text: t('error_request_aborted'), retryable: true })
+  }
+
+  // 重试：复用上一次的文本入参（或当前图片），把交互成本降到一次点击
+  const handleRetry = () => {
+    if (lastAttemptRef.current !== undefined) {
+      void handleTranslate(lastAttemptRef.current)
+      return
+    }
+    void handleTranslate()
   }
 
   const handleCopy = async () => {
@@ -299,8 +332,12 @@ function App() {
       return
     }
 
+    // React 事件派发结束（executeDispatch 的 finally）会把 currentTarget 置为 null，
+    // 因此这里不能读 e.currentTarget；改用 ref 拿 textarea 的最新值。
+    // 仍需 setTimeout：默认粘贴动作在事件处理返回后才把内容写进 textarea，
+    // 同步读取只能拿到粘贴前的旧值。
     window.setTimeout(() => {
-      const val = e.currentTarget.value
+      const val = textareaRef.current?.value ?? ''
       if (val.trim()) handleTranslate(val)
     }, 0)
   }
@@ -335,6 +372,8 @@ function App() {
 
   const activeServiceId = settings.selectedServiceId || (settings.services[0]?.id ?? '')
   const activeService = settings.services.find((s) => s.id === activeServiceId) || settings.services[0]
+  // 没有任何翻译服务时不渲染空下拉框，改为在输入区位置展示空态引导
+  const hasServices = settings.services.length > 0
 
   const handleModelChange = async (modelId: string) => {
     if (!settings || !activeService || activeService.type !== 'single') return
@@ -350,202 +389,62 @@ function App() {
   }
 
   return (
-    <div className="w-[450px] bg-background text-foreground flex flex-col" key={langVersion}>
+    <div className="w-[450px] max-h-[600px] bg-background text-foreground flex flex-col">
       <Toast toast={toast} onDismiss={dismiss} />
 
-      {/* Header */}
-      <div className="px-4 py-2 border-b border-border flex items-center justify-between bg-gradient-to-r from-indigo-500/5 to-violet-500/5">
-        <div className="flex items-center gap-2">
-          <div className="h-6 w-6 rounded-md bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center">
-            <LogoIcon className="h-3.5 w-3.5 text-white" />
-          </div>
-          <h1 className="text-base font-semibold tracking-tight">{t('extName')}</h1>
-          <span className="text-[10px] text-muted-foreground/60 font-mono">v{chrome.runtime.getManifest().version}</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <Button
-            variant={pageTranslating ? 'outline' : 'secondary'}
-            size="sm"
-            className="h-7 shrink-0 gap-1 px-2.5 text-xs"
-            onClick={handleTogglePageTranslation}
-            title={pageTranslating ? t('popup_stop_translation') : t('popup_translate_page')}
-          >
-            {pageTranslating ? (
-              <Square className="fill-current text-red-500" />
-            ) : (
-              <Languages className="text-indigo-500" />
-            )}
-            {pageTranslating ? t('popup_stop_translation') : t('popup_translate_page')}
-          </Button>
-          <Select
-            value={currentTone}
-            options={toneOptions}
-            onChange={handleToneChange}
-            className="w-[100px]"
-            compact
+      <PopupHeader
+        pageTranslating={pageTranslating}
+        onTogglePageTranslation={handleTogglePageTranslation}
+        currentTone={currentTone}
+        toneOptions={toneOptions}
+        onToneChange={handleToneChange}
+      />
+
+      {hasServices && (
+        <PopupServiceSelector
+          settings={settings}
+          activeServiceId={activeServiceId}
+          activeService={activeService}
+          onServiceChange={handleServiceChange}
+          onModelChange={handleModelChange}
+        />
+      )}
+
+      <PopupInputArea
+        hasServices={hasServices}
+        inputText={inputText}
+        image={image}
+        loading={loading}
+        error={error}
+        manualTarget={manualTarget}
+        targetLangPreview={targetLangPreview}
+        imageInputRef={imageInputRef}
+        textareaRef={textareaRef}
+        onInputChange={(value) => {
+          setInputText(value)
+          // 输入文本即放弃已选图片，保持「一次只有一个翻译对象」
+          if (value) clearImage()
+        }}
+        onClearImage={clearImage}
+        onImageInputChange={handleImageInputChange}
+        onPaste={handlePaste}
+        onKeyDown={handleKeyDown}
+        onTranslate={() => handleTranslate()}
+        onCancel={handleCancel}
+        onRetry={handleRetry}
+        onDismissError={() => setError(null)}
+        onManualTargetChange={setManualTarget}
+        result={
+          <PopupTranslationResult
+            result={result}
+            onCopy={handleCopy}
+            providerName={resultMeta?.providerName}
+            modelName={resultMeta?.modelName}
+            usage={resultMeta?.usage}
+            loading={loading}
           />
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 shrink-0"
-            onClick={() => chrome.runtime.openOptionsPage()}
-            title={t('popup_open_settings')}
-          >
-            <Settings className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Service & Model Selector Row */}
-      <div className="px-4 py-2 border-b border-border flex items-center justify-between gap-3 bg-muted/10">
-        <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1 shrink-0">
-          <Layers className="h-3.5 w-3.5 text-indigo-500" />
-          服务:
-        </span>
-        <Select
-          value={activeServiceId}
-          options={settings.services.map((s) => ({
-            value: s.id,
-            label: `${s.name} (${s.type === 'pool' ? '翻译池' : '单提供商'})`
-          }))}
-          onChange={handleServiceChange}
-          placeholder="选择翻译服务"
-          className="flex-1 min-w-0"
-          compact
-        />
-        {activeService && activeService.type === 'single' && (
-          <>
-            <span className="text-xs font-semibold text-muted-foreground/80 flex items-center gap-1 shrink-0">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              模型:
-            </span>
-            <Select
-              value={activeService.modelId}
-              options={settings.providers.find(p => p.id === activeService.providerId)?.models.map(m => ({ value: m.id, label: m.name })) || []}
-              onChange={handleModelChange}
-              placeholder="选择模型"
-              className="flex-1 min-w-0"
-              compact
-            />
-          </>
-        )}
-        {activeService && activeService.type === 'pool' && (
-          <span className="text-xs font-semibold text-muted-foreground/80 flex items-center gap-1 shrink-0">
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-            翻译池
-          </span>
-        )}
-      </div>
-
-      {/* Target Language Hint */}
-      <div className="px-4 pt-2.5 pb-0">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5 text-[11px] text-indigo-600 dark:text-indigo-400 min-w-0">
-            <LogoIcon className="h-3 w-3 shrink-0" />
-            <span className="truncate font-medium">
-              {t('popup_translate_to')}: {targetLangPreview}
-            </span>
-          </div>
-          <Select
-            value={manualTarget}
-            options={[{ value: TARGET_AUTO, label: t('popup_target_auto') }, ...LANGUAGE_OPTIONS]}
-            onChange={(v) => setManualTarget(v as TargetSelection)}
-            className="w-[150px] shrink-0"
-          />
-        </div>
-        <div className="text-[10px] text-muted-foreground mt-0.5 ml-[18px]">
-          {manualTarget === TARGET_AUTO
-            ? t('popup_auto_detect_hint')
-            : t('popup_manual_override_hint')}
-        </div>
-      </div>
-
-      {/* Input Area */}
-      <div className="px-4 py-2 flex-1 flex flex-col gap-2">
-        <input
-          ref={imageInputRef}
-          type="file"
-          accept={LOCAL_IMAGE_ACCEPT}
-          className="hidden"
-          onChange={handleImageInputChange}
-        />
-
-        <Textarea
-          ref={textareaRef}
-          autoFocus
-          placeholder={t('popup_placeholder')}
-          value={inputText}
-          onChange={(e) => {
-            setInputText(e.target.value)
-            // 输入文本即放弃已选图片，保持「一次只有一个翻译对象」
-            if (e.target.value) clearImage()
-          }}
-          onPaste={handlePaste}
-          onKeyDown={handleKeyDown}
-          className="min-h-[80px] resize-none"
-        />
-
-        {image && (
-          <div className="flex items-center gap-2 rounded-md border border-border bg-muted/20 px-2 py-1.5">
-            <img
-              src={image.previewUrl}
-              alt={image.name}
-              className="h-10 w-10 shrink-0 rounded object-cover"
-            />
-            <span className="min-w-0 flex-1 truncate text-[10px] text-muted-foreground">
-              {image.name}
-            </span>
-            <button
-              type="button"
-              onClick={clearImage}
-              aria-label={t('popup_image_remove')}
-              title={t('popup_image_remove')}
-              className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        )}
-
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-9 w-10 shrink-0"
-            onClick={() => imageInputRef.current?.click()}
-            disabled={loading}
-            title={t('popup_image_translate')}
-            aria-label={t('popup_image_translate')}
-          >
-            <ImagePlus className="h-4 w-4" />
-          </Button>
-          <Button
-            onClick={() => handleTranslate()}
-            disabled={loading || (!inputText.trim() && !image)}
-            className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {t('popup_translating')}
-              </>
-            ) : (
-              <>
-                <Send className="mr-2 h-4 w-4" />
-                {t('popup_translate')}
-              </>
-            )}
-          </Button>
-        </div>
-
-        <PopupTranslationResult
-          result={result}
-          onCopy={handleCopy}
-          providerName={resultMeta?.providerName}
-          modelName={resultMeta?.modelName}
-          usage={resultMeta?.usage}
-        />
-      </div>
+        }
+      />
     </div>
   )
 }

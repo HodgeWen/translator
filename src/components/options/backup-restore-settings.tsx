@@ -2,11 +2,11 @@ import React, { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import type { GlobalSettings } from '@/types';
 import { cn } from '@/lib/utils';
+import { SettingsCard } from './settings-card';
 import { t } from '@/lib/i18n';
 import { importSettings, isEncryptedExport } from '@/lib/storage';
-import {
-  Download, Upload, Lock, Eye, EyeOff,
-} from 'lucide-react';
+import { Download, Upload, Lock } from 'lucide-react';
+import { PasswordInput } from '@/components/ui/password-input';
 
 interface OptionsBackupRestoreSettingsProps {
   settings: GlobalSettings;
@@ -17,10 +17,8 @@ interface OptionsBackupRestoreSettingsProps {
 
 export function OptionsBackupRestoreSettings({ settings, onError, onSuccess, onImportSuccess }: OptionsBackupRestoreSettingsProps) {
   const [exportPassphrase, setExportPassphrase] = useState('');
-  const [showExportPassphrase, setShowExportPassphrase] = useState(false);
   const [pendingImportText, setPendingImportText] = useState<string | null>(null);
   const [pendingImportPassphrase, setPendingImportPassphrase] = useState('');
-  const [showImportPassphrase, setShowImportPassphrase] = useState(false);
 
   const hasApiKey = useMemo(
     () => settings.providers.some((p) => p.apiKey?.trim()),
@@ -48,8 +46,7 @@ export function OptionsBackupRestoreSettings({ settings, onError, onSuccess, onI
       if (usePassphrase) {
         onSuccess?.(t('toast_export_encrypted_remember'));
         setExportPassphrase('');
-        setShowExportPassphrase(false);
-      }
+            }
     } catch (err) {
       onError(err instanceof Error ? err.message : t('error_export_failed'));
     }
@@ -60,14 +57,18 @@ export function OptionsBackupRestoreSettings({ settings, onError, onSuccess, onI
       await importSettings(text, passphrase);
       setPendingImportText(null);
       setPendingImportPassphrase('');
-      setShowImportPassphrase(false);
       onImportSuccess();
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
+      const code = err && typeof err === 'object' ? String((err as { code?: unknown }).code ?? '') : '';
       if (msg === 'PASSPHRASE_REQUIRED') {
         onError(t('error_import_passphrase_required'));
       } else if (msg === 'DECRYPT_FAILED' || msg === 'UNSUPPORTED_ENCRYPTED_FORMAT') {
         onError(t('error_import_decrypt_failed'));
+      } else if (/^(SETTINGS_UNSUPPORTED_VERSION|SETTINGS_INVALID_PAYLOAD|INVALID_IMPORT_VERSION|VERSION_TOO_NEW|UNSUPPORTED_VERSION)$/.test(code || msg)) {
+        // 备份文件版本高于当前扩展支持的版本（storage 抛出的稳定码是
+        // SETTINGS_UNSUPPORTED_VERSION，旧正则只列了历史别名，导致本地化文案成了死代码）
+        onError(t('error_invalid_import_version'));
       } else {
         onError(msg || t('error_import_failed'));
       }
@@ -90,7 +91,6 @@ export function OptionsBackupRestoreSettings({ settings, onError, onSuccess, onI
     if (isEncryptedExport(text)) {
       setPendingImportText(text);
       setPendingImportPassphrase('');
-      setShowImportPassphrase(false);
       return;
     }
     await runImport(text);
@@ -109,37 +109,23 @@ export function OptionsBackupRestoreSettings({ settings, onError, onSuccess, onI
   const handleCancelImport = () => {
     setPendingImportText(null);
     setPendingImportPassphrase('');
-    setShowImportPassphrase(false);
   };
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-border p-6 space-y-5">
-        <h3 className="text-lg font-semibold">{t('title_backup_restore')}</h3>
+      <SettingsCard title={t('title_backup_restore')} icon={null} spaceClass="space-y-5">
 
         <div className="space-y-2">
-          <label className="text-sm font-medium flex items-center gap-1.5">
+          <label htmlFor="backup-export-passphrase" className="text-sm font-medium flex items-center gap-1.5">
             <Lock className="h-3.5 w-3.5 text-muted-foreground" />
             {t('label_export_passphrase')}
           </label>
-          <div className="flex gap-2">
-            <input
-              type={showExportPassphrase ? 'text' : 'password'}
-              value={exportPassphrase}
-              onChange={(e) => setExportPassphrase(e.target.value)}
-              className="flex-1 h-9 rounded-md border border-input bg-transparent px-3 text-sm"
-              autoComplete="new-password"
-            />
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-9 w-9 shrink-0"
-              onClick={() => setShowExportPassphrase((v) => !v)}
-              title={showExportPassphrase ? t('btn_hide') : t('btn_show')}
-            >
-              {showExportPassphrase ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </Button>
-          </div>
+          <PasswordInput
+            id="backup-export-passphrase"
+            value={exportPassphrase}
+            onChange={setExportPassphrase}
+            autoComplete="new-password"
+          />
           <p className={cn(
             'text-xs',
             hasApiKey ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'
@@ -164,35 +150,24 @@ export function OptionsBackupRestoreSettings({ settings, onError, onSuccess, onI
 
         {pendingImportText && (
           <div className="rounded-md border border-amber-300 bg-amber-50/60 dark:border-amber-700 dark:bg-amber-900/20 p-4 space-y-3">
-            <label className="text-sm font-medium flex items-center gap-1.5">
+            <label htmlFor="backup-import-passphrase" className="text-sm font-medium flex items-center gap-1.5">
               <Lock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
               {t('label_import_passphrase')}
             </label>
-            <div className="flex gap-2">
-              <input
-                type={showImportPassphrase ? 'text' : 'password'}
-                value={pendingImportPassphrase}
-                onChange={(e) => setPendingImportPassphrase(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleConfirmImport();
-                  }
-                }}
-                className="flex-1 h-9 rounded-md border border-input bg-background px-3 text-sm"
-                autoFocus
-                autoComplete="off"
-              />
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-9 w-9 shrink-0"
-                onClick={() => setShowImportPassphrase((v) => !v)}
-                title={showImportPassphrase ? t('btn_hide') : t('btn_show')}
-              >
-                {showImportPassphrase ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </Button>
-            </div>
+            <PasswordInput
+              id="backup-import-passphrase"
+              value={pendingImportPassphrase}
+              onChange={setPendingImportPassphrase}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleConfirmImport();
+                }
+              }}
+              autoFocus
+              autoComplete="off"
+              className="bg-background"
+            />
             <div className="flex gap-2">
               <Button
                 size="sm"
@@ -207,7 +182,7 @@ export function OptionsBackupRestoreSettings({ settings, onError, onSuccess, onI
             </div>
           </div>
         )}
-      </div>
+      </SettingsCard>
     </div>
   );
 }

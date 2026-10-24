@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type PointerEvent } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
 import { cn } from '@/lib/utils';
 import { isValidHexColor } from '@/entrypoints/content/input-translate-utils';
 
@@ -113,6 +113,29 @@ function emitColor(
   return hex;
 }
 
+/**
+ * 透明色的棋盘格底纹。两处色块（触发器与弹出层预览）逐字相同，
+ * 抽成常量避免改一处漏一处；颜色取 currentColor 叠加在同一元素上。
+ */
+const CHECKER_GRADIENTS =
+  'linear-gradient(45deg, rgba(148,163,184,.35) 25%, transparent 25%), ' +
+  'linear-gradient(-45deg, rgba(148,163,184,.35) 25%, transparent 25%), ' +
+  'linear-gradient(45deg, transparent 75%, rgba(148,163,184,.35) 75%), ' +
+  'linear-gradient(-45deg, transparent 75%, rgba(148,163,184,.35) 75%)'
+
+const CHECKER_SIZE = '8px 8px'
+const CHECKER_POSITION = '0 0, 0 4px, 4px -4px, -4px 0'
+
+/** 色块底纹：实色 + 棋盘格，用来让半透明颜色可读 */
+function checkerSwatchStyle(color: string): CSSProperties {
+  return {
+    backgroundColor: color,
+    backgroundImage: CHECKER_GRADIENTS,
+    backgroundSize: CHECKER_SIZE,
+    backgroundPosition: CHECKER_POSITION
+  }
+}
+
 export function ColorPaletteInput({ value, onPreview, onCommit, label, invalidText }: ColorPaletteInputProps) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -197,13 +220,7 @@ export function ColorPaletteInput({ value, onPreview, onCommit, label, invalidTe
       >
         <span
           className="h-8 w-8 shrink-0 rounded-md border border-border"
-          style={{
-            backgroundColor: currentColor,
-            backgroundImage:
-              'linear-gradient(45deg, rgba(148,163,184,.35) 25%, transparent 25%), linear-gradient(-45deg, rgba(148,163,184,.35) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, rgba(148,163,184,.35) 75%), linear-gradient(-45deg, transparent 75%, rgba(148,163,184,.35) 75%)',
-            backgroundSize: '8px 8px',
-            backgroundPosition: '0 0, 0 4px, 4px -4px, -4px 0',
-          }}
+          style={checkerSwatchStyle(currentColor)}
         />
         <span className="font-mono text-xs">{currentColor}</span>
       </button>
@@ -233,13 +250,7 @@ export function ColorPaletteInput({ value, onPreview, onCommit, label, invalidTe
           <div className="mt-3 flex items-center gap-2">
             <span
               className="h-8 w-8 shrink-0 rounded-md border border-border"
-              style={{
-                backgroundColor: currentColor,
-                backgroundImage:
-                  'linear-gradient(45deg, rgba(148,163,184,.35) 25%, transparent 25%), linear-gradient(-45deg, rgba(148,163,184,.35) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, rgba(148,163,184,.35) 75%), linear-gradient(-45deg, transparent 75%, rgba(148,163,184,.35) 75%)',
-                backgroundSize: '8px 8px',
-                backgroundPosition: '0 0, 0 4px, 4px -4px, -4px 0',
-              }}
+              style={checkerSwatchStyle(currentColor)}
             />
         <input
           type="text"

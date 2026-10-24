@@ -102,6 +102,8 @@ export function OptionsProviderSettings({ settings, onSave, onError }: OptionsPr
         provider={editingProvider}
         isAddingProvider={isAddingProvider}
         nativeLanguage={settings.nativeLanguage}
+        uiLanguage={settings.uiLanguage}
+        colorScheme={settings.colorScheme}
         onSave={handleSaveProvider}
         onCancel={() => {
           setEditingProvider(null);
