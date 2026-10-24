@@ -98,8 +98,47 @@ git(['pull', '--ff-only'], true);
 
 const dirty = gitOut(['status', '--porcelain']);
 if (dirty) {
-  console.log('→ 检测到未提交变更，自动暂存并提交（中文约定式 commit）');
-  git(['add', '-A'], true);
+  // 安全闸门：发版只允许带上 package.json / bun.lock 这类版本相关变更。
+  // 此前用 `git add -A` 会把工作区任意改动（含调试代码、临时文件）一并提交并发布。
+  // 解析 `git status --porcelain`：格式是 "XY <path>" 或重命名时的 "XY <old> -> <new>"。
+  // 注意三点：
+  // 1) 只允许「修改」类状态（M / A 等），删除（D）或冲突（U）不能过白名单 ——
+  //    否则 `D  package.json` 会被当成合法变更提交，随后读 package.json 直接崩。
+  // 2) 路径可能带引号并含空格，不能简单 `.* -> ` 截断（会切坏路径）。
+  // 3) 重命名取新路径（后段）作为实际落盘文件。
+  const dirtyFiles = dirty
+    .split('\n')
+    .map((line) => line.trimEnd())
+    .filter(Boolean)
+    .map((line) => {
+      const status = line.slice(0, 2);
+      let rest = line.slice(3);
+      // git 对含特殊字符的路径加引号，去掉外层引号
+      if (rest.startsWith('"') && rest.endsWith('"')) rest = rest.slice(1, -1);
+      // 重命名/复制：取箭头后的新路径
+      const arrow = rest.indexOf(' -> ');
+      if (arrow !== -1) rest = rest.slice(arrow + 4);
+      return { status, path: rest };
+    });
+
+  const ALLOWED = /^(package\.json|bun\.lock)$/;
+  const ALLOWED_STATUS = /^[MARCT]$/;
+  const unexpected = dirtyFiles.filter(({ status, path }) => {
+    // 任一位是 D / U 都视为不允许（删除或冲突）
+    if (/[DU]/.test(status)) return true;
+    if (!ALLOWED_STATUS.test(status.trim())) return true;
+    return !ALLOWED.test(path);
+  });
+
+  if (unexpected.length > 0) {
+    console.error('工作区存在未提交变更，发版前请先手动提交或还原：');
+    for (const f of unexpected) console.error(`  - ${f.status} ${f.path}`);
+    console.error('（发版脚本只自动提交 package.json / bun.lock 的版本变更）');
+    process.exit(1);
+  }
+
+  console.log('→ 检测到版本相关变更，自动暂存并提交（中文约定式 commit）');
+  git(['add', 'package.json', 'bun.lock'], true);
   const files = gitOut(['diff', '--cached', '--name-only'])
     .split('\n')
     .map((s) => s.trim())

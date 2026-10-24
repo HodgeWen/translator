@@ -81,6 +81,14 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      # 发版前的质量闸门：类型检查与单测必须在打包前通过。
+      # 此前只跑 `bun run zip`，坏代码可以直接发布。
+      - name: Typecheck
+        run: bun run compile
+
+      - name: Unit tests
+        run: bun test
+
       - name: Compute version
         id: version
         env:
