@@ -1,298 +1,311 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>P4 手动验证：图片翻译网页入口</title>
-  <style>
-    :root {
-      color-scheme: light dark;
-    }
-    body {
-      font: 14px/1.6 system-ui, -apple-system, 'Segoe UI', sans-serif;
-      margin: 0 auto;
-      max-width: 880px;
-      padding: 24px 20px 64px;
-    }
-    h1 {
-      font-size: 22px;
-      margin-bottom: 8px;
-    }
-    h2 {
-      font-size: 16px;
-      margin: 0 0 8px;
-    }
-    p.lead {
-      margin-top: 0;
-      opacity: 0.8;
-    }
-    table {
-      border-collapse: collapse;
-      margin: 16px 0 28px;
-      width: 100%;
-    }
-    th,
-    td {
-      border: 1px solid rgba(100, 116, 139, 0.35);
-      padding: 6px 10px;
-      text-align: left;
-      vertical-align: top;
-    }
-    th {
-      background: rgba(100, 116, 139, 0.12);
-      font-weight: 600;
-    }
-    section {
-      border-top: 1px solid rgba(100, 116, 139, 0.25);
-      padding: 20px 0;
-    }
-    figure {
-      margin: 0;
-    }
-    figcaption {
-      margin-top: 8px;
-      color: rgb(71 85 105);
-    }
-    .stage {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-    }
-    img {
-      display: block;
-      border: 1px dashed rgba(100, 116, 139, 0.45);
-      background: rgb(241 245 249);
-    }
-    #large-data,
-    #large-blob {
-      width: 480px;
-      height: 360px;
-    }
-    #overlay-a,
-    #overlay-b {
-      width: 420px;
-      height: auto;
-    }
-    #display-small {
-      width: 150px;
-      height: 112px;
-    }
-    #small-icon {
-      width: 32px;
-      height: 32px;
-    }
-    .css-background {
-      width: 420px;
-      height: 262px;
-      border: 1px dashed rgba(100, 116, 139, 0.45);
-      background-position: center;
-      background-size: cover;
-    }
-    canvas {
-      display: block;
-      border: 1px dashed rgba(100, 116, 139, 0.45);
-      background: rgb(241 245 249);
-    }
-    code {
-      background: rgba(100, 116, 139, 0.14);
-      border-radius: 3px;
-      padding: 0 4px;
-    }
-  </style>
-</head>
-<body>
-  <h1>P4 手动验证：图片翻译网页入口</h1>
-  <p class="lead">
-    本页自包含生成全部样例，不依赖外部资源。加载扩展构建产物后打开，按下方预期逐项核对悬浮「译」按钮、
-    200×200 CSS px 过滤、加载/错误状态与设置总开关。
-  </p>
-
-  <table>
-    <thead>
-      <tr>
-        <th>样例</th>
-        <th>预期</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>1. data URL 大图（480×360）</td>
-        <td>悬停显示「译」；点击后右上角按钮消失、左上角出现加载徽标；无识图模型时显示可点击重试的错误文案</td>
-      </tr>
-      <tr>
-        <td>2. blob URL 大图（480×360）</td>
-        <td>同 1，验证 blob: 在页面侧转 data URL 后仍可触发</td>
-      </tr>
-      <tr>
-        <td>3. 32×32 小图标</td>
-        <td>悬停不显示「译」</td>
-      </tr>
-      <tr>
-        <td>4. 800×600 图片、仅显示 150×112</td>
-        <td>悬停不显示「译」（按渲染尺寸过滤，而非原始像素）</td>
-      </tr>
-      <tr>
-        <td>5. CSS 背景图</td>
-        <td>悬停不显示「译」（非 &lt;img&gt;）</td>
-      </tr>
-      <tr>
-        <td>6. &lt;canvas&gt;</td>
-        <td>悬停不显示「译」</td>
-      </tr>
-    </tbody>
-  </table>
-
-  <p>
-    http(s) 图片路径无法在本地单页复现，请在任意真实网页的大图上补测；设置页关闭「图片悬浮按钮」后，
-    所有页面的「译」按钮应立即消失（右键菜单留给 P5 验证）。
-  </p>
-
-  <section>
-    <h2>1. data URL 大图（canvas 生成，含 6 个已知英文文字框）</h2>
-    <figure>
-      <img id="large-data" alt="Generated quarterly report image (data URL)" />
-      <figcaption>
-        预期：悬停显示「译」；点击后出现加载状态。已知文字行：Quarterly Report 2026 /
-        Income grew by 18% this quarter / Operating costs stayed flat / Customer retention
-        reached 92% / Next review is scheduled for June / All figures are unaudited。
-      </figcaption>
-    </figure>
-  </section>
-
-  <section>
-    <h2>2. blob URL 大图（canvas 生成）</h2>
-    <figure>
-      <img id="large-blob" alt="Generated quarterly report image (blob URL)" />
-      <figcaption>预期：悬停显示「译」；点击后出现加载状态。</figcaption>
-    </figure>
-  </section>
-
-  <section>
-    <h2>3. 小图标（32×32）</h2>
-    <figure>
-      <img id="small-icon" alt="Small icon" />
-      <figcaption>预期：悬停不显示「译」。</figcaption>
-    </figure>
-  </section>
-
-  <section>
-    <h2>4. 大图小显示（原始 800×600，CSS 显示 150×112）</h2>
-    <figure>
-      <img id="display-small" alt="Large image rendered small" />
-      <figcaption>预期：悬停不显示「译」（渲染尺寸小于 200×200）。</figcaption>
-    </figure>
-  </section>
-
-  <section>
-    <h2>5. CSS 背景图</h2>
-    <div id="css-background" class="css-background" role="img" aria-label="CSS background image"></div>
-    <p>预期：悬停不显示「译」。</p>
-  </section>
-
-  <section>
-    <h2>6. &lt;canvas&gt;</h2>
-    <canvas id="plain-canvas" width="480" height="360"></canvas>
-    <p>预期：悬停不显示「译」；P4 不把 canvas 视为图片入口。</p>
-  </section>
-
-  <section>
-    <h2>7. P6 原位覆盖层、工具条与多图独立</h2>
-    <p>
-      预期：用支持图片输入的模型分别触发下面两张图。翻译完成后覆盖块贴在原文位置、背景色取自图片本身；
-      右上角工具条显示「原文」与「关闭」。点击「原文」只隐藏该图覆盖块、工具条保留，按钮变为「译文」；
-      点击「译文」恢复。点击「关闭」后该图的覆盖层、工具条与注入节点消失，另一张图不受影响；
-      再次触发可重新显示（命中识别缓存）。滚动页面、调整窗口宽度或用 DevTools 改变图片 CSS 宽度后，
-      覆盖块应始终贴合原图（偏差 ≤2 CSS px），且图片的 src、naturalWidth/Height 与 CSS 宽高不变。
+  <head>
+    <meta charset="utf-8" />
+    <title>手动验证：图片翻译素材生成器</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+      body {
+        margin: 0 auto;
+        max-width: 960px;
+        padding: 32px 20px 64px;
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        line-height: 1.6;
+        color: #111827;
+        background: #ffffff;
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          color: #e5e7eb;
+          background: #0b111e;
+        }
+        .lead,
+        figcaption,
+        p {
+          color: #cbd5e1;
+        }
+        figure,
+        table,
+        section {
+          border-color: #1f2937;
+        }
+      }
+      h1 {
+        font-size: 1.5rem;
+        margin: 0 0 0.5rem;
+      }
+      h2 {
+        font-size: 1.125rem;
+        margin: 0 0 0.5rem;
+      }
+      .lead {
+        color: #4b5563;
+        margin-top: 0;
+      }
+      section {
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 20px 0;
+      }
+      figure {
+        margin: 12px 0 0;
+      }
+      img {
+        max-width: 100%;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+      }
+      figcaption {
+        margin-top: 8px;
+        font-size: 0.875rem;
+        color: #4b5563;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 16px 0;
+      }
+      th,
+      td {
+        border: 1px solid #e5e7eb;
+        padding: 8px 10px;
+        text-align: left;
+        font-size: 0.875rem;
+      }
+      th {
+        background: #f9fafb;
+      }
+      code {
+        background: #f3f4f6;
+        padding: 1px 5px;
+        border-radius: 4px;
+        font-size: 0.875em;
+      }
+      button {
+        font: inherit;
+        padding: 6px 14px;
+        border-radius: 8px;
+        border: 1px solid #c7d2fe;
+        background: #eef2ff;
+        color: #3730a3;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #e0e7ff;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>手动验证：图片翻译素材生成器</h1>
+    <p class="lead">
+      自 v0.5.0 起，图片翻译<strong>只从 popup 触发</strong>：在 popup 输入框粘贴图片或点底部按钮上传，
+      由视觉模型整图直译、以纯文本展示译文。页面内不再注入「译」按钮、覆盖层或右键菜单，
+      因此本页<strong>不用于验证页面侧交互</strong>，只负责生成测试素材，方便你在 popup 里手工走通流程。
     </p>
-    <figure>
-      <div class="stage">
-        <img id="overlay-a" alt="Overlay sample A" />
-        <img id="overlay-b" alt="Overlay sample B" />
-      </div>
-      <figcaption>
-        两图独立触发、切换与关闭。点击按钮只改第一张图的 src，覆盖层应随之清理，不再覆盖新图。
-        <button type="button" id="change-overlay-src">更换第一张图 src</button>
-      </figcaption>
-    </figure>
-  </section>
 
-  <script>
-    const TEXT_LINES = [
-      'Quarterly Report 2026',
-      'Income grew by 18% this quarter',
-      'Operating costs stayed flat',
-      'Customer retention reached 92%',
-      'Next review is scheduled for June',
-      'All figures are unaudited'
-    ];
+    <table>
+      <thead>
+        <tr>
+          <th>样例</th>
+          <th>用途</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1. 含英文文字的 PNG（data URL）</td>
+          <td>右键另存或截图后粘贴进 popup，验证识图直译的主路径与 6 行已知文案</td>
+        </tr>
+        <tr>
+          <td>2. 同内容的 JPEG（blob URL）</td>
+          <td>验证 JPEG 解码路径（PNG 之外的格式覆盖）</td>
+        </tr>
+        <tr>
+          <td>3. 无文字的纯色图</td>
+          <td>验证「识别不到文字」的错误分支（<code>error_image_no_text</code>）</td>
+        </tr>
+        <tr>
+          <td>4. 超出 20MB 上限的图</td>
+          <td>验证体积校验错误分支（<code>error_image_too_large</code>）</td>
+        </tr>
+        <tr>
+          <td>5. 超长边图（4000px）</td>
+          <td>验证等比缩放到最长边 2048 后仍能正常识图</td>
+        </tr>
+      </tbody>
+    </table>
 
-    function drawTextBox(context, text, x, baseline, font, paddingX, paddingY) {
-      context.font = font;
-      const textWidth = context.measureText(text).width;
-      const fontSize = Number(font.match(/(\d+)px/)[1]);
-      const top = baseline - fontSize - paddingY;
-      const height = fontSize + paddingY * 2;
-      context.fillStyle = '#eef2ff';
-      context.fillRect(x - paddingX, top, textWidth + paddingX * 2, height);
-      context.strokeStyle = '#c7d2fe';
-      context.lineWidth = 2;
-      context.strokeRect(x - paddingX, top, textWidth + paddingX * 2, height);
-      context.fillStyle = '#111827';
-      context.fillText(text, x, baseline);
-    }
+    <section>
+      <h2>1. 含英文文字的 PNG</h2>
+      <figure>
+        <img id="text-png" alt="生成的英文报告图片" />
+        <figcaption>
+          已知 6 行文案：Quarterly Report 2026 / Income grew by 18% this quarter /
+          Operating costs stayed flat / Customer retention reached 92% /
+          Next review is scheduled for June / All figures are unaudited。
+          把这张图粘贴进 popup，译文应覆盖全部 6 行。
+        </figcaption>
+      </figure>
+      <p><button type="button" id="download-png">下载 PNG</button></p>
+    </section>
 
-    function drawTextImage(canvas) {
-      const context = canvas.getContext('2d');
-      context.fillStyle = '#ffffff';
-      context.fillRect(0, 0, canvas.width, canvas.height);
+    <section>
+      <h2>2. 同内容的 JPEG</h2>
+      <figure>
+        <img id="text-jpeg" alt="生成的英文报告图片（JPEG）" />
+        <figcaption>验证 JPEG 解码与直译路径，预期译文与样例 1 一致。</figcaption>
+      </figure>
+      <p><button type="button" id="download-jpeg">下载 JPEG</button></p>
+    </section>
 
-      const titleFont = '600 44px system-ui, -apple-system, sans-serif';
-      const bodyFont = '400 30px system-ui, -apple-system, sans-serif';
-      drawTextBox(context, TEXT_LINES[0], 48, 100, titleFont, 14, 12);
-      TEXT_LINES.slice(1).forEach((line, index) => {
-        drawTextBox(context, line, 48, 190 + index * 70, bodyFont, 12, 9);
+    <section>
+      <h2>3. 无文字的纯色图</h2>
+      <figure>
+        <img id="blank-image" alt="无文字的纯色图" />
+        <figcaption>预期 popup 报「识别不到文字」，不产出空译文。</figcaption>
+      </figure>
+      <p><button type="button" id="download-blank">下载 PNG</button></p>
+    </section>
+
+    <section>
+      <h2>4. 超出 20MB 上限</h2>
+      <p>
+        生成一张约 21MB 的 PNG（纯噪声压缩率低，用固定种子保证可复现）。预期 popup 在
+        <strong>解码之前</strong>就报体积超限，不发起模型请求。
+      </p>
+      <p><button type="button" id="download-huge">下载超大 PNG</button></p>
+    </section>
+
+    <section>
+      <h2>5. 超长边图（4000px）</h2>
+      <figure>
+        <img id="oversize-image" alt="长边 4000px 的图片" />
+        <figcaption>
+          预期仍能直译：内部按最长边 2048 等比缩放后再交给模型，缩放不改变可读性。
+        </figcaption>
+      </figure>
+      <p><button type="button" id="download-oversize">下载 PNG</button></p>
+    </section>
+
+    <script>
+      const TEXT_LINES = [
+        'Quarterly Report 2026',
+        'Income grew by 18% this quarter',
+        'Operating costs stayed flat',
+        'Customer retention reached 92%',
+        'Next review is scheduled for June',
+        'All figures are unaudited'
+      ];
+
+      function drawTextBox(context, text, x, baseline, font, paddingX, paddingY) {
+        context.font = font;
+        const textWidth = context.measureText(text).width;
+        const fontSize = Number(font.match(/(\d+)px/)[1]);
+        const top = baseline - fontSize - paddingY;
+        const height = fontSize + paddingY * 2;
+        context.fillStyle = '#eef2ff';
+        context.fillRect(x - paddingX, top, textWidth + paddingX * 2, height);
+        context.strokeStyle = '#c7d2fe';
+        context.lineWidth = 2;
+        context.strokeRect(x - paddingX, top, textWidth + paddingX * 2, height);
+        context.fillStyle = '#111827';
+        context.fillText(text, x, baseline);
+      }
+
+      function drawTextImage(canvas) {
+        const context = canvas.getContext('2d');
+        context.fillStyle = '#ffffff';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+
+        const titleFont = '600 44px system-ui, -apple-system, sans-serif';
+        const bodyFont = '400 30px system-ui, -apple-system, sans-serif';
+        drawTextBox(context, TEXT_LINES[0], 48, 100, titleFont, 14, 12);
+        TEXT_LINES.slice(1).forEach((line, index) => {
+          drawTextBox(context, line, 48, 190 + index * 70, bodyFont, 12, 9);
+        });
+        return canvas;
+      }
+
+      function createTextCanvas(width, height) {
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        return drawTextImage(canvas);
+      }
+
+      function createBlankCanvas(width, height) {
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext('2d');
+        context.fillStyle = '#93c5fd';
+        context.fillRect(0, 0, width, height);
+        return canvas;
+      }
+
+      /** 纯噪声图：PNG 压缩率极低，便于生成 > 20MB 的素材 */
+      function createNoiseCanvas(width, height, seed) {
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext('2d');
+        const image = context.createImageData(width, height);
+        let state = seed >>> 0;
+        for (let i = 0; i < image.data.length; i += 4) {
+          state = (state * 1664525 + 1013904223) >>> 0;
+          image.data[i] = state & 0xff;
+          image.data[i + 1] = (state >>> 8) & 0xff;
+          image.data[i + 2] = (state >>> 16) & 0xff;
+          image.data[i + 3] = 255;
+        }
+        context.putImageData(image, 0, 0);
+        return canvas;
+      }
+
+      function downloadCanvas(canvas, filename, type = 'image/png') {
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) return;
+            const url = URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.href = url;
+            anchor.download = filename;
+            anchor.click();
+            // 交给浏览器开始下载后再释放
+            setTimeout(() => URL.revokeObjectURL(url), 10_000);
+          },
+          type,
+          0.92
+        );
+      }
+
+      const textCanvas = createTextCanvas(800, 600);
+      document.getElementById('text-png').src = textCanvas.toDataURL('image/png');
+      document.getElementById('text-jpeg').src = textCanvas.toDataURL('image/jpeg', 0.92);
+
+      const blankCanvas = createBlankCanvas(640, 400);
+      document.getElementById('blank-image').src = blankCanvas.toDataURL('image/png');
+
+      const oversizeCanvas = createTextCanvas(4000, 3000);
+      document.getElementById('oversize-image').src = oversizeCanvas.toDataURL('image/png');
+
+      document.getElementById('download-png').addEventListener('click', () => {
+        downloadCanvas(textCanvas, 'translator-text.png');
       });
-      return canvas;
-    }
-
-    function createTextCanvas(width, height) {
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      return drawTextImage(canvas);
-    }
-
-    document.getElementById('large-data').src = createTextCanvas(800, 600).toDataURL('image/png');
-
-    const blobCanvas = createTextCanvas(800, 600);
-    blobCanvas.toBlob(
-      (blob) => {
-        if (blob) document.getElementById('large-blob').src = URL.createObjectURL(blob);
-      },
-      'image/jpeg',
-      0.92
-    );
-
-    document.getElementById('display-small').src = createTextCanvas(800, 600).toDataURL('image/png');
-
-    const iconSvg =
-      '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">' +
-      '<rect width="32" height="32" rx="6" fill="#2563eb"/>' +
-      '<path d="M9 22l5-13h4l5 13h-3.4l-1-3.1h-5.2l-1 3.1H9zm5.2-5.8h3.6L16 11.4l-1.8 4.8z" fill="#fff"/>' +
-      '</svg>';
-    document.getElementById('small-icon').src =
-      'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(iconSvg);
-
-    document.getElementById('css-background').style.backgroundImage =
-      'url(' + createTextCanvas(640, 400).toDataURL('image/png') + ')';
-
-    drawTextImage(document.getElementById('plain-canvas'));
-
-    document.getElementById('overlay-a').src = createTextCanvas(640, 480).toDataURL('image/png');
-    document.getElementById('overlay-b').src = createTextCanvas(520, 360).toDataURL('image/png');
-    document.getElementById('change-overlay-src').addEventListener('click', () => {
-      document.getElementById('overlay-a').src = createTextCanvas(560, 420).toDataURL('image/png');
-    });
-  </script>
-</body>
+      document.getElementById('download-jpeg').addEventListener('click', () => {
+        downloadCanvas(textCanvas, 'translator-text.jpg', 'image/jpeg');
+      });
+      document.getElementById('download-blank').addEventListener('click', () => {
+        downloadCanvas(blankCanvas, 'translator-blank.png');
+      });
+      document.getElementById('download-huge').addEventListener('click', () => {
+        downloadCanvas(createNoiseCanvas(2600, 2600, 20261024), 'translator-huge.png');
+      });
+      document.getElementById('download-oversize').addEventListener('click', () => {
+        downloadCanvas(oversizeCanvas, 'translator-oversize.png');
+      });
+    </script>
+  </body>
 </html>

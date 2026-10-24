@@ -186,7 +186,26 @@ describe('vision queue fallback', () => {
     expect(calls).toEqual(['m1', 'm2']);
   });
 
-  test('skips remaining models of a provider on 401/403/429', async () => {
+  test('skips remaining models of a provider on 401/403', async () => {
+    for (const status of [401, 403]) {
+      const calls: string[] = [];
+      const result = await runVisionQueue(
+        queueOf(['p1', 'm1'], ['p1', 'm2'], ['p2', 'm3']),
+        async (pm) => {
+          calls.push(pm.provider.id + '/' + pm.model.id);
+          if (pm.provider.id === 'p1') throw new HttpError(status, `HTTP ${status}: auth failed`);
+          return 'ok';
+        }
+      );
+
+      expect(result).toBe('ok');
+      expect(calls).toEqual(['p1/m1', 'p2/m3']);
+    }
+  });
+
+  test('429 does NOT skip the rest of the provider: other models may have separate quota', async () => {
+    // 429 是瞬时限流，不是 provider 失效。同一 provider 的不同视觉模型常有独立配额，
+    // 直接丢掉整个 provider 的备选模型会让「首选模型限流」变成整条链路失败。
     const calls: string[] = [];
     const result = await runVisionQueue(
       queueOf(['p1', 'm1'], ['p1', 'm2'], ['p2', 'm3']),
@@ -198,7 +217,7 @@ describe('vision queue fallback', () => {
     );
 
     expect(result).toBe('ok');
-    expect(calls).toEqual(['p1/m1', 'p2/m3']);
+    expect(calls).toEqual(['p1/m1', 'p1/m2', 'p2/m3']);
   });
 
   test('throws a recognisable error when every model fails', async () => {
